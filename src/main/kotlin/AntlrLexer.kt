@@ -16,12 +16,32 @@ class AntlrLexer(val text: String) {
         }
     }
 
-    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(text, AntlrTokenType.Eof, text.length, 0) }
+    private val lineIndexes = mutableListOf<Int>()
+
+    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(this, AntlrTokenType.Eof, text.length, 0) }
     var charIndex: Int = 0
         private set
         get
 
+    fun substring(token: AntlrToken): String {
+        return text.substring(token.index, token.end())
+    }
+
+    fun lineColumn(i: Int): Pair<Int, Int> {
+        lineIndexes.binarySearch { it.compareTo(i) }.let { lineIndex ->
+            return if (lineIndex < 0) {
+                val line = -lineIndex - 2
+                Pair(line + 1, i - lineIndexes[line] + 1)
+            } else {
+                Pair(lineIndex + 1, 1)
+            }
+        }
+    }
+
     fun nextToken(): AntlrToken {
+        if (charIndex == 0) {
+            lineIndexes.add(0)
+        }
         if (charIndex >= text.length) {
             return eofToken
         }
@@ -43,7 +63,7 @@ class AntlrLexer(val text: String) {
                 while (charIndex < text.length) {
                     val endChar = text[charIndex]
                     if (endChar == '\'') {
-                        stringToken = AntlrToken(text, AntlrTokenType.String, startIndex, charIndex - startIndex + 1)
+                        stringToken = AntlrToken(this, AntlrTokenType.String, startIndex, charIndex - startIndex + 1)
                         charIndex++
                         break
                     } else if (endChar == '\r' || endChar == '\n') {
@@ -53,7 +73,7 @@ class AntlrLexer(val text: String) {
                 }
                 if (stringToken == null) {
                     stringToken =
-                        AntlrToken(text, AntlrTokenType.String, startIndex, charIndex - startIndex, AntlrTokenChannel.Error)
+                        AntlrToken(this, AntlrTokenType.String, startIndex, charIndex - startIndex, AntlrTokenChannel.Error)
                 }
                 stringToken
             }
@@ -63,9 +83,10 @@ class AntlrLexer(val text: String) {
                 if (charIndex < text.length && text[charIndex] == '\n') {
                     charIndex++
                 }
-                AntlrToken(text, AntlrTokenType.LineBreak, startIndex, charIndex - startIndex, AntlrTokenChannel.Whitespace)
+                lineIndexes.add(charIndex)
+                AntlrToken(this, AntlrTokenType.LineBreak, startIndex, charIndex - startIndex, AntlrTokenChannel.Whitespace)
             }
-            '\n' -> tokenizeSingleCharToken(AntlrTokenType.LineBreak, AntlrTokenChannel.Whitespace)
+            '\n' -> tokenizeSingleCharToken(AntlrTokenType.LineBreak, AntlrTokenChannel.Whitespace).also { lineIndexes.add(charIndex) }
 
             in lexerIdStartChars -> tokenizeSequence(AntlrTokenType.LexerId, idContinueChars)
             in parserIdStartChars -> tokenizeSequence(AntlrTokenType.ParserId, idContinueChars,
@@ -87,7 +108,7 @@ class AntlrLexer(val text: String) {
         tokenType: AntlrTokenType,
         tokenChannel: AntlrTokenChannel = AntlrTokenChannel.Default
     ) : AntlrToken {
-        return AntlrToken(text, tokenType, charIndex, 1, tokenChannel).also { charIndex++ }
+        return AntlrToken(this, tokenType, charIndex, 1, tokenChannel).also { charIndex++ }
     }
 
     private inline fun tokenizeSequence(
@@ -102,7 +123,7 @@ class AntlrLexer(val text: String) {
             charIndex++
         }
 
-        return AntlrToken(text, tokenTypeConverter(startIndex, tokenType), startIndex, charIndex - startIndex, channel)
+        return AntlrToken(this, tokenTypeConverter(startIndex, tokenType), startIndex, charIndex - startIndex, channel)
     }
 
     private fun checkKeyword(start: Int, value: String): Boolean {

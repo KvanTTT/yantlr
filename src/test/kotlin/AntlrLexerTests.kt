@@ -57,4 +57,29 @@ class AntlrLexerTests {
         checkNextToken(AntlrTokenType.Grammar, "grammar")
         checkNextToken(AntlrTokenType.Eof, "")
     }
+
+    @Test
+    fun testLineNumbers() {
+        val text = "a\nb11\r\nc222\rd"
+        val lexer = AntlrLexer(text)
+
+        fun checkNextToken(expectedValue: String, expectedStartLine: Int, expectedStartColumn: Int, expectedEndLine: Int, expectedEndColumn: Int) {
+            val actualToken = lexer.nextToken()
+            assertEquals(expectedValue, actualToken.value)
+            val (startLine, startColumn) = lexer.lineColumn(actualToken.index)
+            assertEquals(expectedStartLine, startLine)
+            assertEquals(expectedStartColumn, startColumn)
+            val (endLine, endColumn) = lexer.lineColumn(actualToken.end())
+            assertEquals(expectedEndLine, endLine)
+            assertEquals(expectedEndColumn, endColumn)
+        }
+
+        checkNextToken("a", 1, 1, 1, 2)
+        checkNextToken("\n", 1, 2, 2, 1)
+        checkNextToken("b11", 2, 1, 2, 4)
+        checkNextToken("\r\n", 2, 4, 3, 1)
+        checkNextToken("c222", 3, 1, 3, 5)
+        checkNextToken("\r", 3, 5, 4, 1)
+        checkNextToken("d", 4, 1, 4, 2)
+    }
 }

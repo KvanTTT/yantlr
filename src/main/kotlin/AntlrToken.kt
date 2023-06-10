@@ -1,18 +1,19 @@
 class AntlrToken(
-    private val text: String,
+    val lexer: AntlrLexer?,
     val type: AntlrTokenType,
     val index: Int,
     val length: Int,
-    val channel: AntlrTokenChannel = AntlrTokenChannel.Default
+    val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
+    val definedValue: String? = null
 ) {
     val value: String by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        text.substring(index, index + length)
+        definedValue ?: lexer!!.substring(this)
     }
 
-    val end = index + length
+    fun end() = index + length
 
     override fun toString(): String {
-        return "AntlrToken($type, [$index, $end), '$value')"
+        return "AntlrToken($type, [$index, ${end()}), '$value')"
     }
 }
 
