@@ -48,11 +48,13 @@ enum class AntlrTokenType {
     RightParen,
     Whitespace,
     LineBreak,
+    LineComment,
+    BlockComment,
     Error
 }
 
 enum class AntlrTokenChannel {
     Default,
-    Whitespace,
+    Hidden,
     Error
 }
