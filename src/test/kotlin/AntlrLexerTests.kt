@@ -38,7 +38,7 @@ class AntlrLexerTests {
         checkNextWhitespace()
         checkNextToken(AntlrTokenType.Semicolon, ";")
         checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Bar, "|")
+        checkNextToken(AntlrTokenType.Or, "|")
         checkNextWhitespace()
         checkNextToken(AntlrTokenType.Star, "*")
         checkNextWhitespace()
@@ -55,7 +55,7 @@ class AntlrLexerTests {
         checkNextToken(AntlrTokenType.Parser, "parser")
         checkNextWhitespace()
         checkNextToken(AntlrTokenType.Grammar, "grammar")
-        checkNextToken(AntlrTokenType.Eof, "")
+        checkNextToken(AntlrTokenType.EofRule, "")
     }
 
     @Test

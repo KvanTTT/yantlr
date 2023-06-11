@@ -6,19 +6,33 @@ class AntlrToken(
     val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
     val definedValue: String? = null
 ) {
-    val value: String by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        definedValue ?: lexer!!.substring(this)
+    companion object {
+        fun createAbstractToken(type: AntlrTokenType, channel: AntlrTokenChannel = AntlrTokenChannel.Default, value: String? = null): AntlrToken {
+            return AntlrToken(null, type, 0, 0, channel, value)
+        }
+    }
+
+    val value: String? by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        definedValue ?: lexer?.substring(this)
     }
 
     fun end() = index + length
 
     override fun toString(): String {
-        return "AntlrToken($type, [$index, ${end()}), '$value')"
+        val result = StringBuilder("AntlrToken($type")
+        if (lexer != null) {
+            result.append(", $index, ${end()}")
+        }
+        if (value != null) {
+            result.append(", '$value'")
+        }
+        result.append(")")
+        return result.toString()
     }
 }
 
 enum class AntlrTokenType {
-    Eof,
+    EofRule,
     String,
     LexerId,
     ParserId,
@@ -27,7 +41,7 @@ enum class AntlrTokenType {
     Grammar,
     Colon,
     Semicolon,
-    Bar,
+    Or,
     Star,
     Plus,
     LeftParen,

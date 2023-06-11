@@ -18,7 +18,7 @@ class AntlrLexer(val text: String) {
 
     private val lineIndexes = mutableListOf<Int>()
 
-    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(this, AntlrTokenType.Eof, text.length, 0) }
+    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(this, AntlrTokenType.EofRule, text.length, 0) }
     var charIndex: Int = 0
         private set
         get
@@ -50,7 +50,7 @@ class AntlrLexer(val text: String) {
         return when (c) {
             ':' -> tokenizeSingleCharToken(AntlrTokenType.Colon)
             ';' -> tokenizeSingleCharToken(AntlrTokenType.Semicolon)
-            '|' -> tokenizeSingleCharToken(AntlrTokenType.Bar)
+            '|' -> tokenizeSingleCharToken(AntlrTokenType.Or)
             '*' -> tokenizeSingleCharToken(AntlrTokenType.Star)
             '+' -> tokenizeSingleCharToken(AntlrTokenType.Plus)
             '(' -> tokenizeSingleCharToken(AntlrTokenType.LeftParen)
