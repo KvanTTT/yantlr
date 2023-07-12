@@ -47,13 +47,13 @@ class AntlrLexer(val text: String) {
         }
 
         return when (text[charIndex]) {
-            ':' -> tokenizeSingleCharToken(AntlrTokenType.Colon)
-            ';' -> tokenizeSingleCharToken(AntlrTokenType.Semicolon)
-            '|' -> tokenizeSingleCharToken(AntlrTokenType.Or)
-            '*' -> tokenizeSingleCharToken(AntlrTokenType.Star)
-            '+' -> tokenizeSingleCharToken(AntlrTokenType.Plus)
-            '(' -> tokenizeSingleCharToken(AntlrTokenType.LeftParen)
-            ')' -> tokenizeSingleCharToken(AntlrTokenType.RightParen)
+            ':' -> tokenizeSingleChar(AntlrTokenType.Colon)
+            ';' -> tokenizeSingleChar(AntlrTokenType.Semicolon)
+            '|' -> tokenizeSingleChar(AntlrTokenType.Or)
+            '*' -> tokenizeSingleChar(AntlrTokenType.Star)
+            '+' -> tokenizeSingleChar(AntlrTokenType.Plus)
+            '(' -> tokenizeSingleChar(AntlrTokenType.LeftParen)
+            ')' -> tokenizeSingleChar(AntlrTokenType.RightParen)
             '\'' -> tokenizeString()
             '\r', '\n' -> tokenizeLineBreak()
             '/' -> tokenizeComment()
@@ -70,11 +70,11 @@ class AntlrLexer(val text: String) {
             })
             in whitespaceChars -> tokenizeSequence(AntlrTokenType.Whitespace, whitespaceChars, AntlrTokenChannel.Hidden)
 
-            else -> tokenizeSingleCharToken(AntlrTokenType.Error, AntlrTokenChannel.Error)
+            else -> tokenizeSingleChar(AntlrTokenType.Error, AntlrTokenChannel.Error)
         }
     }
 
-    private fun tokenizeSingleCharToken(
+    private fun tokenizeSingleChar(
         tokenType: AntlrTokenType,
         tokenChannel: AntlrTokenChannel = AntlrTokenChannel.Default
     ) : AntlrToken {
