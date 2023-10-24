@@ -1,115 +1,100 @@
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import AntlrTokenType.*
-import TreeNodeType.*
 
 class AntlrParserTests {
-    private fun TreeNodeType.tree(vararg children: AntlrTreeNode): AntlrTreeNode {
-        return createNode(this, children.toList(), null)
+    private fun token(tokenType: AntlrTokenType, value: String? = null): AntlrToken {
+        return AntlrToken.createAbstractToken(tokenType, value = value)
     }
 
-    private fun token(tokenType: AntlrTokenType, value: String? = null): TokenTreeNode {
-        return TokenTreeNode(AntlrToken.createAbstractToken(tokenType, value = value), null)
-    }
-
-    private val defaultTreeNode = GrammarRule.tree(
+    private val defaultTreeNode = GrammarNode(
+        null,
         token(Grammar),
         token(ParserId, "test"),
         token(Semicolon),
 
-        RuleRule.tree(
-            token(ParserId, "x"),
+        listOf(RuleNode(
+            RuleNode.AltParserIdNode(token(ParserId, "x")),
             token(Colon),
 
-            BlockRule.tree(
-                AlternativeRule.tree(
-                    ElementRule.tree(token(LexerId, "A"))
-                ),
+            BlockNode(
+                AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "A")))),
 
-                BlockRuleOrAlternative.tree(
-                    token(Or),
-                    AlternativeRule.tree(
-                        ElementRule.tree(
-                            token(ParserId, "b")
-                        ),
-                    )
-                ),
-
-                BlockRuleOrAlternative.tree(
-                    token(Or),
-                    AlternativeRule.tree(
-                        ElementRule.tree(
-                            token(LeftParen),
-                            BlockRule.tree(
-                                AlternativeRule.tree(
-                                    ElementRule.tree(
-                                        token(LexerId, "C")
-                                    ),
-                                ),
-                                BlockRuleOrAlternative.tree(
-                                    token(Or),
-                                    AlternativeRule.tree(
-                                        ElementRule.tree(
-                                            token(ParserId, "d")
-                                        ),
-                                    )
-                                )
-                            ),
-                            token(RightParen)
-                        ),
+                listOf(
+                    BlockNode.OrAlternativeNode(
+                        token(Or),
+                        AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "b"))))
                     ),
-                ),
-
-                BlockRuleOrAlternative.tree(
-                    token(Or),
-                ),
+                    BlockNode.OrAlternativeNode(
+                        token(Or),
+                        AlternativeNode(
+                            listOf(ElementNode.ElementBlock(
+                                token(LeftParen),
+                                BlockNode(
+                                    AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "C")))),
+                                    listOf(BlockNode.OrAlternativeNode(
+                                        token(Or),
+                                        AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "d")))),
+                                    ))
+                                ),
+                                token(RightParen)
+                            ))
+                        )
+                    ),
+                    BlockNode.OrAlternativeNode(
+                        token(Or),
+                        AlternativeNode(emptyList())
+                    ),
+                )
             ),
 
             token(Semicolon),
-        )
+        ))
     )
 
     private val defaultTreeString = """
-                Grammar
-                  Token (Grammar)
-                  Token (ParserId, test)
-                  Token (Semicolon)
-                  Rule
-                    Token (ParserId, x)
-                    Token (Colon)
-                    Block
-                      Alternative
-                        Element
-                          Token (LexerId, A)
-                      BlockRuleOrAlternative
-                        Token (Or)
-                        Alternative
-                          Element
-                            Token (ParserId, b)
-                      BlockRuleOrAlternative
-                        Token (Or)
-                        Alternative
-                          Element
-                            Token (LeftParen)
-                            Block
-                              Alternative
-                                Element
-                                  Token (LexerId, C)
-                              BlockRuleOrAlternative
-                                Token (Or)
-                                Alternative
-                                  Element
-                                    Token (ParserId, d)
-                            Token (RightParen)
-                      BlockRuleOrAlternative
-                        Token (Or)
-                    Token (Semicolon)
+Grammar
+  Token (Grammar)
+  Token (ParserId, test)
+  Token (Semicolon)
+  Rule
+    AltParserId
+      Token (ParserId, x)
+    Token (Colon)
+    Block
+      Alternative
+        ElementLexerId
+          Token (LexerId, A)
+      OrAlternative
+        Token (Or)
+        Alternative
+          ElementParserId
+            Token (ParserId, b)
+      OrAlternative
+        Token (Or)
+        Alternative
+          ElementBlock
+            Token (LeftParen)
+            Block
+              Alternative
+                ElementLexerId
+                  Token (LexerId, C)
+              OrAlternative
+                Token (Or)
+                Alternative
+                  ElementParserId
+                    Token (ParserId, d)
+            Token (RightParen)
+      OrAlternative
+        Token (Or)
+        Alternative
+    Token (Semicolon)
 
-            """.trimIndent()
+""".trimIndent()
 
     @Test
     fun testPrettifyAntlrNode() {
-        assertEquals(defaultTreeString, defaultTreeNode.toString())
+        assertEquals(defaultTreeString, AntlrTreePrettier().prettify(defaultTreeNode))
     }
 
     /**
@@ -145,8 +130,8 @@ class AntlrParserTests {
         )
         val tokenStream = AntlrListTokenStream(tokens)
         val parser = AntlrParser(tokenStream)
-        val result = parser.parse()
+        val result = parser.parseGrammar()
 
-        assertEquals(defaultTreeString, result.toString())
+        assertEquals(defaultTreeString, AntlrTreePrettier().prettify(result))
     }
 }

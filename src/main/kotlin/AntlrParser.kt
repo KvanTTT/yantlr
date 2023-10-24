@@ -5,8 +5,6 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
             AntlrTokenType.ParserId,
             AntlrTokenType.LeftParen
         )
-
-        val blockEndTokens = setOf(AntlrTokenType.Semicolon, AntlrTokenType.RightParen)
     }
 
     var tokenIndex: Int = 0
@@ -14,72 +12,91 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
         get
 
     // grammar
-    //   : (lexer | parser)? grammar Id Semicolon rule*
+    //   : (Lexer | Parser)? Grammar ParserId Semicolon rule*
     //   ;
-    fun parse(): AntlrTreeNode {
-        return createTreeNode(TreeNodeType.GrammarRule) {
-            val token = getToken()
-            if (token.type == AntlrTokenType.Lexer || token.type == AntlrTokenType.Parser) {
-                add(TokenTreeNode(token, tokenStream))
+    fun parseGrammar(): GrammarNode {
+        val token = getToken()
+        val altNode = when (token.type) {
+            AntlrTokenType.Lexer -> {
                 nextDefaultToken()
+                GrammarNode.AltLexerNode(token)
             }
-            add(match(AntlrTokenType.Grammar))
-
-            val grammarIdType = if (checkToken(AntlrTokenType.LexerId))
-                AntlrTokenType.LexerId
-            else
-                AntlrTokenType.ParserId
-            add(match(grammarIdType))
-
-            add(match(AntlrTokenType.Semicolon))
-
-            while (!checkToken(AntlrTokenType.EofRule)) {
-                add(parseRule())
+            AntlrTokenType.Parser -> {
+                nextDefaultToken()
+                GrammarNode.AltParserNode(token)
             }
+            else -> null
         }
+
+        val grammarToken = match(AntlrTokenType.Grammar)
+
+        val idToken = match(if (checkToken(AntlrTokenType.LexerId)) AntlrTokenType.LexerId else AntlrTokenType.ParserId)
+
+        val semicolonToken = match(AntlrTokenType.Semicolon)
+
+        val ruleNodes = mutableListOf<RuleNode>()
+        while (!checkToken(AntlrTokenType.EofRule)) {
+            ruleNodes.add(parseRule())
+        }
+
+        return GrammarNode(
+            altNode,
+            grammarToken,
+            idToken,
+            semicolonToken,
+            ruleNodes
+        )
     }
 
     // rule
     //   : (LexerId | ParserId) Colon block Semicolon
     //   ;
-    fun parseRule(): RuleTreeNode {
-        return createTreeNode(TreeNodeType.RuleRule) {
-            val ruleId = if (checkToken(AntlrTokenType.LexerId)) AntlrTokenType.LexerId else AntlrTokenType.ParserId
-            add(match(ruleId))
-            add(match(AntlrTokenType.Colon))
-            add(parseBlock())
-            add(match(AntlrTokenType.Semicolon))
+    fun parseRule(): RuleNode {
+        val altNode = when (checkToken(AntlrTokenType.LexerId)) {
+            true -> RuleNode.AltLexerIdNode(match(AntlrTokenType.LexerId))
+            else -> RuleNode.AltParserIdNode(match(AntlrTokenType.ParserId))
         }
+
+        val colonToken = match(AntlrTokenType.Colon)
+
+        val blockNode = parseBlock()
+
+        val semicolonToken = match(AntlrTokenType.Semicolon)
+
+        return RuleNode(
+            altNode,
+            colonToken,
+            blockNode,
+            semicolonToken
+        )
     }
 
     // block
-    //   : (alternative (OR alternative?)*)*
+    //   : alternative (OR alternative)*
     //   ;
-    fun parseBlock(): BlockTreeNode {
-        return createTreeNode(TreeNodeType.BlockRule) {
-            if (getToken().type !in blockEndTokens) {
-                add(parseAlternative())
-                while (checkToken(AntlrTokenType.Or)) {
-                    val orAlternativeChildren = mutableListOf<AntlrTreeNode>()
-                    orAlternativeChildren.add(match(AntlrTokenType.Or))
-                    if (getToken().type !in blockEndTokens) {
-                        orAlternativeChildren.add(parseAlternative())
-                    }
-                    add(createTreeNode(TreeNodeType.BlockRuleOrAlternative) { addAll(orAlternativeChildren) })
-                }
-            }
+    fun parseBlock(): BlockNode {
+        val alternativeNode = parseAlternative()
+
+        val orAlternativeChildren = mutableListOf<BlockNode.OrAlternativeNode>()
+        while (checkToken(AntlrTokenType.Or)) {
+            orAlternativeChildren.add(BlockNode.OrAlternativeNode(matchToken(), parseAlternative()))
         }
+
+        return BlockNode(alternativeNode, orAlternativeChildren)
     }
 
     // alternative
-    //   : element+
+    //   : element*
     //   ;
-    fun parseAlternative(): AlternativeTreeNode {
-        return createTreeNode(TreeNodeType.AlternativeRule) {
-            while (getToken().type in elementTokenTypes) {
-                add(parseElement())
-            }
+    fun parseAlternative(): AlternativeNode {
+        val elementNodes = mutableListOf<ElementNode>()
+        while (getToken().type in elementTokenTypes) {
+            elementNodes.add(parseElement())
         }
+
+        return AlternativeNode(
+            elementNodes
+        )
     }
 
     // element
@@ -87,30 +104,20 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     //   | ParserId
     //   | '(' block? ')'
     //   ;
-    fun parseElement(): ElementTreeNode {
-        return createTreeNode(TreeNodeType.ElementRule) {
-            val nextToken = matchToken()
-            when (nextToken.type) {
-                AntlrTokenType.LexerId,
-                AntlrTokenType.ParserId -> add(TokenTreeNode(nextToken, tokenStream))
-
-                AntlrTokenType.LeftParen -> {
-                    add(TokenTreeNode(nextToken, tokenStream))
-                    add(parseBlock())
-                    add(match(AntlrTokenType.RightParen))
-                }
-
-                else -> add(ErrorTokenTreeNode(nextToken, tokenStream))
-            }
+    fun parseElement(): ElementNode {
+        val nextToken = matchToken()
+        return when (nextToken.type) {
+            AntlrTokenType.LexerId -> ElementNode.ElementLexerId(nextToken)
+            AntlrTokenType.ParserId -> ElementNode.ElementParserId(nextToken)
+            else -> ElementNode.ElementBlock(
+                nextToken,
+                parseBlock(),
+                match(AntlrTokenType.RightParen)
+            )
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : AntlrTreeNode> createTreeNode(treeNodeType: TreeNodeType, builderAction: MutableList<AntlrTreeNode>.() -> Unit): T {
-        return mutableListOf<AntlrTreeNode>().apply(builderAction).let { createNode(treeNodeType, it, tokenStream) as T }
-    }
-
-    private fun match(tokenType: AntlrTokenType): TokenTreeNode {
+    private fun match(tokenType: AntlrTokenType): AntlrToken {
         val currentToken = getToken()
         val realToken = if (currentToken.type == tokenType) {
             nextDefaultToken()
@@ -118,7 +125,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
         } else {
             tokenStream.createErrorTokenAtCurrentIndex(tokenType)
         }
-        return TokenTreeNode(realToken, tokenStream)
+        return realToken
     }
 
     private fun matchToken(): AntlrToken {
