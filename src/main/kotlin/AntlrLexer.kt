@@ -18,13 +18,13 @@ class AntlrLexer(val text: String) {
 
     private val lineIndexes = mutableListOf<Int>()
 
-    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { createToken(AntlrTokenType.EofRule, text.length, 0, AntlrTokenChannel.Default) }
+    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(AntlrTokenType.EofRule, text.length, 0, AntlrTokenChannel.Default) }
     var charIndex: Int = 0
         private set
         get
 
-    fun substring(token: AntlrToken): String {
-        return text.substring(token.index, token.end())
+    fun getTokenValue(token: AntlrToken): String {
+        return token.value ?: text.substring(token.index, token.end())
     }
 
     fun lineColumn(i: Int): Pair<Int, Int> {
@@ -78,7 +78,7 @@ class AntlrLexer(val text: String) {
         tokenType: AntlrTokenType,
         tokenChannel: AntlrTokenChannel = AntlrTokenChannel.Default
     ) : AntlrToken {
-        return createToken(tokenType, charIndex, 1, tokenChannel).also { charIndex++ }
+        return AntlrToken(tokenType, charIndex, 1, tokenChannel).also { charIndex++ }
     }
 
     private inline fun tokenizeSequence(
@@ -93,7 +93,7 @@ class AntlrLexer(val text: String) {
             charIndex++
         }
 
-        return createToken(tokenTypeConverter(startIndex, tokenType), startIndex, charIndex - startIndex, channel)
+        return AntlrToken(tokenTypeConverter(startIndex, tokenType), startIndex, charIndex - startIndex, channel)
     }
 
     private fun checkKeyword(start: Int, value: String): Boolean {
@@ -130,13 +130,13 @@ class AntlrLexer(val text: String) {
         } else {
             AntlrTokenChannel.Default
         }
-        return createToken(AntlrTokenType.String, startIndex, length, channel)
+        return AntlrToken(AntlrTokenType.String, startIndex, length, channel)
     }
 
     private fun tokenizeLineBreak(): AntlrToken {
         val startIndex = charIndex
         processLineBreak()
-        return createToken(AntlrTokenType.LineBreak, startIndex, charIndex - startIndex, AntlrTokenChannel.Hidden)
+        return AntlrToken(AntlrTokenType.LineBreak, startIndex, charIndex - startIndex, AntlrTokenChannel.Hidden)
     }
 
     private fun tokenizeComment(): AntlrToken {
@@ -170,7 +170,7 @@ class AntlrLexer(val text: String) {
             }
         }
         val tokenChannel = if (tokenType == AntlrTokenType.Error) AntlrTokenChannel.Error else AntlrTokenChannel.Hidden
-        return createToken(tokenType, startIndex, charIndex - startIndex, tokenChannel)
+        return AntlrToken(tokenType, startIndex, charIndex - startIndex, tokenChannel)
     }
 
     private fun processLineBreak() {
@@ -185,8 +185,4 @@ class AntlrLexer(val text: String) {
     private fun checkLineBreak(value: Char) = value == '\r' || value == '\n'
 
     private fun checkChar(index: Int, value: Char): Boolean = index < text.length && text[index] == value
-
-    private fun createToken(tokenType: AntlrTokenType, startIndex: Int, length: Int, channel: AntlrTokenChannel): AntlrToken {
-        return AntlrToken(this, tokenType, startIndex, length, channel)
-    }
 }

@@ -1,4 +1,4 @@
-class AntlrTreePrettier : AntlrTreeVisitor() {
+class AntlrPrettier : AntlrTreeVisitor() {
     private var indentLevel = 0
     private val indentCache = mutableMapOf<Int, String>()
     private val result = StringBuilder()
@@ -7,6 +7,13 @@ class AntlrTreePrettier : AntlrTreeVisitor() {
         indentLevel = 0
         result.clear()
         visitTreeNode(node)
+        return result.toString()
+    }
+
+    fun prettify(token: AntlrToken): String {
+        indentLevel = 0
+        result.clear()
+        visitToken(token)
         return result.toString()
     }
 

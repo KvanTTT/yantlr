@@ -16,7 +16,7 @@ class AntlrLexerTests {
         fun checkNextToken(expectedType: AntlrTokenType, expectedValue: String, expectedChannel: AntlrTokenChannel = AntlrTokenChannel.Default) {
             val actualToken = lexer.nextToken()
             assertEquals(expectedType, actualToken.type)
-            assertEquals(expectedValue, actualToken.value)
+            assertEquals(expectedValue, lexer.getTokenValue(actualToken))
             assertEquals(expectedChannel, actualToken.channel)
         }
 
@@ -73,7 +73,7 @@ class AntlrLexerTests {
 
         fun checkNextToken(expectedValue: String, expectedStartLine: Int, expectedStartColumn: Int, expectedEndLine: Int, expectedEndColumn: Int) {
             val actualToken = lexer.nextToken()
-            assertEquals(expectedValue, actualToken.value)
+            assertEquals(expectedValue, lexer.getTokenValue(actualToken))
             val (startLine, startColumn) = lexer.lineColumn(actualToken.index)
             assertEquals(expectedStartLine, startLine)
             assertEquals(expectedStartColumn, startColumn)

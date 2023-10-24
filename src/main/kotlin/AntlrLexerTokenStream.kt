@@ -9,6 +9,8 @@ class AntlrLexerTokenStream(private val lexer: AntlrLexer) : AntlrTokenStream {
     }
 
     override fun createErrorTokenAtCurrentIndex(tokenType: AntlrTokenType): AntlrToken {
-        return AntlrToken(lexer, tokenType, lexer.charIndex, 0, AntlrTokenChannel.Error)
+        return AntlrToken(tokenType, lexer.charIndex, 0, AntlrTokenChannel.Error)
     }
+
+    override fun getTokenValue(token: AntlrToken): String = lexer.getTokenValue(token)
 }

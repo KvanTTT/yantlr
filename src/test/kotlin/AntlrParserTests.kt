@@ -94,7 +94,7 @@ Grammar
 
     @Test
     fun testPrettifyAntlrNode() {
-        assertEquals(defaultTreeString, AntlrTreePrettier().prettify(defaultTreeNode))
+        assertEquals(defaultTreeString, AntlrPrettier().prettify(defaultTreeNode))
     }
 
     /**
@@ -132,6 +132,6 @@ Grammar
         val parser = AntlrParser(tokenStream)
         val result = parser.parseGrammar()
 
-        assertEquals(defaultTreeString, AntlrTreePrettier().prettify(result))
+        assertEquals(defaultTreeString, AntlrPrettier().prettify(result))
     }
 }
