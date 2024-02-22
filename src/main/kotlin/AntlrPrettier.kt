@@ -1,4 +1,4 @@
-class AntlrPrettier : AntlrTreeVisitor() {
+class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor() {
     private var indentLevel = 0
     private val indentCache = mutableMapOf<Int, String>()
     private val result = StringBuilder()
@@ -21,7 +21,7 @@ class AntlrPrettier : AntlrTreeVisitor() {
         result.appendIndent()
         val nodeType = node::class.simpleName!!
         result.append(if (nodeType.endsWith("Node")) nodeType.substring(0, nodeType.length - 4) else nodeType)
-        result.append("\n");
+        result.append("\n")
         indentLevel++
         node.acceptChildren(this)
         indentLevel--
@@ -32,7 +32,7 @@ class AntlrPrettier : AntlrTreeVisitor() {
             appendIndent()
             append("Token (")
             append(token.type)
-            token.value?.let {
+            (token.value ?: lexer?.getTokenValue(token))?.let {
                 append(", ")
                 append(it)
             }

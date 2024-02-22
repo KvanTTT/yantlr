@@ -3,94 +3,96 @@ import kotlin.test.assertEquals
 import AntlrTokenType.*
 
 class AntlrParserTests {
-    private fun token(tokenType: AntlrTokenType, value: String? = null): AntlrToken {
+    companion object {
+        val defaultTreeString = """
+Grammar
+  Token (Grammar, grammar)
+  Token (ParserId, test)
+  Token (Semicolon, ;)
+  Rule
+    AltParserId
+      Token (ParserId, x)
+    Token (Colon, :)
+    Block
+      Alternative
+        ElementLexerId
+          Token (LexerId, A)
+      OrAlternative
+        Token (Or, |)
+        Alternative
+          ElementParserId
+            Token (ParserId, b)
+      OrAlternative
+        Token (Or, |)
+        Alternative
+          ElementBlock
+            Token (LeftParen, ()
+            Block
+              Alternative
+                ElementLexerId
+                  Token (LexerId, C)
+              OrAlternative
+                Token (Or, |)
+                Alternative
+                  ElementParserId
+                    Token (ParserId, d)
+            Token (RightParen, ))
+      OrAlternative
+        Token (Or, |)
+        Alternative
+    Token (Semicolon, ;)
+
+""".trimIndent()
+    }
+
+    private fun token(tokenType: AntlrTokenType, value: String): AntlrToken {
         return AntlrToken.createAbstractToken(tokenType, value = value)
     }
 
     private val defaultTreeNode = GrammarNode(
         null,
-        token(Grammar),
+        token(Grammar, "grammar"),
         token(ParserId, "test"),
-        token(Semicolon),
+        token(Semicolon, ";"),
 
         listOf(RuleNode(
             RuleNode.AltParserIdNode(token(ParserId, "x")),
-            token(Colon),
+            token(Colon, ":"),
 
             BlockNode(
                 AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "A")))),
 
                 listOf(
                     BlockNode.OrAlternativeNode(
-                        token(Or),
+                        token(Or, "|"),
                         AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "b"))))
                     ),
                     BlockNode.OrAlternativeNode(
-                        token(Or),
+                        token(Or, "|"),
                         AlternativeNode(
                             listOf(ElementNode.ElementBlock(
-                                token(LeftParen),
+                                token(LeftParen, "("),
                                 BlockNode(
                                     AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "C")))),
                                     listOf(BlockNode.OrAlternativeNode(
-                                        token(Or),
+                                        token(Or, "|"),
                                         AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "d")))),
                                     ))
                                 ),
-                                token(RightParen)
+                                token(RightParen, ")")
                             ))
                         )
                     ),
                     BlockNode.OrAlternativeNode(
-                        token(Or),
+                        token(Or, "|"),
                         AlternativeNode(emptyList())
                     ),
                 )
             ),
 
-            token(Semicolon),
+            token(Semicolon, ";"),
         ))
     )
-
-    private val defaultTreeString = """
-Grammar
-  Token (Grammar)
-  Token (ParserId, test)
-  Token (Semicolon)
-  Rule
-    AltParserId
-      Token (ParserId, x)
-    Token (Colon)
-    Block
-      Alternative
-        ElementLexerId
-          Token (LexerId, A)
-      OrAlternative
-        Token (Or)
-        Alternative
-          ElementParserId
-            Token (ParserId, b)
-      OrAlternative
-        Token (Or)
-        Alternative
-          ElementBlock
-            Token (LeftParen)
-            Block
-              Alternative
-                ElementLexerId
-                  Token (LexerId, C)
-              OrAlternative
-                Token (Or)
-                Alternative
-                  ElementParserId
-                    Token (ParserId, d)
-            Token (RightParen)
-      OrAlternative
-        Token (Or)
-        Alternative
-    Token (Semicolon)
-
-""".trimIndent()
 
     @Test
     fun testPrettifyAntlrNode() {
@@ -110,23 +112,23 @@ Grammar
     @Test
     fun testParser() {
         val tokens = listOf(
-            AntlrToken.createAbstractToken(Grammar),
+            AntlrToken.createAbstractToken(Grammar, value = "grammar"),
             AntlrToken.createAbstractToken(ParserId, value = "test"),
-            AntlrToken.createAbstractToken(Semicolon),
+            AntlrToken.createAbstractToken(Semicolon, value = ";"),
 
             AntlrToken.createAbstractToken(ParserId, value = "x"),
-            AntlrToken.createAbstractToken(Colon),
+            AntlrToken.createAbstractToken(Colon, value = ":"),
             AntlrToken.createAbstractToken(LexerId, value = "A"),
-            AntlrToken.createAbstractToken(Or),
+            AntlrToken.createAbstractToken(Or, value = "|"),
             AntlrToken.createAbstractToken(ParserId, value = "b"),
-            AntlrToken.createAbstractToken(Or),
-            AntlrToken.createAbstractToken(LeftParen),
+            AntlrToken.createAbstractToken(Or, value = "|"),
+            AntlrToken.createAbstractToken(LeftParen, value = "("),
             AntlrToken.createAbstractToken(LexerId, value = "C"),
-            AntlrToken.createAbstractToken(Or),
+            AntlrToken.createAbstractToken(Or, value = "|"),
             AntlrToken.createAbstractToken(ParserId, value = "d"),
-            AntlrToken.createAbstractToken(RightParen),
-            AntlrToken.createAbstractToken(Or),
-            AntlrToken.createAbstractToken(Semicolon)
+            AntlrToken.createAbstractToken(RightParen, value = ")"),
+            AntlrToken.createAbstractToken(Or, value = "|"),
+            AntlrToken.createAbstractToken(Semicolon, value = ";")
         )
         val tokenStream = AntlrListTokenStream(tokens)
         val parser = AntlrParser(tokenStream)
