@@ -123,7 +123,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
             nextDefaultToken()
             currentToken
         } else {
-            tokenStream.createErrorTokenAtCurrentIndex(tokenType)
+            tokenStream.createErrorToken(tokenType)
         }
         return realToken
     }

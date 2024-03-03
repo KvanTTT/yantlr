@@ -130,7 +130,7 @@ Grammar
             AntlrToken.createAbstractToken(Bar, value = "|"),
             AntlrToken.createAbstractToken(Semicolon, value = ";")
         )
-        val tokenStream = AntlrListTokenStream(tokens)
+        val tokenStream = AntlrTokenStream(tokens)
         val parser = AntlrParser(tokenStream)
         val result = parser.parseGrammar()
 
