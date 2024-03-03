@@ -59,7 +59,7 @@ class AntlrLexer(val text: String) {
         get
 
     fun getTokenValue(token: AntlrToken): String {
-        return token.value ?: text.substring(token.index, token.end())
+        return token.value ?: text.substring(token.offset, token.end())
     }
 
     fun lineColumn(i: Int): Pair<Int, Int> {

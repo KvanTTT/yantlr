@@ -1,6 +1,6 @@
 class AntlrToken(
     val type: AntlrTokenType,
-    val index: Int,
+    val offset: Int,
     val length: Int,
     val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
     val value: String? = null
@@ -11,7 +11,7 @@ class AntlrToken(
         }
     }
 
-    fun end() = index + length
+    fun end() = offset + length
 }
 
 enum class AntlrTokenType {
