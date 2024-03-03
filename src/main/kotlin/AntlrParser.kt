@@ -78,7 +78,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
         val alternativeNode = parseAlternative()
 
         val orAlternativeChildren = mutableListOf<BlockNode.OrAlternativeNode>()
-        while (checkToken(AntlrTokenType.Or)) {
+        while (checkToken(AntlrTokenType.Bar)) {
             orAlternativeChildren.add(BlockNode.OrAlternativeNode(matchToken(), parseAlternative()))
         }
 

@@ -2,68 +2,209 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class AntlrLexerTests {
+    data class ExpectedToken(
+        val type: AntlrTokenType,
+        val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
+        val value: String? = null
+    )
+
     @Test
-    fun testLexer() {
-        val text = """
-            'string' 'error
-            LexerId parserId : ; | * + ( ) `
-            lexer parser /* block comment */ grammar
-            // line comment
-            /* unterminated block comment
-        """.trimIndent()
-        val lexer = AntlrLexer(text)
+    fun testEmpty() {
+        checkTokens("", listOf())
+    }
 
-        fun checkNextToken(expectedType: AntlrTokenType, expectedValue: String, expectedChannel: AntlrTokenChannel = AntlrTokenChannel.Default) {
-            val actualToken = lexer.nextToken()
-            assertEquals(expectedType, actualToken.type)
-            assertEquals(expectedValue, lexer.getTokenValue(actualToken))
-            assertEquals(expectedChannel, actualToken.channel)
-        }
+    @Test
+    fun testOperators() {
+        checkTokens(
+            ", ; ( ) = : | * + += . .. } ? ~ -> #",
+            listOf(
+                AntlrTokenType.Comma, AntlrTokenType.Semicolon, AntlrTokenType.LeftParen, AntlrTokenType.RightParen,
+                AntlrTokenType.Equals, AntlrTokenType.Colon,
+                AntlrTokenType.Bar, AntlrTokenType.Star, AntlrTokenType.Plus, AntlrTokenType.PlusAssign,
+                AntlrTokenType.Dot,
+                AntlrTokenType.Range, AntlrTokenType.RightBrace, AntlrTokenType.Question, AntlrTokenType.Tilde,
+                AntlrTokenType.RightArrow, AntlrTokenType.Pound
+            ).map { ExpectedToken(it) },
+        )
 
-        fun checkNextWhitespace() {
-            checkNextToken(AntlrTokenType.Whitespace, " ", AntlrTokenChannel.Hidden)
-        }
+        checkTokens(
+            "- / &",
+            listOf(
+                ExpectedToken(AntlrTokenType.Error, AntlrTokenChannel.Error, "-"),
+                ExpectedToken(AntlrTokenType.Error, AntlrTokenChannel.Error, "/"),
+                ExpectedToken(AntlrTokenType.Error, AntlrTokenChannel.Error, "&"),
+            ),
+        )
+    }
 
-        fun checkNextLineBreak() {
-            checkNextToken(AntlrTokenType.LineBreak, "\n", AntlrTokenChannel.Hidden)
-        }
+    @Test
+    fun testKeywords() {
+        checkTokens(
+            "channels { fragment grammar import lexer mode options  { parser tokens {",
+            listOf(
+                AntlrTokenType.Channels,
+                AntlrTokenType.Fragment, AntlrTokenType.Grammar, AntlrTokenType.Import, AntlrTokenType.Lexer,
+                AntlrTokenType.Mode, AntlrTokenType.Options,
+                AntlrTokenType.Parser, AntlrTokenType.Tokens
+            ).map { ExpectedToken(it) },
+        )
+    }
 
-        checkNextToken(AntlrTokenType.String, "'string'")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.String, "'error", AntlrTokenChannel.Error)
-        checkNextLineBreak()
-        checkNextToken(AntlrTokenType.LexerId, "LexerId")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.ParserId, "parserId")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Colon, ":")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Semicolon, ";")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Or, "|")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Star, "*")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Plus, "+")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.LeftParen, "(")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.RightParen, ")")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Error, "`", AntlrTokenChannel.Error)
-        checkNextLineBreak()
-        checkNextToken(AntlrTokenType.Lexer, "lexer")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Parser, "parser")
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.BlockComment, "/* block comment */", AntlrTokenChannel.Hidden)
-        checkNextWhitespace()
-        checkNextToken(AntlrTokenType.Grammar, "grammar")
-        checkNextLineBreak()
-        checkNextToken(AntlrTokenType.LineComment, "// line comment", AntlrTokenChannel.Hidden)
-        checkNextLineBreak()
-        checkNextToken(AntlrTokenType.BlockComment, "/* unterminated block comment", AntlrTokenChannel.Hidden)
-        checkNextToken(AntlrTokenType.EofRule, "")
+    @Test
+    fun testIdentifiers() {
+        checkTokens(
+            "TokenId parserId Привет привет grammarId options options1",
+            listOf(
+                AntlrTokenType.LexerId, AntlrTokenType.ParserId, AntlrTokenType.LexerId, AntlrTokenType.ParserId,
+                AntlrTokenType.ParserId, AntlrTokenType.ParserId, AntlrTokenType.ParserId
+            ).map { ExpectedToken(it) },
+        )
+    }
+
+    @Test
+    fun testStrings() {
+        checkTokens(
+            """'a' '\'' '\\' '\x' '\u0000'""",
+            listOf(
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                ExpectedToken(AntlrTokenType.Char, value = "a"),
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\'"),
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\\\"),
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\x"),
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u0000"),
+                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+            ),
+        )
+    }
+
+    @Test
+    fun testIncorrectStrings() {
+        checkTokens(
+            """
+                '
+                's
+                '\
+                '\u
+                '\u0
+                '\uab
+            """.trimIndent(),
+            listOf(
+                ExpectedToken(AntlrTokenType.Quote),
+
+                ExpectedToken(AntlrTokenType.Quote),
+                ExpectedToken(AntlrTokenType.Char, value = "s"),
+
+                ExpectedToken(AntlrTokenType.Quote),
+                ExpectedToken(AntlrTokenType.EscapedChar, AntlrTokenChannel.Error, value = "\\"),
+
+                ExpectedToken(AntlrTokenType.Quote),
+                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, AntlrTokenChannel.Error, value = "\\u"),
+
+                ExpectedToken(AntlrTokenType.Quote),
+                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, AntlrTokenChannel.Error, value = "\\u0"),
+
+                ExpectedToken(AntlrTokenType.Quote),
+                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, AntlrTokenChannel.Error, value = "\\u"),
+                ExpectedToken(AntlrTokenType.Char, value = "a"),
+                ExpectedToken(AntlrTokenType.Char, value = "b"),
+            ),
+        )
+    }
+
+    @Test
+    fun testComments() {
+        checkTokens(
+            "// Single line comment\n/* Multi line comment */",
+            listOf(
+                ExpectedToken(AntlrTokenType.LineComment, AntlrTokenChannel.Hidden, value = "// Single line comment"),
+                ExpectedToken(AntlrTokenType.BlockComment, AntlrTokenChannel.Hidden, value = "/* Multi line comment */")
+            ),
+            ignoreWhitespaces = true,
+        )
+
+        // Check comments at the end of file
+        checkTokens(
+            "// Single line comment",
+            listOf(ExpectedToken(AntlrTokenType.LineComment, AntlrTokenChannel.Hidden, value = "// Single line comment"))
+        )
+        checkTokens(
+            "/* Multi line comment",
+            listOf(ExpectedToken(AntlrTokenType.BlockComment, AntlrTokenChannel.Hidden, value = "/* Multi line comment"))
+        )
+    }
+
+    @Test
+    fun testLexerCharSet() {
+        checkTokens(
+            """TOKEN options { caseInsensitive = true ; } : [a-z'"[\]\.];""",
+            listOf(
+                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN"),
+                ExpectedToken(AntlrTokenType.Options),
+                ExpectedToken(AntlrTokenType.ParserId, value = "caseInsensitive"),
+                ExpectedToken(AntlrTokenType.Equals),
+                ExpectedToken(AntlrTokenType.ParserId, value = "true"),
+                ExpectedToken(AntlrTokenType.Semicolon),
+                ExpectedToken(AntlrTokenType.RightBrace),
+                ExpectedToken(AntlrTokenType.Colon),
+                ExpectedToken(AntlrTokenType.LeftBracket),
+                ExpectedToken(AntlrTokenType.Char, value = "a"),
+                ExpectedToken(AntlrTokenType.Hyphen),
+                ExpectedToken(AntlrTokenType.Char, value = "z"),
+                ExpectedToken(AntlrTokenType.Char, value = "'"),
+                ExpectedToken(AntlrTokenType.Char, value = "\""),
+                ExpectedToken(AntlrTokenType.Char, value = "["),
+                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\]"),
+                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\."),
+                ExpectedToken(AntlrTokenType.RightBracket),
+                ExpectedToken(AntlrTokenType.Semicolon),
+            )
+        )
+
+        checkTokens(
+            """
+                TOKEN : [a
+                TOKEN2 : [b\
+                TOKEN3 : [c
+            """.trimIndent(),
+            listOf(
+                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN"),
+                ExpectedToken(AntlrTokenType.Colon),
+                ExpectedToken(AntlrTokenType.LeftBracket, value = "["),
+                ExpectedToken(AntlrTokenType.Char, value = "a"),
+                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN2"),
+                ExpectedToken(AntlrTokenType.Colon),
+                ExpectedToken(AntlrTokenType.LeftBracket, value = "["),
+                ExpectedToken(AntlrTokenType.Char, value = "b"),
+                ExpectedToken(AntlrTokenType.EscapedChar, AntlrTokenChannel.Error, value = "\\"),
+                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN3"),
+                ExpectedToken(AntlrTokenType.Colon),
+                ExpectedToken(AntlrTokenType.LeftBracket),
+                ExpectedToken(AntlrTokenType.Char, value = "c"),
+            )
+        )
+    }
+
+    @Test
+    fun testBom() {
+        checkTokens(
+            "\uFEFF",
+            listOf(
+                ExpectedToken(AntlrTokenType.Bom, AntlrTokenChannel.Hidden, value = "\uFEFF")
+            ),
+            ignoreWhitespaces = true,
+        )
     }
 
     @Test
@@ -94,5 +235,28 @@ class AntlrLexerTests {
         checkNextToken("\n", 5, 4, 6, 1)
         checkNextToken("\n", 6, 1, 7, 1)
         checkNextToken("f", 7, 1, 7, 2)
+    }
+
+    private fun checkTokens(
+        input: String,
+        expectedTokens: List<ExpectedToken>,
+        ignoreWhitespaces: Boolean = true
+    ) {
+        val lexer = AntlrLexer(input)
+
+        for (expectedToken in expectedTokens) {
+            var token: AntlrToken
+            do {
+                token = lexer.nextToken()
+            } while (ignoreWhitespaces && (token.type == AntlrTokenType.Whitespace || token.type == AntlrTokenType.LineBreak))
+
+            assertEquals(expectedToken.type, token.type, "Expected token type: ${expectedToken.type.name}")
+            assertEquals(expectedToken.channel, token.channel, "Expected token channel: ${expectedToken.channel.name}")
+            if (expectedToken.value != null) {
+                assertEquals(expectedToken.value, lexer.getTokenValue(token))
+            }
+        }
+
+        assertEquals(lexer.charIndex, input.length, "Lexer did not consume all input")
     }
 }

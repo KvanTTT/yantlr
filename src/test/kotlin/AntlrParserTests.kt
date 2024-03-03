@@ -18,12 +18,12 @@ Grammar
         ElementLexerId
           Token (LexerId, A)
       OrAlternative
-        Token (Or, |)
+        Token (Bar, |)
         Alternative
           ElementParserId
             Token (ParserId, b)
       OrAlternative
-        Token (Or, |)
+        Token (Bar, |)
         Alternative
           ElementBlock
             Token (LeftParen, ()
@@ -32,13 +32,13 @@ Grammar
                 ElementLexerId
                   Token (LexerId, C)
               OrAlternative
-                Token (Or, |)
+                Token (Bar, |)
                 Alternative
                   ElementParserId
                     Token (ParserId, d)
             Token (RightParen, ))
       OrAlternative
-        Token (Or, |)
+        Token (Bar, |)
         Alternative
     Token (Semicolon, ;)
 
@@ -64,18 +64,18 @@ Grammar
 
                 listOf(
                     BlockNode.OrAlternativeNode(
-                        token(Or, "|"),
+                        token(Bar, "|"),
                         AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "b"))))
                     ),
                     BlockNode.OrAlternativeNode(
-                        token(Or, "|"),
+                        token(Bar, "|"),
                         AlternativeNode(
                             listOf(ElementNode.ElementBlock(
                                 token(LeftParen, "("),
                                 BlockNode(
                                     AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "C")))),
                                     listOf(BlockNode.OrAlternativeNode(
-                                        token(Or, "|"),
+                                        token(Bar, "|"),
                                         AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "d")))),
                                     ))
                                 ),
@@ -84,7 +84,7 @@ Grammar
                         )
                     ),
                     BlockNode.OrAlternativeNode(
-                        token(Or, "|"),
+                        token(Bar, "|"),
                         AlternativeNode(emptyList())
                     ),
                 )
@@ -119,15 +119,15 @@ Grammar
             AntlrToken.createAbstractToken(ParserId, value = "x"),
             AntlrToken.createAbstractToken(Colon, value = ":"),
             AntlrToken.createAbstractToken(LexerId, value = "A"),
-            AntlrToken.createAbstractToken(Or, value = "|"),
+            AntlrToken.createAbstractToken(Bar, value = "|"),
             AntlrToken.createAbstractToken(ParserId, value = "b"),
-            AntlrToken.createAbstractToken(Or, value = "|"),
+            AntlrToken.createAbstractToken(Bar, value = "|"),
             AntlrToken.createAbstractToken(LeftParen, value = "("),
             AntlrToken.createAbstractToken(LexerId, value = "C"),
-            AntlrToken.createAbstractToken(Or, value = "|"),
+            AntlrToken.createAbstractToken(Bar, value = "|"),
             AntlrToken.createAbstractToken(ParserId, value = "d"),
             AntlrToken.createAbstractToken(RightParen, value = ")"),
-            AntlrToken.createAbstractToken(Or, value = "|"),
+            AntlrToken.createAbstractToken(Bar, value = "|"),
             AntlrToken.createAbstractToken(Semicolon, value = ";")
         )
         val tokenStream = AntlrListTokenStream(tokens)

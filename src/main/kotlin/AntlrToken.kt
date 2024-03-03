@@ -16,7 +16,6 @@ class AntlrToken(
 
 enum class AntlrTokenType {
     EofRule,
-    String,
     LexerId,
     ParserId,
     Lexer,
@@ -24,7 +23,7 @@ enum class AntlrTokenType {
     Grammar,
     Colon,
     Semicolon,
-    Or,
+    Bar,
     Star,
     Plus,
     LeftParen,
@@ -33,11 +32,41 @@ enum class AntlrTokenType {
     LineBreak,
     LineComment,
     BlockComment,
-    Error
+    Error,
+    Fragment,
+    Import,
+    Mode,
+    Channels,
+    Options,
+    Tokens,
+    Equals,
+    Range,
+    Dot,
+    Pound,
+    RightArrow,
+    Tilde,
+    Question,
+    Comma,
+    PlusAssign,
+    Bom,
+    RightBrace,
+    LeftBracket,
+    RightBracket,
+    Hyphen,
+    Char,
+    EscapedChar,
+    Quote,
+    UnicodeEscapedChar,
 }
 
 enum class AntlrTokenChannel {
     Default,
     Hidden,
     Error
+}
+
+enum class AntlrMode {
+    Default,
+    StringLiteral,
+    CharSetLiteral
 }
