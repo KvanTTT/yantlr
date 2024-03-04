@@ -2,12 +2,6 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class AntlrLexerTests {
-    data class ExpectedToken(
-        val type: AntlrTokenType,
-        val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
-        val value: String? = null
-    )
-
     @Test
     fun testEmpty() {
         checkTokens("", listOf())
@@ -24,15 +18,15 @@ class AntlrLexerTests {
                 AntlrTokenType.Dot,
                 AntlrTokenType.Range, AntlrTokenType.RightBrace, AntlrTokenType.Question, AntlrTokenType.Tilde,
                 AntlrTokenType.RightArrow, AntlrTokenType.Pound
-            ).map { ExpectedToken(it) },
+            ).map { AntlrToken(it) },
         )
 
         checkTokens(
             "- / &",
             listOf(
-                ExpectedToken(AntlrTokenType.Error, AntlrTokenChannel.Error, "-"),
-                ExpectedToken(AntlrTokenType.Error, AntlrTokenChannel.Error, "/"),
-                ExpectedToken(AntlrTokenType.Error, AntlrTokenChannel.Error, "&"),
+                AntlrToken(AntlrTokenType.Error, channel = AntlrTokenChannel.Error, value = "-"),
+                AntlrToken(AntlrTokenType.Error, channel = AntlrTokenChannel.Error, value = "/"),
+                AntlrToken(AntlrTokenType.Error, channel = AntlrTokenChannel.Error, value = "&"),
             ),
         )
     }
@@ -46,7 +40,7 @@ class AntlrLexerTests {
                 AntlrTokenType.Fragment, AntlrTokenType.Grammar, AntlrTokenType.Import, AntlrTokenType.Lexer,
                 AntlrTokenType.Mode, AntlrTokenType.Options,
                 AntlrTokenType.Parser, AntlrTokenType.Tokens
-            ).map { ExpectedToken(it) },
+            ).map { AntlrToken(it) },
         )
     }
 
@@ -57,7 +51,7 @@ class AntlrLexerTests {
             listOf(
                 AntlrTokenType.LexerId, AntlrTokenType.ParserId, AntlrTokenType.LexerId, AntlrTokenType.ParserId,
                 AntlrTokenType.ParserId, AntlrTokenType.ParserId, AntlrTokenType.ParserId
-            ).map { ExpectedToken(it) },
+            ).map { AntlrToken(it) },
         )
     }
 
@@ -66,25 +60,25 @@ class AntlrLexerTests {
         checkTokens(
             """'a' '\'' '\\' '\x' '\u0000'""",
             listOf(
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
-                ExpectedToken(AntlrTokenType.Char, value = "a"),
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.Char, value = "a"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
 
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
-                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\'"),
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.EscapedChar, value = "\\'"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
 
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
-                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\\\"),
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.EscapedChar, value = "\\\\"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
 
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
-                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\x"),
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.EscapedChar, value = "\\x"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
 
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
-                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u0000"),
-                ExpectedToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
+                AntlrToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u0000"),
+                AntlrToken(AntlrTokenType.Quote, value = "'"),
             ),
         )
     }
@@ -101,24 +95,24 @@ class AntlrLexerTests {
                 '\uab
             """.trimIndent(),
             listOf(
-                ExpectedToken(AntlrTokenType.Quote),
+                AntlrToken(AntlrTokenType.Quote),
 
-                ExpectedToken(AntlrTokenType.Quote),
-                ExpectedToken(AntlrTokenType.Char, value = "s"),
+                AntlrToken(AntlrTokenType.Quote),
+                AntlrToken(AntlrTokenType.Char, value = "s"),
 
-                ExpectedToken(AntlrTokenType.Quote),
-                ExpectedToken(AntlrTokenType.EscapedChar, AntlrTokenChannel.Error, value = "\\"),
+                AntlrToken(AntlrTokenType.Quote),
+                AntlrToken(AntlrTokenType.EscapedChar, channel = AntlrTokenChannel.Error, value = "\\"),
 
-                ExpectedToken(AntlrTokenType.Quote),
-                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, AntlrTokenChannel.Error, value = "\\u"),
+                AntlrToken(AntlrTokenType.Quote),
+                AntlrToken(AntlrTokenType.UnicodeEscapedChar, channel = AntlrTokenChannel.Error, value = "\\u"),
 
-                ExpectedToken(AntlrTokenType.Quote),
-                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, AntlrTokenChannel.Error, value = "\\u0"),
+                AntlrToken(AntlrTokenType.Quote),
+                AntlrToken(AntlrTokenType.UnicodeEscapedChar, channel = AntlrTokenChannel.Error, value = "\\u0"),
 
-                ExpectedToken(AntlrTokenType.Quote),
-                ExpectedToken(AntlrTokenType.UnicodeEscapedChar, AntlrTokenChannel.Error, value = "\\u"),
-                ExpectedToken(AntlrTokenType.Char, value = "a"),
-                ExpectedToken(AntlrTokenType.Char, value = "b"),
+                AntlrToken(AntlrTokenType.Quote),
+                AntlrToken(AntlrTokenType.UnicodeEscapedChar, channel = AntlrTokenChannel.Error, value = "\\u"),
+                AntlrToken(AntlrTokenType.Char, value = "a"),
+                AntlrToken(AntlrTokenType.Char, value = "b"),
             ),
         )
     }
@@ -128,8 +122,8 @@ class AntlrLexerTests {
         checkTokens(
             "// Single line comment\n/* Multi line comment */",
             listOf(
-                ExpectedToken(AntlrTokenType.LineComment, AntlrTokenChannel.Hidden, value = "// Single line comment"),
-                ExpectedToken(AntlrTokenType.BlockComment, AntlrTokenChannel.Hidden, value = "/* Multi line comment */")
+                AntlrToken(AntlrTokenType.LineComment, channel = AntlrTokenChannel.Hidden, value = "// Single line comment"),
+                AntlrToken(AntlrTokenType.BlockComment, channel = AntlrTokenChannel.Hidden, value = "/* Multi line comment */")
             ),
             ignoreWhitespaces = true,
         )
@@ -137,11 +131,11 @@ class AntlrLexerTests {
         // Check comments at the end of file
         checkTokens(
             "// Single line comment",
-            listOf(ExpectedToken(AntlrTokenType.LineComment, AntlrTokenChannel.Hidden, value = "// Single line comment"))
+            listOf(AntlrToken(AntlrTokenType.LineComment, channel = AntlrTokenChannel.Hidden, value = "// Single line comment"))
         )
         checkTokens(
             "/* Multi line comment",
-            listOf(ExpectedToken(AntlrTokenType.BlockComment, AntlrTokenChannel.Hidden, value = "/* Multi line comment"))
+            listOf(AntlrToken(AntlrTokenType.BlockComment, channel = AntlrTokenChannel.Hidden, value = "/* Multi line comment"))
         )
     }
 
@@ -150,25 +144,25 @@ class AntlrLexerTests {
         checkTokens(
             """TOKEN options { caseInsensitive = true ; } : [a-z'"[\]\.];""",
             listOf(
-                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN"),
-                ExpectedToken(AntlrTokenType.Options),
-                ExpectedToken(AntlrTokenType.ParserId, value = "caseInsensitive"),
-                ExpectedToken(AntlrTokenType.Equals),
-                ExpectedToken(AntlrTokenType.ParserId, value = "true"),
-                ExpectedToken(AntlrTokenType.Semicolon),
-                ExpectedToken(AntlrTokenType.RightBrace),
-                ExpectedToken(AntlrTokenType.Colon),
-                ExpectedToken(AntlrTokenType.LeftBracket),
-                ExpectedToken(AntlrTokenType.Char, value = "a"),
-                ExpectedToken(AntlrTokenType.Hyphen),
-                ExpectedToken(AntlrTokenType.Char, value = "z"),
-                ExpectedToken(AntlrTokenType.Char, value = "'"),
-                ExpectedToken(AntlrTokenType.Char, value = "\""),
-                ExpectedToken(AntlrTokenType.Char, value = "["),
-                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\]"),
-                ExpectedToken(AntlrTokenType.EscapedChar, value = "\\."),
-                ExpectedToken(AntlrTokenType.RightBracket),
-                ExpectedToken(AntlrTokenType.Semicolon),
+                AntlrToken(AntlrTokenType.LexerId, value = "TOKEN"),
+                AntlrToken(AntlrTokenType.Options),
+                AntlrToken(AntlrTokenType.ParserId, value = "caseInsensitive"),
+                AntlrToken(AntlrTokenType.Equals),
+                AntlrToken(AntlrTokenType.ParserId, value = "true"),
+                AntlrToken(AntlrTokenType.Semicolon),
+                AntlrToken(AntlrTokenType.RightBrace),
+                AntlrToken(AntlrTokenType.Colon),
+                AntlrToken(AntlrTokenType.LeftBracket),
+                AntlrToken(AntlrTokenType.Char, value = "a"),
+                AntlrToken(AntlrTokenType.Hyphen),
+                AntlrToken(AntlrTokenType.Char, value = "z"),
+                AntlrToken(AntlrTokenType.Char, value = "'"),
+                AntlrToken(AntlrTokenType.Char, value = "\""),
+                AntlrToken(AntlrTokenType.Char, value = "["),
+                AntlrToken(AntlrTokenType.EscapedChar, value = "\\]"),
+                AntlrToken(AntlrTokenType.EscapedChar, value = "\\."),
+                AntlrToken(AntlrTokenType.RightBracket),
+                AntlrToken(AntlrTokenType.Semicolon),
             )
         )
 
@@ -179,19 +173,19 @@ class AntlrLexerTests {
                 TOKEN3 : [c
             """.trimIndent(),
             listOf(
-                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN"),
-                ExpectedToken(AntlrTokenType.Colon),
-                ExpectedToken(AntlrTokenType.LeftBracket, value = "["),
-                ExpectedToken(AntlrTokenType.Char, value = "a"),
-                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN2"),
-                ExpectedToken(AntlrTokenType.Colon),
-                ExpectedToken(AntlrTokenType.LeftBracket, value = "["),
-                ExpectedToken(AntlrTokenType.Char, value = "b"),
-                ExpectedToken(AntlrTokenType.EscapedChar, AntlrTokenChannel.Error, value = "\\"),
-                ExpectedToken(AntlrTokenType.LexerId, value = "TOKEN3"),
-                ExpectedToken(AntlrTokenType.Colon),
-                ExpectedToken(AntlrTokenType.LeftBracket),
-                ExpectedToken(AntlrTokenType.Char, value = "c"),
+                AntlrToken(AntlrTokenType.LexerId, value = "TOKEN"),
+                AntlrToken(AntlrTokenType.Colon),
+                AntlrToken(AntlrTokenType.LeftBracket, value = "["),
+                AntlrToken(AntlrTokenType.Char, value = "a"),
+                AntlrToken(AntlrTokenType.LexerId, value = "TOKEN2"),
+                AntlrToken(AntlrTokenType.Colon),
+                AntlrToken(AntlrTokenType.LeftBracket, value = "["),
+                AntlrToken(AntlrTokenType.Char, value = "b"),
+                AntlrToken(AntlrTokenType.EscapedChar, channel = AntlrTokenChannel.Error, value = "\\"),
+                AntlrToken(AntlrTokenType.LexerId, value = "TOKEN3"),
+                AntlrToken(AntlrTokenType.Colon),
+                AntlrToken(AntlrTokenType.LeftBracket),
+                AntlrToken(AntlrTokenType.Char, value = "c"),
             )
         )
     }
@@ -201,7 +195,7 @@ class AntlrLexerTests {
         checkTokens(
             "\uFEFF",
             listOf(
-                ExpectedToken(AntlrTokenType.Bom, AntlrTokenChannel.Hidden, value = "\uFEFF")
+                AntlrToken(AntlrTokenType.Bom, channel = AntlrTokenChannel.Hidden, value = "\uFEFF")
             ),
             ignoreWhitespaces = true,
         )
@@ -239,22 +233,18 @@ class AntlrLexerTests {
 
     private fun checkTokens(
         input: String,
-        expectedTokens: List<ExpectedToken>,
+        expectedTokens: List<AntlrToken>,
         ignoreWhitespaces: Boolean = true
     ) {
         val lexer = AntlrLexer(input)
 
         for (expectedToken in expectedTokens) {
-            var token: AntlrToken
+            var actualToken: AntlrToken
             do {
-                token = lexer.nextToken()
-            } while (ignoreWhitespaces && (token.type == AntlrTokenType.Whitespace || token.type == AntlrTokenType.LineBreak))
+                actualToken = lexer.nextToken()
+            } while (ignoreWhitespaces && (actualToken.type == AntlrTokenType.Whitespace || actualToken.type == AntlrTokenType.LineBreak))
 
-            assertEquals(expectedToken.type, token.type, "Expected token type: ${expectedToken.type.name}")
-            assertEquals(expectedToken.channel, token.channel, "Expected token channel: ${expectedToken.channel.name}")
-            if (expectedToken.value != null) {
-                assertEquals(expectedToken.value, lexer.getTokenValue(token))
-            }
+            check(expectedToken, actualToken) { lexer.getTokenValue(actualToken) }
         }
 
         assertEquals(lexer.charIndex, input.length, "Lexer did not consume all input")

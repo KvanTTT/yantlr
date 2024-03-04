@@ -1,7 +1,7 @@
 class AntlrToken(
     val type: AntlrTokenType,
-    val offset: Int,
-    val length: Int,
+    val offset: Int = 0,
+    val length: Int = 0,
     val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
     val value: String? = null
 ) {
