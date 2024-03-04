@@ -1,3 +1,5 @@
+package parser
+
 class AntlrListTokenStream(tokensList: List<AntlrToken>) : AntlrTokenStream(tokensList) {
     private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(AntlrTokenType.Eof, 0, 0) }
 

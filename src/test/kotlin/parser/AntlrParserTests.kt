@@ -1,6 +1,8 @@
+package parser
+
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import AntlrTokenType.*
+import parser.AntlrTokenType.*
 
 class AntlrParserTests {
     companion object {
@@ -56,7 +58,8 @@ Grammar
         token(ParserId, "test"),
         token(Semicolon, ";"),
 
-        listOf(RuleNode(
+        listOf(
+            RuleNode(
             RuleNode.AltParserIdNode(token(ParserId, "x")),
             token(Colon, ":"),
 
@@ -71,11 +74,13 @@ Grammar
                     BlockNode.OrAlternativeNode(
                         token(Bar, "|"),
                         AlternativeNode(
-                            listOf(ElementNode.ElementBlock(
+                            listOf(
+                                ElementNode.ElementBlock(
                                 token(LeftParen, "("),
                                 BlockNode(
                                     AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "C")))),
-                                    listOf(BlockNode.OrAlternativeNode(
+                                    listOf(
+                                        BlockNode.OrAlternativeNode(
                                         token(Bar, "|"),
                                         AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "d")))),
                                     ))
@@ -92,7 +97,8 @@ Grammar
             ),
 
             token(Semicolon, ";"),
-        )),
+        )
+        ),
 
         token(Eof, null)
     )

@@ -1,3 +1,6 @@
+package parser
+
+import parser.AntlrToken
 import kotlin.test.assertEquals
 
 fun check(expectedToken: AntlrToken, actualToken: AntlrToken, getTokenValue: (AntlrToken) -> String?) {

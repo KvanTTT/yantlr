@@ -1,4 +1,6 @@
-import AntlrParserWithLexerTests.Companion.defaultGrammar
+package parser
+
+import parser.AntlrParserWithLexerTests.Companion.defaultGrammar
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

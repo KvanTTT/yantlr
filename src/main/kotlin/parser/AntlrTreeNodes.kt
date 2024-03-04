@@ -1,3 +1,5 @@
+package parser
+
 sealed class AntlrNode {
     abstract fun acceptChildren(visitor: AntlrTreeVisitor)
 }

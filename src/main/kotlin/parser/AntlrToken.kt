@@ -1,3 +1,5 @@
+package parser
+
 class AntlrToken(
     val type: AntlrTokenType,
     val offset: Int = 0,

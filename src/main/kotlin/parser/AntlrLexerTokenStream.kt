@@ -1,3 +1,5 @@
+package parser
+
 class AntlrLexerTokenStream(private val lexer: AntlrLexer) : AntlrTokenStream(mutableListOf()) {
     private val appendableTokens = tokens as MutableList<AntlrToken>
 

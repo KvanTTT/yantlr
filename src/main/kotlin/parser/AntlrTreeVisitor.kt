@@ -1,3 +1,5 @@
+package parser
+
 abstract class AntlrTreeVisitor {
     abstract fun visitTreeNode(node: AntlrNode)
 

@@ -1,3 +1,5 @@
+package parser
+
 class AntlrLexer(val text: String) {
     companion object {
         private val whitespaceChars = setOf(' ', '\t')

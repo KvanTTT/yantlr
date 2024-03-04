@@ -1,3 +1,5 @@
+package parser
+
 class AntlrParser(val tokenStream: AntlrTokenStream) {
     companion object {
         private val elementTokenTypes = setOf(

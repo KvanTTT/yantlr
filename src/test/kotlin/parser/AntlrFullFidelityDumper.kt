@@ -1,3 +1,5 @@
+package parser
+
 class AntlrFullFidelityDumper(val lexer: AntlrLexer, tokens: List<AntlrToken>) : AntlrTreeVisitor() {
     private val tokensCalculator = AntlrTokensCalculator(tokens)
     private val result = StringBuilder()
