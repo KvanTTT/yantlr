@@ -15,7 +15,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     //   : (Lexer | Parser)? Grammar ParserId Semicolon rule*
     //   ;
     fun parseGrammar(): GrammarNode {
-        val token = getToken()
+        val token = nextDefaultToken()
         val altNode = when (token.type) {
             AntlrTokenType.Lexer -> {
                 nextDefaultToken()
@@ -28,40 +28,39 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
             else -> null
         }
 
-        val grammarToken = match(AntlrTokenType.Grammar)
+        val grammarToken = if (altNode == null) token else nextDefaultToken()
 
-        val idToken = match(if (checkToken(AntlrTokenType.LexerId)) AntlrTokenType.LexerId else AntlrTokenType.ParserId)
+        val idToken = nextDefaultToken()
 
-        val semicolonToken = match(AntlrTokenType.Semicolon)
+        val semicolonToken = nextDefaultToken()
 
-        val ruleNodes = mutableListOf<RuleNode>()
-        while (!checkToken(AntlrTokenType.EofRule)) {
-            ruleNodes.add(parseRule())
+        var nextToken = nextDefaultToken(incIndex = false)
+        val ruleNodes = buildList {
+            while (nextToken.type != AntlrTokenType.Eof) {
+                add(parseRule())
+                nextToken = nextDefaultToken(incIndex = false)
+            }
         }
 
-        return GrammarNode(
-            altNode,
-            grammarToken,
-            idToken,
-            semicolonToken,
-            ruleNodes
-        )
+        return GrammarNode(altNode, grammarToken, idToken, semicolonToken, ruleNodes, nextToken)
     }
 
     // rule
     //   : (LexerId | ParserId) Colon block Semicolon
     //   ;
-    fun parseRule(): RuleNode {
-        val altNode = when (checkToken(AntlrTokenType.LexerId)) {
-            true -> RuleNode.AltLexerIdNode(match(AntlrTokenType.LexerId))
-            else -> RuleNode.AltParserIdNode(match(AntlrTokenType.ParserId))
+    private fun parseRule(): RuleNode {
+        val nextToken = nextDefaultToken()
+
+        val altNode = when (nextToken.type) {
+            AntlrTokenType.LexerId -> RuleNode.AltLexerIdNode(nextToken)
+            else -> RuleNode.AltParserIdNode(nextToken)
         }
 
-        val colonToken = match(AntlrTokenType.Colon)
+        val colonToken = nextDefaultToken()
 
         val blockNode = parseBlock()
 
-        val semicolonToken = match(AntlrTokenType.Semicolon)
+        val semicolonToken = nextDefaultToken()
 
         return RuleNode(
             altNode,
@@ -74,29 +73,32 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     // block
     //   : alternative (OR alternative)*
     //   ;
-    fun parseBlock(): BlockNode {
+    private fun parseBlock(): BlockNode {
         val alternativeNode = parseAlternative()
 
-        val orAlternativeChildren = mutableListOf<BlockNode.OrAlternativeNode>()
-        while (checkToken(AntlrTokenType.Bar)) {
-            orAlternativeChildren.add(BlockNode.OrAlternativeNode(matchToken(), parseAlternative()))
+        val barAlternativeChildren = buildList {
+            var nextToken = nextDefaultToken(incIndex = false)
+            while (nextToken.type == AntlrTokenType.Bar) {
+                incIndex()
+                add(BlockNode.OrAlternativeNode(nextToken, parseAlternative()))
+                nextToken = nextDefaultToken(incIndex = false)
+            }
         }
 
-        return BlockNode(alternativeNode, orAlternativeChildren)
+        return BlockNode(alternativeNode, barAlternativeChildren)
     }
 
     // alternative
     //   : element*
     //   ;
-    fun parseAlternative(): AlternativeNode {
-        val elementNodes = mutableListOf<ElementNode>()
-        while (getToken().type in elementTokenTypes) {
-            elementNodes.add(parseElement())
+    private fun parseAlternative(): AlternativeNode {
+        val elementNodes = buildList {
+            while (nextDefaultToken(incIndex = false).type in elementTokenTypes) {
+                add(parseElement())
+            }
         }
 
-        return AlternativeNode(
-            elementNodes
-        )
+        return AlternativeNode(elementNodes)
     }
 
     // element
@@ -104,46 +106,35 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     //   | ParserId
     //   | '(' block? ')'
     //   ;
-    fun parseElement(): ElementNode {
-        val nextToken = matchToken()
+    private fun parseElement(): ElementNode {
+        val nextToken = nextDefaultToken()
         return when (nextToken.type) {
             AntlrTokenType.LexerId -> ElementNode.ElementLexerId(nextToken)
             AntlrTokenType.ParserId -> ElementNode.ElementParserId(nextToken)
             else -> ElementNode.ElementBlock(
                 nextToken,
                 parseBlock(),
-                match(AntlrTokenType.RightParen)
+                nextDefaultToken()
             )
         }
     }
 
-    private fun match(tokenType: AntlrTokenType): AntlrToken {
-        val currentToken = getToken()
-        val realToken = if (currentToken.type == tokenType) {
-            nextDefaultToken()
-            currentToken
-        } else {
-            tokenStream.createErrorToken(tokenType)
-        }
-        return realToken
-    }
-
-    private fun matchToken(): AntlrToken {
-        return getToken().also { nextDefaultToken() }
-    }
-
-    private fun checkToken(expectedTokenType: AntlrTokenType): Boolean {
-        return getToken().type == expectedTokenType
-    }
-
-    private fun nextDefaultToken() {
+    private fun nextDefaultToken(incIndex: Boolean = true): AntlrToken {
+        var currentToken: AntlrToken
         do {
+            currentToken = tokenStream.getToken(tokenIndex)
             tokenIndex++
-            val currentToken = getToken()
-        } while (currentToken.channel != AntlrTokenChannel.Default)
+        }
+        while (currentToken.channel != AntlrTokenChannel.Default)
+
+        if (!incIndex) {
+            tokenIndex--
+        }
+
+        return currentToken
     }
 
-    private fun getToken(): AntlrToken {
-        return tokenStream.getToken(tokenIndex)
+    private fun incIndex() {
+        tokenIndex++
     }
 }

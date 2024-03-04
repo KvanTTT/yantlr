@@ -41,11 +41,12 @@ Grammar
         Token (Bar, |)
         Alternative
     Token (Semicolon, ;)
+  Token (Eof)
 
 """.trimIndent()
     }
 
-    private fun token(tokenType: AntlrTokenType, value: String): AntlrToken {
+    private fun token(tokenType: AntlrTokenType, value: String?): AntlrToken {
         return AntlrToken.createAbstractToken(tokenType, value = value)
     }
 
@@ -91,7 +92,9 @@ Grammar
             ),
 
             token(Semicolon, ";"),
-        ))
+        )),
+
+        token(Eof, null)
     )
 
     @Test
@@ -130,7 +133,7 @@ Grammar
             AntlrToken.createAbstractToken(Bar, value = "|"),
             AntlrToken.createAbstractToken(Semicolon, value = ";")
         )
-        val tokenStream = AntlrTokenStream(tokens)
+        val tokenStream = AntlrListTokenStream(tokens)
         val parser = AntlrParser(tokenStream)
         val result = parser.parseGrammar()
 

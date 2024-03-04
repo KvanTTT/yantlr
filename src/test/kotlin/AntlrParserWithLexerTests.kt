@@ -2,9 +2,9 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class AntlrParserWithLexerTests {
-    @Test
-    fun testParserWithLexer() {
-        val testGrammar = """
+    companion object {
+        val defaultGrammar = """
+// Begin comment
 grammar test;
 x
     : A
@@ -12,9 +12,13 @@ x
     | (C | d)
     |
     ;
+// End comment
 """.trimIndent()
+    }
 
-        val lexer = AntlrLexer(testGrammar)
+    @Test
+    fun testParserWithLexer() {
+        val lexer = AntlrLexer(defaultGrammar)
         val tokenStream = AntlrLexerTokenStream(lexer)
         val parser = AntlrParser(tokenStream)
         val result = parser.parseGrammar()

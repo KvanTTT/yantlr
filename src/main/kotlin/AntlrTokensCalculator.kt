@@ -1,6 +1,13 @@
 class AntlrTokensCalculator(val tokens: List<AntlrToken>) {
+    private val tokenIndexes = tokens.mapIndexed { index, token -> token to index }.toMap()
     private val leadingTokensCache: MutableMap<Int, List<AntlrToken>> = mutableMapOf()
     private val trailingTokensCache: MutableMap<Int, List<AntlrToken>> = mutableMapOf()
+
+    fun getLeadingTokens(token: AntlrToken): List<AntlrToken> =
+        tokenIndexes[token]?.let { return getLeadingTokens(it) } ?: emptyList()
+
+    fun getTrailingTokens(token: AntlrToken): List<AntlrToken> =
+        tokenIndexes[token]?.let { return getTrailingTokens(it) } ?: emptyList()
 
     fun getLeadingTokens(index: Int): List<AntlrToken> {
         if (index < 0 || index > tokens.size) {

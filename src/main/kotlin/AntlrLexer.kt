@@ -53,13 +53,18 @@ class AntlrLexer(val text: String) {
 
     private val lineIndexes = mutableListOf<Int>()
 
-    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(AntlrTokenType.EofRule, text.length, 0, AntlrTokenChannel.Default) }
+    private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) { AntlrToken(AntlrTokenType.Eof, text.length, 0, AntlrTokenChannel.Default) }
+
     var charIndex: Int = 0
         private set
         get
 
-    fun getTokenValue(token: AntlrToken): String {
-        return token.value ?: text.substring(token.offset, token.end())
+    fun getTokenValue(token: AntlrToken): String? {
+        return if (token.type == AntlrTokenType.Eof) {
+            null
+        } else {
+            token.value ?: text.substring(token.offset, token.end())
+        }
     }
 
     fun lineColumn(i: Int): Pair<Int, Int> {

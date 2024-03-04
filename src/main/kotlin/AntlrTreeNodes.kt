@@ -8,6 +8,7 @@ class GrammarNode(
     val parserIdToken: AntlrToken,
     val semicolonToken: AntlrToken,
     val ruleNodes: List<RuleNode>,
+    val eofToken: AntlrToken,
 ) : AntlrNode() {
     sealed class AltNode : AntlrNode()
 
@@ -25,6 +26,7 @@ class GrammarNode(
         visitor.visitToken(parserIdToken)
         visitor.visitToken(semicolonToken)
         ruleNodes.forEach { visitor.visitRuleNode(it) }
+        visitor.visitToken(eofToken)
     }
 }
 

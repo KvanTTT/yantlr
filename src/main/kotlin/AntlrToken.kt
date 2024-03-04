@@ -15,7 +15,7 @@ class AntlrToken(
 }
 
 enum class AntlrTokenType {
-    EofRule,
+    Eof,
     LexerId,
     ParserId,
     Lexer,
