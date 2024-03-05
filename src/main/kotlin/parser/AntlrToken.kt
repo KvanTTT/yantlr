@@ -60,15 +60,3 @@ enum class AntlrTokenType {
     Quote,
     UnicodeEscapedChar,
 }
-
-enum class AntlrTokenChannel {
-    Default,
-    Hidden,
-    Error
-}
-
-enum class AntlrMode {
-    Default,
-    StringLiteral,
-    CharSetLiteral
-}

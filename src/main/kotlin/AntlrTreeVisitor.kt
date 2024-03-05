@@ -1,9 +1,10 @@
-package parser
+import parser.*
 
-abstract class AntlrTreeVisitor {
-    abstract fun visitTreeNode(node: AntlrNode)
 
-    abstract fun visitToken(token: AntlrToken)
+abstract class AntlrTreeVisitor<out R> {
+    abstract fun visitTreeNode(node: AntlrNode): R
+
+    abstract fun visitToken(token: AntlrToken): R
 
     open fun visitGrammarNode(node: GrammarNode) = visitTreeNode(node)
 

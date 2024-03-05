@@ -1,6 +1,8 @@
 package parser
 
-class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor() {
+import AntlrTreeVisitor
+
+class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit>() {
     private var indentLevel = 0
     private val indentCache = mutableMapOf<Int, String>()
     private val result = StringBuilder()
