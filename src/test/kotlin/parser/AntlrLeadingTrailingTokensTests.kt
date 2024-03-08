@@ -74,8 +74,10 @@ class AntlrLeadingTrailingTokensTests {
 
         assertEquals(expected.size, actualTokens.size, "Size mismatch for ${if (leading) "leading" else "trailing"} tokens at index $index")
 
+        val tokenComparer = AntlrTreeComparer(null)
+
         for ((expectedToken, actualToken) in expected.zip(actualTokens)) {
-            check(expectedToken, actualToken) { actualToken.value }
+            tokenComparer.compare(expectedToken, actualToken)
         }
     }
 

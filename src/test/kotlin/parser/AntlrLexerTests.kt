@@ -239,6 +239,7 @@ class AntlrLexerTests {
         ignoreWhitespaces: Boolean = true
     ) {
         val lexer = AntlrLexer(input)
+        val tokenComparer = AntlrTreeComparer(lexer)
 
         for (expectedToken in expectedTokens) {
             var actualToken: AntlrToken
@@ -246,7 +247,7 @@ class AntlrLexerTests {
                 actualToken = lexer.nextToken()
             } while (ignoreWhitespaces && (actualToken.type == AntlrTokenType.Whitespace || actualToken.type == AntlrTokenType.LineBreak))
 
-            check(expectedToken, actualToken) { lexer.getTokenValue(actualToken) }
+            tokenComparer.compareToken(expectedToken, actualToken)
         }
 
         assertEquals(lexer.charIndex, input.length, "Lexer did not consume all input")
