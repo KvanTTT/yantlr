@@ -43,11 +43,11 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
 
         val semicolonToken = matchDefaultToken()
 
-        var (nextToken, _) = getDefaultToken()
+        var nextToken = getDefaultToken()
         val ruleNodes = buildList {
             while (nextToken.type != AntlrTokenType.Eof) {
                 add(parseRule())
-                nextToken = getDefaultToken().first
+                nextToken = getDefaultToken()
             }
         }
 
@@ -81,13 +81,11 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
         val alternativeNode = parseAlternative()
 
         val barAlternativeChildren = buildList {
-            var (nextToken, offset) = getDefaultToken()
+            var nextToken = getDefaultToken()
             while (nextToken.type == AntlrTokenType.Bar) {
-                incTokenIndex(offset)
+                matchDefaultToken()
                 add(BlockNode.OrAlternativeNode(nextToken, parseAlternative()))
-                val token = getDefaultToken()
-                nextToken = token.first
-                offset = token.second
+                nextToken = getDefaultToken()
             }
         }
 
@@ -100,7 +98,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     fun parseAlternative(): AlternativeNode {
         val elementNodes = buildList {
             add(parseElement())
-            while (getDefaultToken().first.type in elementTokenTypes) {
+            while (getDefaultToken().type in elementTokenTypes) {
                 add(parseElement())
             }
         }
@@ -121,17 +119,16 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     //   : Char | EscapedChar | UnicodeEscapedChar
     //   ;
     fun parseElement(): ElementNode {
-        val (nextToken, offset) = getDefaultToken()
-        return when (nextToken.type) {
-            AntlrTokenType.LexerId -> ElementNode.LexerId(nextToken).also { incTokenIndex(offset) }
-            AntlrTokenType.ParserId -> ElementNode.ParserId(nextToken).also { incTokenIndex(offset) }
+        return when (getDefaultToken().type) {
+            AntlrTokenType.LexerId -> ElementNode.LexerId(matchDefaultToken())
+            AntlrTokenType.ParserId -> ElementNode.ParserId(matchDefaultToken())
             AntlrTokenType.LeftParen -> ElementNode.Block(
-                nextToken.also { incTokenIndex(offset) },
+                matchDefaultToken(),
                 parseBlock(),
                 matchDefaultToken()
             )
             AntlrTokenType.Quote -> {
-                incTokenIndex(offset) // Consume quote
+                val openQuote = matchDefaultToken() // Consume quote
                 var closeQuote: AntlrToken
 
                 val charTokens = buildList {
@@ -140,7 +137,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                         when (nextChar.type) {
                             AntlrTokenType.Quote -> {
                                 closeQuote = nextChar
-                                incTokenIndex(1)
+                                matchToken()
                                 break
                             }
                             AntlrTokenType.LineBreak, AntlrTokenType.Eof -> {
@@ -148,17 +145,16 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                                 break
                             }
                             else -> {
-                                add(nextChar)
-                                incTokenIndex(1)
+                                add(matchToken())
                             }
                         }
                     }
                 }
 
-                ElementNode.StringLiteral(nextToken, charTokens, closeQuote)
+                ElementNode.StringLiteral(openQuote, charTokens, closeQuote)
             }
             AntlrTokenType.LeftBracket -> {
-                incTokenIndex(offset) // Consume quote
+                val openBracket = matchDefaultToken() // Consume quote
                 var closeBracket: AntlrToken
 
                 val charSetNodes = buildList {
@@ -166,8 +162,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                         val nextChar = getToken(0)
                         when {
                             nextChar.type == AntlrTokenType.RightBracket -> {
-                                closeBracket = nextChar
-                                incTokenIndex(1) // consume right bracket
+                                closeBracket = matchToken() // consume right bracket
                                 break
                             }
                             nextChar.type == AntlrTokenType.LineBreak || nextChar.type == AntlrTokenType.Eof -> {
@@ -175,8 +170,8 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                                 break
                             }
                             getToken(1).type == AntlrTokenType.Hyphen && getToken(2).type in charSetTokenTypes -> {
-                                incTokenIndex(1) // consume char
-                                add(ElementNode.CharSet.CharHyphenChar(nextChar,
+                                add(ElementNode.CharSet.CharHyphenChar(
+                                    matchToken(),
                                     ElementNode.CharSet.CharHyphenChar.HyphenChar(
                                         matchToken(),
                                         matchToken(),
@@ -184,19 +179,30 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                                 ))
                             }
                             else -> {
-                                add(ElementNode.CharSet.CharHyphenChar(nextChar, null))
-                                incTokenIndex(1)
+                                add(ElementNode.CharSet.CharHyphenChar(matchToken(), null))
                             }
                         }
                     }
                 }
 
-                ElementNode.CharSet(nextToken, charSetNodes, closeBracket)
+                ElementNode.CharSet(openBracket, charSetNodes, closeBracket)
             }
             else -> {
                 ElementNode.Empty()
             }
         }
+    }
+
+    private fun getDefaultToken(): AntlrToken {
+        var currentToken: AntlrToken
+        var currentOffset = 0
+        do {
+            currentToken = tokenStream.getToken(tokenIndex + currentOffset)
+            currentOffset++
+        }
+        while (currentToken.channel != AntlrTokenChannel.Default)
+
+        return currentToken
     }
 
     private fun matchDefaultToken(): AntlrToken {
@@ -210,27 +216,11 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
         return currentToken
     }
 
-    private fun getDefaultToken(): Pair<AntlrToken, Int> {
-        var currentToken: AntlrToken
-        var currentOffset = 0
-        do {
-            currentToken = tokenStream.getToken(tokenIndex + currentOffset)
-            currentOffset++
-        }
-        while (currentToken.channel != AntlrTokenChannel.Default)
-
-        return Pair(currentToken, currentOffset)
-    }
-
-    private fun matchToken(): AntlrToken {
-        return tokenStream.getToken(tokenIndex).also { tokenIndex++ }
-    }
-
     private fun getToken(offset: Int): AntlrToken {
         return tokenStream.getToken(tokenIndex + offset)
     }
 
-    private fun incTokenIndex(offset: Int) {
-        tokenIndex += offset
+    private fun matchToken(): AntlrToken {
+        return tokenStream.getToken(tokenIndex).also { tokenIndex++ }
     }
 }
