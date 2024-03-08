@@ -5,21 +5,21 @@ import kotlin.test.assertEquals
 
 class AntlrLeadingTrailingTokensTests {
     @Test
-    fun testEmpty() {
+    fun empty() {
         val tokensCalculator = AntlrTokensCalculator(emptyList())
         checkTokens(0, tokensCalculator, emptyList(), leading = true)
         checkTokens(0, tokensCalculator, emptyList(), leading = false)
     }
 
     @Test
-    fun testSingle() {
+    fun single() {
         val tokensCalculator = AntlrTokensCalculator(listOf(AntlrToken(AntlrTokenType.ParserId, 0, 1)))
         checkTokens(0, tokensCalculator, emptyList(), leading = true)
         checkTokens(0, tokensCalculator, emptyList(), leading = false)
     }
 
     @Test
-    fun testSimple() {
+    fun simple() {
         val tokensCalculator = AntlrTokensCalculator(listOf(
             createWhitespaceToken(),
             AntlrToken(AntlrTokenType.ParserId),
@@ -30,7 +30,7 @@ class AntlrLeadingTrailingTokensTests {
     }
 
     @Test
-    fun testOnlyWhitespaces() {
+    fun onlyWhitespaces() {
         val tokensCalculator = AntlrTokensCalculator(listOf(
             createWhitespaceToken(),
             createLineBreakToken(),
@@ -45,7 +45,7 @@ class AntlrLeadingTrailingTokensTests {
     }
 
     @Test
-    fun testMultipleTokens() {
+    fun multipleTokens() {
         val tokensCalculator = AntlrTokensCalculator(listOf(
             AntlrToken(AntlrTokenType.ParserId),
             createWhitespaceToken(),

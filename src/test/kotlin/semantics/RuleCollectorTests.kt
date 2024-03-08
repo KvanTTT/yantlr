@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 
 class RuleCollectorTests {
     @Test
-    fun testRules() {
+    fun rules() {
         val grammar = """
             grammar test;
             x: A;
