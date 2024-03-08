@@ -19,12 +19,12 @@ x
     }
 
     @Test
-    fun testParserWithLexer() {
+    fun parserWithLexer() {
         check(defaultTreeNode, defaultGrammar) { it.parseGrammar() }
     }
 
     @Test
-    fun testStringLiteral() {
+    fun stringLiteral() {
         val expectedNode = ElementNode.StringLiteral(
             AntlrToken(AntlrTokenType.Quote),
             listOf(
@@ -41,7 +41,7 @@ x
     }
 
     @Test
-    fun testUnterminatedStringLiteral() {
+    fun unterminatedStringLiteral() {
         val expectedNode = ElementNode.StringLiteral(
             AntlrToken(AntlrTokenType.Quote),
             listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
@@ -52,7 +52,7 @@ x
     }
 
     @Test
-    fun testCharSet() {
+    fun charSet() {
         val expectedNode = ElementNode.CharSet(
             AntlrToken(AntlrTokenType.LeftBracket),
             listOf(
@@ -90,7 +90,7 @@ x
     }
 
     @Test
-    fun testUnterminatedCharSet() {
+    fun unterminatedCharSet() {
         val expectedNode = ElementNode.CharSet(
             AntlrToken(AntlrTokenType.LeftBracket),
             listOf(

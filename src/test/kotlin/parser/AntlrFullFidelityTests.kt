@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 
 class AntlrFullFidelityTests {
     @Test
-    fun testFullFidelityTree() {
+    fun fullFidelityTree() {
         val lexer = AntlrLexer(defaultGrammar)
         val tokenStream = AntlrLexerTokenStream(lexer)
         val parser = AntlrParser(tokenStream)

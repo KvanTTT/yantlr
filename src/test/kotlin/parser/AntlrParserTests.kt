@@ -102,7 +102,7 @@ Grammar
     }
 
     @Test
-    fun testPrettifyAntlrNode() {
+    fun prettifyAntlrNode() {
         assertEquals(defaultTreeString, AntlrPrettier().prettify(defaultTreeNode))
     }
 
@@ -117,7 +117,7 @@ Grammar
      *     ;
      */
     @Test
-    fun testParser() {
+    fun parser() {
         val tokens = listOf(
             AntlrToken(Grammar, value = "grammar"),
             AntlrToken(ParserId, value = "test"),

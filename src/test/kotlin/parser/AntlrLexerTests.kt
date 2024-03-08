@@ -10,7 +10,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testOperators() {
+    fun operators() {
         checkTokens(
             ", ; ( ) = : | * + += . .. } ? ~ -> #",
             listOf(
@@ -34,7 +34,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testKeywords() {
+    fun keywords() {
         checkTokens(
             "channels { fragment grammar import lexer mode options  { parser tokens {",
             listOf(
@@ -47,7 +47,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testIdentifiers() {
+    fun identifiers() {
         checkTokens(
             "TokenId parserId Привет привет grammarId options options1",
             listOf(
@@ -58,7 +58,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testStrings() {
+    fun strings() {
         checkTokens(
             """'a' '\'' '\\' '\x' '\u09AF'""",
             listOf(
@@ -86,7 +86,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testIncorrectStrings() {
+    fun incorrectStrings() {
         checkTokens(
             """
                 '
@@ -120,7 +120,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testComments() {
+    fun comments() {
         checkTokens(
             "// Single line comment\n/* Multi line comment */",
             listOf(
@@ -142,7 +142,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testLexerCharSet() {
+    fun lexerCharSet() {
         checkTokens(
             """TOKEN options { caseInsensitive = true ; } : [a-z'"[\]\.];""",
             listOf(
@@ -193,7 +193,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testBom() {
+    fun bom() {
         checkTokens(
             "\uFEFF",
             listOf(
@@ -204,7 +204,7 @@ class AntlrLexerTests {
     }
 
     @Test
-    fun testLineNumbers() {
+    fun lineNumbers() {
         val text = "a\nb11\r\nc222\rd/*\n*/e\n\nf"
         val lexer = AntlrLexer(text)
 
