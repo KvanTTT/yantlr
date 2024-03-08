@@ -59,12 +59,12 @@ Grammar
                     AntlrToken(Colon, value = ":"),
 
                     BlockNode(
-                        AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "A")))),
+                        AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "A"), elementSuffix = null))),
 
                         listOf(
                             BlockNode.OrAlternativeNode(
                                 AntlrToken(Bar, value = "|"),
-                                AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "b"))))
+                                AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "b"), elementSuffix = null)))
                             ),
                             BlockNode.OrAlternativeNode(
                                 AntlrToken(Bar, value = "|"),
@@ -73,14 +73,15 @@ Grammar
                                         ElementNode.Block(
                                             AntlrToken(LeftParen, value = "("),
                                             BlockNode(
-                                                AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "C")))),
+                                                AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "C"), elementSuffix = null))),
                                                 listOf(
                                                     BlockNode.OrAlternativeNode(
                                                         AntlrToken(Bar, value = "|"),
-                                                        AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "d")))),
+                                                        AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "d"), elementSuffix = null))),
                                                     ))
                                             ),
-                                            AntlrToken(RightParen, value = ")")
+                                            AntlrToken(RightParen, value = ")"),
+                                            elementSuffix = null,
                                         ))
                                 )
                             ),
