@@ -87,47 +87,51 @@ sealed class ElementNode : AntlrNode() {
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? = null
     }
 
-    class LexerId(val lexerId: AntlrToken) : ElementNode() {
+    class LexerId(val lexerId: AntlrToken, val elementSuffix: ElementSuffixNode?) : ElementNode() {
         override fun calculateLeftToken(): AntlrToken = lexerId
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(lexerId)
+            elementSuffix?.let { visitor.visitTreeNode(it) }
             return null
         }
     }
 
-    class ParserId(val parserId: AntlrToken) : ElementNode() {
+    class ParserId(val parserId: AntlrToken, val elementSuffix: ElementSuffixNode?) : ElementNode() {
         override fun calculateLeftToken(): AntlrToken = parserId
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(parserId)
+            elementSuffix?.let { visitor.visitTreeNode(it) }
             return null
         }
     }
 
-    class Block(val leftParen: AntlrToken, val blockNode: BlockNode, val rightParen: AntlrToken) : ElementNode() {
+    class Block(val leftParen: AntlrToken, val blockNode: BlockNode, val rightParen: AntlrToken, val elementSuffix: ElementSuffixNode?) : ElementNode() {
         override fun calculateLeftToken(): AntlrToken = leftParen
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(leftParen)
             visitor.visitBlockNode(blockNode)
             visitor.visitToken(rightParen)
+            elementSuffix?.let { visitor.visitTreeNode(it) }
             return null
         }
     }
 
-    class StringLiteral(val openQuote: AntlrToken, val chars: List<AntlrToken>, val closeQuote: AntlrToken) : ElementNode() {
+    class StringLiteral(val openQuote: AntlrToken, val chars: List<AntlrToken>, val closeQuote: AntlrToken, val elementSuffix: ElementSuffixNode?) : ElementNode() {
         override fun calculateLeftToken(): AntlrToken = openQuote
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(openQuote)
             chars.forEach { visitor.visitToken(it) }
             visitor.visitToken(closeQuote)
+            elementSuffix?.let { visitor.visitTreeNode(it) }
             return null
         }
     }
 
-    class CharSet(val openBracket: AntlrToken, val children: List<CharHyphenChar>, val closeBracket: AntlrToken) : ElementNode() {
+    class CharSet(val openBracket: AntlrToken, val children: List<CharHyphenChar>, val closeBracket: AntlrToken, val elementSuffix: ElementSuffixNode?) : ElementNode() {
         class CharHyphenChar(
             val char: AntlrToken,
             val range: HyphenChar?
@@ -157,7 +161,18 @@ sealed class ElementNode : AntlrNode() {
             visitor.visitToken(openBracket)
             children.forEach { visitor.visitElementCharSetCharHyphenCharNode(it) }
             visitor.visitToken(closeBracket)
+            elementSuffix?.let { visitor.visitTreeNode(it) }
             return null
         }
+    }
+}
+
+class ElementSuffixNode(val ebnf: AntlrToken, val nonGreedy: AntlrToken?) : AntlrNode() {
+    override fun calculateLeftToken(): AntlrToken = ebnf
+
+    override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
+        visitor.visitToken(ebnf)
+        nonGreedy?.let { visitor.visitToken(it) }
+        return null
     }
 }

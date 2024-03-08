@@ -16,6 +16,12 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
             AntlrTokenType.UnicodeEscapedChar,
             AntlrTokenType.Hyphen,
         )
+
+        private val elementSuffixTokenTypes = setOf(
+            AntlrTokenType.Question,
+            AntlrTokenType.Star,
+            AntlrTokenType.Plus,
+        )
     }
 
     var tokenIndex: Int = 0
@@ -107,11 +113,11 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     }
 
     // element
-    //   : LexerId
-    //   | ParserId
-    //   | '(' block? ')'
-    //   | '\'' char* '\''
-    //   | '[' (char range=('-' char)?)* ']'
+    //   : LexerId elementSuffix?
+    //   | ParserId elementSuffix?
+    //   | '(' block? ')' elementSuffix?
+    //   | '\'' char* '\'' elementSuffix?
+    //   | '[' (char range=('-' char)?)* ']' elementSuffix?
     //   |
     //   ;
     //
@@ -119,13 +125,24 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     //   : Char | EscapedChar | UnicodeEscapedChar
     //   ;
     fun parseElement(): ElementNode {
-        return when (getDefaultToken().type) {
-            AntlrTokenType.LexerId -> ElementNode.LexerId(matchDefaultToken())
-            AntlrTokenType.ParserId -> ElementNode.ParserId(matchDefaultToken())
+        val nextToken = getDefaultToken()
+
+        fun tryParseElementSuffix(): ElementSuffixNode? {
+            return if (getDefaultToken().type in elementSuffixTokenTypes) {
+                parseElementSuffix()
+            } else {
+                null
+            }
+        }
+
+        return when (nextToken.type) {
+            AntlrTokenType.LexerId -> ElementNode.LexerId(matchDefaultToken(), tryParseElementSuffix())
+            AntlrTokenType.ParserId -> ElementNode.ParserId(matchDefaultToken(), tryParseElementSuffix())
             AntlrTokenType.LeftParen -> ElementNode.Block(
                 matchDefaultToken(),
                 parseBlock(),
-                matchDefaultToken()
+                matchDefaultToken(),
+                tryParseElementSuffix()
             )
             AntlrTokenType.Quote -> {
                 val openQuote = matchDefaultToken() // Consume quote
@@ -151,7 +168,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                     }
                 }
 
-                ElementNode.StringLiteral(openQuote, charTokens, closeQuote)
+                ElementNode.StringLiteral(openQuote, charTokens, closeQuote, tryParseElementSuffix())
             }
             AntlrTokenType.LeftBracket -> {
                 val openBracket = matchDefaultToken() // Consume quote
@@ -185,12 +202,26 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                     }
                 }
 
-                ElementNode.CharSet(openBracket, charSetNodes, closeBracket)
+                ElementNode.CharSet(openBracket, charSetNodes, closeBracket, tryParseElementSuffix())
             }
             else -> {
                 ElementNode.Empty()
             }
         }
+    }
+
+    // elementSuffix
+    //   : ('?' | '*' | '+') '?'?
+    //   ;
+    fun parseElementSuffix(): ElementSuffixNode {
+        val ebnfToken = matchDefaultToken()
+        val nonGreedyToken = if (getDefaultToken().type == AntlrTokenType.Question) {
+            matchDefaultToken()
+        } else {
+            null
+        }
+
+        return ElementSuffixNode(ebnfToken, nonGreedyToken)
     }
 
     private fun getDefaultToken(): AntlrToken {

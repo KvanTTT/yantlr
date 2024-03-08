@@ -35,6 +35,7 @@ x
                 AntlrToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u000A"),
             ),
             AntlrToken(AntlrTokenType.Quote),
+            elementSuffix = null,
         )
 
         check(expectedNode, """'ab\r\t\u000A'""") { it.parseElement() }
@@ -46,6 +47,7 @@ x
             AntlrToken(AntlrTokenType.Quote),
             listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
             AntlrToken(AntlrTokenType.Quote, channel = AntlrTokenChannel.Error),
+            elementSuffix = null,
         )
 
         check(expectedNode, """'a""") { it.parseElement() }
@@ -84,6 +86,7 @@ x
                 ),
             ),
             AntlrToken(AntlrTokenType.RightBracket),
+            elementSuffix = null,
         )
 
         check(expectedNode, """[-a-z0-9Z-]""") { it.parseElement() }
@@ -104,9 +107,46 @@ x
                 ),
             ),
             AntlrToken(AntlrTokenType.RightBracket, channel = AntlrTokenChannel.Error),
+            elementSuffix = null,
         )
 
         check(expectedNode, "[a-\n") { it.parseElement() }
+    }
+
+    @Test
+    fun elementSuffix() {
+        val expectedNode = AlternativeNode(listOf(
+            ElementNode.LexerId(
+                AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                elementSuffix = ElementSuffixNode(
+                    AntlrToken(AntlrTokenType.Question),
+                    nonGreedy = null
+                ),
+            ),
+            ElementNode.ParserId(
+                AntlrToken(AntlrTokenType.ParserId, value = "a"),
+                elementSuffix = ElementSuffixNode(
+                    AntlrToken(AntlrTokenType.Star),
+                    nonGreedy = null
+                ),
+            ),
+            ElementNode.LexerId(
+                AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                elementSuffix = ElementSuffixNode(
+                    AntlrToken(AntlrTokenType.Plus),
+                    nonGreedy = null
+                ),
+            ),
+            ElementNode.ParserId(
+                AntlrToken(AntlrTokenType.ParserId, value = "a"),
+                elementSuffix = ElementSuffixNode(
+                    AntlrToken(AntlrTokenType.Star),
+                    AntlrToken(AntlrTokenType.Question),
+                ),
+            ),
+        ))
+
+        check(expectedNode, "A? a* A+ a*?") { it.parseAlternative() }
     }
 
     private fun <T> check(expectedTreeFragment: T, grammarFragment: String, parseFunc: (AntlrParser) -> T) {
