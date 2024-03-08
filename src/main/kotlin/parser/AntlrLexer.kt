@@ -26,7 +26,7 @@ class AntlrLexer(val text: String) {
             '\u0300'..'\u036F',
             '\u203F'..'\u2040',
         )
-        private val digits = charSetOf('0'..'9')
+        private val hexDigits = charSetOf('0'..'9', 'a'..'f', 'A'..'F')
 
         private val fragmentKeyword = Keyword(AntlrTokenType.Fragment, "fragment")
         private val grammarKeyword = Keyword(AntlrTokenType.Grammar, "grammar")
@@ -190,7 +190,7 @@ class AntlrLexer(val text: String) {
                             val startIndex = charIndex
                             charIndex += 2 // Skip '\u'
                             val endIndex = charIndex + 4
-                            while (charIndex < endIndex && charIndex < text.length && text[charIndex] in digits) {
+                            while (charIndex < endIndex && charIndex < text.length && text[charIndex] in hexDigits) {
                                 charIndex++
                             }
                             val channel = if (charIndex == endIndex) AntlrTokenChannel.Default else AntlrTokenChannel.Error
