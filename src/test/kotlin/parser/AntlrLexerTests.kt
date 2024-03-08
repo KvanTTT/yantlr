@@ -60,7 +60,7 @@ class AntlrLexerTests {
     @Test
     fun testStrings() {
         checkTokens(
-            """'a' '\'' '\\' '\x' '\u0000'""",
+            """'a' '\'' '\\' '\x' '\u09AF'""",
             listOf(
                 AntlrToken(AntlrTokenType.Quote, value = "'"),
                 AntlrToken(AntlrTokenType.Char, value = "a"),
@@ -79,7 +79,7 @@ class AntlrLexerTests {
                 AntlrToken(AntlrTokenType.Quote, value = "'"),
 
                 AntlrToken(AntlrTokenType.Quote, value = "'"),
-                AntlrToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u0000"),
+                AntlrToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u09AF"),
                 AntlrToken(AntlrTokenType.Quote, value = "'"),
             ),
         )
@@ -94,7 +94,7 @@ class AntlrLexerTests {
                 '\
                 '\u
                 '\u0
-                '\uab
+                '\uxz
             """.trimIndent(),
             listOf(
                 AntlrToken(AntlrTokenType.Quote),
@@ -113,8 +113,8 @@ class AntlrLexerTests {
 
                 AntlrToken(AntlrTokenType.Quote),
                 AntlrToken(AntlrTokenType.UnicodeEscapedChar, channel = AntlrTokenChannel.Error, value = "\\u"),
-                AntlrToken(AntlrTokenType.Char, value = "a"),
-                AntlrToken(AntlrTokenType.Char, value = "b"),
+                AntlrToken(AntlrTokenType.Char, value = "x"),
+                AntlrToken(AntlrTokenType.Char, value = "z"),
             ),
         )
     }
