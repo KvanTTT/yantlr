@@ -2,7 +2,7 @@ package parser
 
 import kotlin.math.min
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.memberProperties
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
@@ -32,7 +32,7 @@ class AntlrTreeComparer(val lexer: AntlrLexer?) {
             "Expected node: ${expectedNode.getNodeInfo()}, actual node: ${actualNode.getNodeInfo()}"
         )
 
-        for (expectedMemberProperty in expectedNodeClass.declaredMemberProperties) {
+        for (expectedMemberProperty in expectedNodeClass.memberProperties) {
             @Suppress("UNCHECKED_CAST")
             val property = expectedMemberProperty as KProperty1<Any, *>
             if (!compare(property.get(expectedNode), property.get(actualNode), property.name)) {
