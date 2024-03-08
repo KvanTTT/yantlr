@@ -5,7 +5,14 @@ class AntlrLexerTokenStream(private val lexer: AntlrLexer) : AntlrTokenStream(mu
 
     override fun getToken(index: Int): AntlrToken {
         while (index >= tokens.size) {
-            appendableTokens.add(lexer.nextToken())
+            val nextToken = lexer.nextToken()
+            if (nextToken.type == AntlrTokenType.Eof) {
+                if (appendableTokens.lastOrNull()?.type != AntlrTokenType.Eof) {
+                    appendableTokens.add(nextToken) // Only single Eof token is allowed at the end
+                }
+                return nextToken
+            }
+            appendableTokens.add(nextToken)
         }
         return appendableTokens[index]
     }
