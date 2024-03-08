@@ -2,18 +2,23 @@ package parser
 
 class AntlrToken(
     val type: AntlrTokenType,
-    val offset: Int = 0,
-    val length: Int = 0,
+    val offset: Int = -1,
+    val length: Int = -1,
     val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
     val value: String? = null
 ) {
-    companion object {
-        fun createAbstractToken(type: AntlrTokenType, channel: AntlrTokenChannel = AntlrTokenChannel.Default, value: String? = null): AntlrToken {
-            return AntlrToken(type, 0, 0, channel, value)
-        }
-    }
-
     fun end() = offset + length
+
+    override fun toString(): String {
+        val result = StringBuilder()
+        result.append("AntlrToken(type=$type")
+        if (offset != -1) result.append(", offset=$offset")
+        if (length != -1) result.append(", length=$length")
+        if (channel != AntlrTokenChannel.Default) result.append(", channel=$channel")
+        if (value != null) result.append(", value=$value")
+        result.append(")")
+        return result.toString()
+    }
 }
 
 enum class AntlrTokenType {
@@ -55,8 +60,8 @@ enum class AntlrTokenType {
     LeftBracket,
     RightBracket,
     Hyphen,
+    Quote,
     Char,
     EscapedChar,
-    Quote,
     UnicodeEscapedChar,
 }

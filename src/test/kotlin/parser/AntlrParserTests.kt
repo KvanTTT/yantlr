@@ -12,96 +12,94 @@ Grammar
   Token (ParserId, test)
   Token (Semicolon, ;)
   Rule
-    AltParserId
-      Token (ParserId, x)
+    Token (ParserId, x)
     Token (Colon, :)
     Block
       Alternative
-        ElementLexerId
+        LexerId
           Token (LexerId, A)
       OrAlternative
         Token (Bar, |)
         Alternative
-          ElementParserId
+          ParserId
             Token (ParserId, b)
       OrAlternative
         Token (Bar, |)
         Alternative
-          ElementBlock
+          Block
             Token (LeftParen, ()
             Block
               Alternative
-                ElementLexerId
+                LexerId
                   Token (LexerId, C)
               OrAlternative
                 Token (Bar, |)
                 Alternative
-                  ElementParserId
+                  ParserId
                     Token (ParserId, d)
             Token (RightParen, ))
       OrAlternative
         Token (Bar, |)
         Alternative
+          Empty
     Token (Semicolon, ;)
   Token (Eof)
 
 """.trimIndent()
-    }
 
-    private fun token(tokenType: AntlrTokenType, value: String?): AntlrToken {
-        return AntlrToken.createAbstractToken(tokenType, value = value)
-    }
+        val defaultTreeNode = GrammarNode(
+            null,
+            AntlrToken(Grammar, value = "grammar"),
+            AntlrToken(ParserId, value = "test"),
+            AntlrToken(Semicolon, value = ";"),
 
-    private val defaultTreeNode = GrammarNode(
-        null,
-        token(Grammar, "grammar"),
-        token(ParserId, "test"),
-        token(Semicolon, ";"),
+            listOf(
+                RuleNode(
+                    AntlrToken(ParserId, value = "x"),
+                    AntlrToken(Colon, value = ":"),
 
-        listOf(
-            RuleNode(
-            RuleNode.AltParserIdNode(token(ParserId, "x")),
-            token(Colon, ":"),
+                    BlockNode(
+                        AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "A")))),
 
-            BlockNode(
-                AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "A")))),
-
-                listOf(
-                    BlockNode.OrAlternativeNode(
-                        token(Bar, "|"),
-                        AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "b"))))
-                    ),
-                    BlockNode.OrAlternativeNode(
-                        token(Bar, "|"),
-                        AlternativeNode(
-                            listOf(
-                                ElementNode.ElementBlock(
-                                token(LeftParen, "("),
-                                BlockNode(
-                                    AlternativeNode(listOf(ElementNode.ElementLexerId(token(LexerId, "C")))),
+                        listOf(
+                            BlockNode.OrAlternativeNode(
+                                AntlrToken(Bar, value = "|"),
+                                AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "b"))))
+                            ),
+                            BlockNode.OrAlternativeNode(
+                                AntlrToken(Bar, value = "|"),
+                                AlternativeNode(
                                     listOf(
-                                        BlockNode.OrAlternativeNode(
-                                        token(Bar, "|"),
-                                        AlternativeNode(listOf(ElementNode.ElementParserId(token(ParserId, "d")))),
-                                    ))
-                                ),
-                                token(RightParen, ")")
-                            ))
+                                        ElementNode.Block(
+                                            AntlrToken(LeftParen, value = "("),
+                                            BlockNode(
+                                                AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "C")))),
+                                                listOf(
+                                                    BlockNode.OrAlternativeNode(
+                                                        AntlrToken(Bar, value = "|"),
+                                                        AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "d")))),
+                                                    ))
+                                            ),
+                                            AntlrToken(RightParen, value = ")")
+                                        ))
+                                )
+                            ),
+                            BlockNode.OrAlternativeNode(
+                                AntlrToken(Bar, value = "|"),
+                                AlternativeNode(
+                                    listOf(ElementNode.Empty())
+                                )
+                            ),
                         )
                     ),
-                    BlockNode.OrAlternativeNode(
-                        token(Bar, "|"),
-                        AlternativeNode(emptyList())
-                    ),
+
+                    AntlrToken(Semicolon, value = ";"),
                 )
             ),
 
-            token(Semicolon, ";"),
+            AntlrToken(Eof)
         )
-        ),
-
-        token(Eof, null)
-    )
+    }
 
     @Test
     fun testPrettifyAntlrNode() {
@@ -121,23 +119,23 @@ Grammar
     @Test
     fun testParser() {
         val tokens = listOf(
-            AntlrToken.createAbstractToken(Grammar, value = "grammar"),
-            AntlrToken.createAbstractToken(ParserId, value = "test"),
-            AntlrToken.createAbstractToken(Semicolon, value = ";"),
+            AntlrToken(Grammar, value = "grammar"),
+            AntlrToken(ParserId, value = "test"),
+            AntlrToken(Semicolon, value = ";"),
 
-            AntlrToken.createAbstractToken(ParserId, value = "x"),
-            AntlrToken.createAbstractToken(Colon, value = ":"),
-            AntlrToken.createAbstractToken(LexerId, value = "A"),
-            AntlrToken.createAbstractToken(Bar, value = "|"),
-            AntlrToken.createAbstractToken(ParserId, value = "b"),
-            AntlrToken.createAbstractToken(Bar, value = "|"),
-            AntlrToken.createAbstractToken(LeftParen, value = "("),
-            AntlrToken.createAbstractToken(LexerId, value = "C"),
-            AntlrToken.createAbstractToken(Bar, value = "|"),
-            AntlrToken.createAbstractToken(ParserId, value = "d"),
-            AntlrToken.createAbstractToken(RightParen, value = ")"),
-            AntlrToken.createAbstractToken(Bar, value = "|"),
-            AntlrToken.createAbstractToken(Semicolon, value = ";")
+            AntlrToken(ParserId, value = "x"),
+            AntlrToken(Colon, value = ":"),
+            AntlrToken(LexerId, value = "A"),
+            AntlrToken(Bar, value = "|"),
+            AntlrToken(ParserId, value = "b"),
+            AntlrToken(Bar, value = "|"),
+            AntlrToken(LeftParen, value = "("),
+            AntlrToken(LexerId, value = "C"),
+            AntlrToken(Bar, value = "|"),
+            AntlrToken(ParserId, value = "d"),
+            AntlrToken(RightParen, value = ")"),
+            AntlrToken(Bar, value = "|"),
+            AntlrToken(Semicolon, value = ";")
         )
         val tokenStream = AntlrListTokenStream(tokens)
         val parser = AntlrParser(tokenStream)
