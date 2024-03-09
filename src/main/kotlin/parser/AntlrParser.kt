@@ -56,7 +56,9 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
             }
         }
 
-        return GrammarNode(lexerOrParserToken, grammarToken, idToken, semicolonToken, ruleNodes, emitEndNode(matchToEof))
+        val endToken = emitEndNode(emptyList(), matchToEof)
+
+        return GrammarNode(lexerOrParserToken, grammarToken, idToken, semicolonToken, ruleNodes, endToken)
     }
 
     // rule
@@ -137,19 +139,20 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
             }
         }
 
+        val extraTokens = mutableListOf<AntlrToken>()
         return when (nextToken.type) {
             AntlrTokenType.LexerId -> {
-                ElementNode.LexerId(matchToken(), tryParseElementSuffix(), emitEndNode(matchToEof))
+                ElementNode.LexerId(matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
             }
             AntlrTokenType.ParserId -> {
-                ElementNode.ParserId(matchToken(), tryParseElementSuffix(), emitEndNode(matchToEof))
+                ElementNode.ParserId(matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
             }
             AntlrTokenType.LeftParen -> ElementNode.Block(
                 matchToken(),
                 parseBlock(),
                 matchToken(AntlrTokenType.RightParen),
                 tryParseElementSuffix(),
-                emitEndNode(matchToEof),
+                emitEndNode(extraTokens, matchToEof),
             )
             AntlrTokenType.Quote -> {
                 val openQuote = matchToken() // Consume quote
@@ -166,14 +169,23 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                                 closeQuote = AntlrToken(AntlrTokenType.Quote, getToken().offset, 0, channel = AntlrTokenChannel.Error)
                                 break
                             }
-                            else -> {
+                            AntlrTokenType.Char, AntlrTokenType.EscapedChar, AntlrTokenType.UnicodeEscapedChar -> {
                                 add(matchToken())
+                            }
+                            else -> {
+                                extraTokens.add(matchToken())
                             }
                         }
                     }
                 }
 
-                ElementNode.StringLiteral(openQuote, charTokens, closeQuote, tryParseElementSuffix(), emitEndNode(matchToEof))
+                ElementNode.StringLiteral(
+                    openQuote,
+                    charTokens,
+                    closeQuote,
+                    tryParseElementSuffix(),
+                    emitEndNode(extraTokens, matchToEof)
+                )
             }
             AntlrTokenType.LeftBracket -> {
                 val openBracket = matchToken() // Consume quote
@@ -190,7 +202,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                                 closeBracket = AntlrToken(AntlrTokenType.RightBracket, getToken().offset, 0, channel = AntlrTokenChannel.Error)
                                 break
                             }
-                            else -> {
+                            AntlrTokenType.Hyphen, AntlrTokenType.Char, AntlrTokenType.EscapedChar, AntlrTokenType.UnicodeEscapedChar -> {
                                 if (getToken(1).type == AntlrTokenType.Hyphen && getToken(2).type in charSetTokenTypes) {
                                     add(ElementNode.CharSet.CharHyphenChar(
                                         matchToken(),
@@ -203,14 +215,23 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
                                     add(ElementNode.CharSet.CharHyphenChar(matchToken(), null))
                                 }
                             }
+                            else -> {
+                                extraTokens.add(matchToken())
+                            }
                         }
                     }
                 }
 
-                ElementNode.CharSet(openBracket, charSetNodes, closeBracket, tryParseElementSuffix(), emitEndNode(matchToEof))
+                ElementNode.CharSet(
+                    openBracket,
+                    charSetNodes,
+                    closeBracket,
+                    tryParseElementSuffix(),
+                    emitEndNode(extraTokens, matchToEof)
+                )
             }
             else -> {
-                ElementNode.Empty(emitEndNode(matchToEof))
+                ElementNode.Empty(emitEndNode(extraTokens, matchToEof))
             }
         }
     }
@@ -233,12 +254,12 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
         return ElementSuffixNode(ebnfToken, nonGreedyToken)
     }
 
-    private fun emitEndNode(matchToEof: Boolean): EndNode? {
+    private fun emitEndNode(extraTokens: List<AntlrToken>, matchToEof: Boolean): EndNode? {
         if (!matchToEof) {
-            return null
+            return extraTokens.takeIf { it.isNotEmpty() }?.let { EndNode(it, null) }
         }
 
-        val errorTokens = buildList {
+        val errorTokens = extraTokens + buildList {
             var nextToken = getToken()
             while (nextToken.type != AntlrTokenType.Eof) {
                 add(matchToken(nextToken.type))
