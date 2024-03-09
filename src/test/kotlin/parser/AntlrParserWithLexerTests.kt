@@ -56,6 +56,20 @@ x
     }
 
     @Test
+    fun stringLiteralWithIncorrectEscaping() {
+        check(
+            ElementNode.StringLiteral(
+                AntlrToken(AntlrTokenType.Quote),
+                // Unrecognized token '\u' can be extract from hidden channel
+                listOf(AntlrToken(AntlrTokenType.Char, value = "X")),
+                AntlrToken(AntlrTokenType.Quote),
+                elementSuffix = null,
+            ),
+            """'\uX'"""
+        ) { it.parseElement() }
+    }
+
+    @Test
     fun charSet() {
         check(
             ElementNode.CharSet(
