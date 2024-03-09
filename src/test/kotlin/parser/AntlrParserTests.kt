@@ -43,7 +43,8 @@ Grammar
         Alternative
           Empty
     Token (Semicolon, ;)
-  Token (Eof)
+  End
+    Token (Eof)
 
 """.trimIndent()
 
@@ -98,7 +99,7 @@ Grammar
                 )
             ),
 
-            AntlrToken(Eof)
+            EndNode(emptyList(), AntlrToken(Eof))
         )
     }
 
@@ -136,7 +137,8 @@ Grammar
             AntlrToken(ParserId, value = "d"),
             AntlrToken(RightParen, value = ")"),
             AntlrToken(Bar, value = "|"),
-            AntlrToken(Semicolon, value = ";")
+            AntlrToken(Semicolon, value = ";"),
+            AntlrToken(Eof),
         )
         val tokenStream = AntlrListTokenStream(tokens)
         val parser = AntlrParser(tokenStream)
