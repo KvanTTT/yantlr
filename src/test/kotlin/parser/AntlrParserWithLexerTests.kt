@@ -20,12 +20,12 @@ x
 
     @Test
     fun parserWithLexer() {
-        check(defaultTreeNode, defaultGrammar) { it.parseGrammar() }
+        helpers.check(defaultTreeNode, defaultGrammar) { it.parseGrammar() }
     }
 
     @Test
     fun stringLiteral() {
-        check(
+        helpers.check(
             ElementNode.StringLiteral(
                 AntlrToken(AntlrTokenType.Quote),
                 listOf(
@@ -44,7 +44,7 @@ x
 
     @Test
     fun unterminatedStringLiteral() {
-        check(
+        helpers.check(
             ElementNode.StringLiteral(
                 AntlrToken(AntlrTokenType.Quote),
                 listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
@@ -57,7 +57,7 @@ x
 
     @Test
     fun stringLiteralWithIncorrectEscaping() {
-        check(
+        helpers.check(
             ElementNode.StringLiteral(
                 AntlrToken(AntlrTokenType.Quote),
                 // Unrecognized token '\u' can be extract from hidden channel
@@ -71,7 +71,7 @@ x
 
     @Test
     fun charSet() {
-        check(
+        helpers.check(
             ElementNode.CharSet(
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
@@ -111,7 +111,7 @@ x
 
     @Test
     fun unterminatedCharSet() {
-        check(
+        helpers.check(
             ElementNode.CharSet(
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
@@ -133,37 +133,39 @@ x
 
     @Test
     fun elementSuffix() {
-        check(
-            AlternativeNode(listOf(
-                ElementNode.LexerId(
-                    AntlrToken(AntlrTokenType.LexerId, value = "A"),
-                    elementSuffix = ElementSuffixNode(
-                        AntlrToken(AntlrTokenType.Question),
-                        nonGreedy = null
+        helpers.check(
+            AlternativeNode(
+                listOf(
+                    ElementNode.LexerId(
+                        AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                        elementSuffix = ElementSuffixNode(
+                            AntlrToken(AntlrTokenType.Question),
+                            nonGreedy = null
+                        ),
                     ),
-                ),
-                ElementNode.ParserId(
-                    AntlrToken(AntlrTokenType.ParserId, value = "a"),
-                    elementSuffix = ElementSuffixNode(
-                        AntlrToken(AntlrTokenType.Star),
-                        nonGreedy = null
+                    ElementNode.ParserId(
+                        AntlrToken(AntlrTokenType.ParserId, value = "a"),
+                        elementSuffix = ElementSuffixNode(
+                            AntlrToken(AntlrTokenType.Star),
+                            nonGreedy = null
+                        ),
                     ),
-                ),
-                ElementNode.LexerId(
-                    AntlrToken(AntlrTokenType.LexerId, value = "A"),
-                    elementSuffix = ElementSuffixNode(
-                        AntlrToken(AntlrTokenType.Plus),
-                        nonGreedy = null
+                    ElementNode.LexerId(
+                        AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                        elementSuffix = ElementSuffixNode(
+                            AntlrToken(AntlrTokenType.Plus),
+                            nonGreedy = null
+                        ),
                     ),
-                ),
-                ElementNode.ParserId(
-                    AntlrToken(AntlrTokenType.ParserId, value = "a"),
-                    elementSuffix = ElementSuffixNode(
-                        AntlrToken(AntlrTokenType.Star),
-                        AntlrToken(AntlrTokenType.Question),
+                    ElementNode.ParserId(
+                        AntlrToken(AntlrTokenType.ParserId, value = "a"),
+                        elementSuffix = ElementSuffixNode(
+                            AntlrToken(AntlrTokenType.Star),
+                            AntlrToken(AntlrTokenType.Question),
+                        ),
                     ),
-                ),
-            )),
+                )
+            ),
             "A? a* A+ a*?"
         ) { it.parseAlternative() }
     }

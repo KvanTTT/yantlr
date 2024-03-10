@@ -1,6 +1,10 @@
-package parser
+package helpers
 
 import AntlrTreeVisitor
+import parser.AntlrLexer
+import parser.AntlrNode
+import parser.AntlrToken
+import parser.AntlrTokensCalculator
 
 class AntlrFullFidelityDumper(val lexer: AntlrLexer, tokens: List<AntlrToken>) : AntlrTreeVisitor<Unit>() {
     private val tokensCalculator = AntlrTokensCalculator(tokens)
