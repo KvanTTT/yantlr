@@ -10,4 +10,6 @@ class AntlrListTokenStream(tokensList: List<AntlrToken>) : AntlrTokenStream(toke
     }
 
     override fun getTokenValue(token: AntlrToken): String? = token.value
+
+    override fun fetchAllTokens(): List<AntlrToken> = tokens
 }
