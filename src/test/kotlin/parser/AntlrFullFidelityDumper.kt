@@ -19,7 +19,7 @@ class AntlrFullFidelityDumper(val lexer: AntlrLexer, tokens: List<AntlrToken>) :
     override fun visitToken(token: AntlrToken) {
         with (result) {
             tokensCalculator.getLeadingTokens(token).forEach { append(lexer.getTokenValue(it)) }
-            lexer.getTokenValue(token)?.let { append(it) }
+            append(lexer.getTokenValue(token))
             tokensCalculator.getTrailingTokens(token).forEach { append(lexer.getTokenValue(it)) }
         }
     }
