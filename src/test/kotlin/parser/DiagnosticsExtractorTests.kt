@@ -2,6 +2,7 @@ package parser
 
 import AntlrDiagnostic
 import ExtraToken
+import MissingToken
 import UnrecognizedToken
 import helpers.AntlrGrammarDiagnosticsHandler
 import helpers.AntlrTreeComparer
@@ -12,11 +13,15 @@ import kotlin.test.assertEquals
 class DiagnosticsExtractorTests {
     @Test
     fun simple() {
-        val extractionResult = AntlrGrammarDiagnosticsHandler().extract("""
+        val antlrGrammarDiagnosticsHandler = AntlrGrammarDiagnosticsHandler()
+
+        val input = """
 grammar test
 /*!UnrecognizedToken!*/`/*!*/
-/*!ExtraToken!*/+=/*!*/
-        """.trimIndent())
+/*!MissingToken!*//*!*//*!ExtraToken!*/+=/*!*/
+        """.trimIndent()
+
+        val extractionResult = antlrGrammarDiagnosticsHandler.extract(input)
 
         val actualRefinedInput = extractionResult.refinedTokens.joinToString("") { it.value ?: "" }
 
@@ -28,8 +33,17 @@ grammar test
 
         assertEquals(expectedRefinedInput, actualRefinedInput)
 
-        val lexerOnRefinedInput = AntlrLexer(expectedRefinedInput)
-        AntlrLexerTokenStream(lexerOnRefinedInput).fetchAllTokens()
+        val actualDiagnostics = mutableListOf<AntlrDiagnostic>()
+
+        val lexerOnRefinedInput = AntlrLexer(expectedRefinedInput) {
+            actualDiagnostics.add(it)
+        }
+        val parser = AntlrParser(AntlrLexerTokenStream(lexerOnRefinedInput)) {
+            actualDiagnostics.add(it)
+        }
+        parser.parseGrammar()
+
+        assertEquals(3, actualDiagnostics.size)
 
         checkDiagnostic(
             UnrecognizedToken(
@@ -39,15 +53,25 @@ grammar test
             extractionResult.diagnostics[0],
             lexerOnRefinedInput
         )
-
+        checkDiagnostic(
+            MissingToken(
+                AntlrToken(AntlrTokenType.Semicolon, channel = AntlrTokenChannel.Error),
+                lexerOnRefinedInput.getOffset(LineColumn(3, 1)), 0
+            ),
+            extractionResult.diagnostics[1],
+            lexerOnRefinedInput
+        )
         checkDiagnostic(
             ExtraToken(
                 AntlrToken(AntlrTokenType.PlusAssign, channel = AntlrTokenChannel.Default, value = "+="),
                 lexerOnRefinedInput.getOffset(LineColumn(3, 1)), 2
             ),
-            extractionResult.diagnostics[1],
+            extractionResult.diagnostics[2],
             lexerOnRefinedInput
         )
+
+        val grammarWithEmbedDiagnostics = antlrGrammarDiagnosticsHandler.embedDiagnostics(extractionResult.refinedTokens, actualDiagnostics)
+        assertEquals(input, grammarWithEmbedDiagnostics)
     }
 
     @Test
@@ -85,9 +109,8 @@ grammar test /*!UnrecognizedToken!*/`/*!*//*!*/
             is ExtraToken -> AntlrTreeComparer(lexer).compareToken(expectedDiagnostic.token, (actualDiagnostic as ExtraToken).token)
         }
 
-        assertEquals(expectedDiagnostic.stage, actualDiagnostic.stage)
         assertEquals(expectedDiagnostic.severity, actualDiagnostic.severity)
-        assertEquals(expectedDiagnostic.start, actualDiagnostic.start)
+        assertEquals(expectedDiagnostic.offset, actualDiagnostic.offset)
         assertEquals(expectedDiagnostic.length, actualDiagnostic.length)
     }
 }

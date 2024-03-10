@@ -2,11 +2,9 @@ package helpers
 
 import AntlrDiagnostic
 import ExtraToken
+import MissingToken
 import UnrecognizedToken
-import parser.AntlrLexer
-import parser.AntlrLexerTokenStream
-import parser.AntlrToken
-import parser.AntlrTokenType
+import parser.*
 import kotlin.reflect.KClass
 
 class AntlrGrammarDiagnosticsHandler {
@@ -16,7 +14,7 @@ class AntlrGrammarDiagnosticsHandler {
         private const val DIAGNOSTIC_END = "/*!*/"
     }
 
-    data class DescriptorStart(val type: KClass<*>, val offset: Int, val refinedOffset: Int, val info: List<Any>)
+    private data class DescriptorStart(val type: KClass<*>, val offset: Int, val refinedOffset: Int, val info: List<Any>)
 
     data class ExtractionResult(val diagnostics: List<AntlrDiagnostic>, val refinedTokens: List<AntlrToken>)
 
@@ -29,6 +27,7 @@ class AntlrGrammarDiagnosticsHandler {
         val diagnosticsList = mutableListOf<AntlrDiagnostic>()
         val refinedTokens = mutableListOf<AntlrToken>()
         var refinedOffset = 0
+        var ignoredTokensLength = 0
 
         var tokenIndex = 0
         do {
@@ -59,8 +58,10 @@ class AntlrGrammarDiagnosticsHandler {
             }
 
             if (!ignoreToken) {
-                refinedTokens.add(token.shift(token.offset - refinedOffset))
+                refinedTokens.add(token.shift(token.offset - ignoredTokensLength))
                 refinedOffset += token.length
+            } else {
+                ignoredTokensLength += token.length
             }
 
             if (token.type == AntlrTokenType.Eof) {
@@ -75,6 +76,39 @@ class AntlrGrammarDiagnosticsHandler {
         }
 
         return ExtractionResult(diagnosticsList, refinedTokens)
+    }
+
+    fun embedDiagnostics(refinedTokens: List<AntlrToken>, diagnostics: List<AntlrDiagnostic>): String {
+        data class DiagnosticInfo(val diagnostic: AntlrDiagnostic, val start: Boolean)
+
+        val offsetToDiagnosticMap = mutableMapOf<Int, MutableList<DiagnosticInfo>>()
+
+        for (diagnostic in diagnostics.sortedBy { it.offset }) {
+            val diagnosticStartList = offsetToDiagnosticMap[diagnostic.offset] ?: run {
+                mutableListOf<DiagnosticInfo>().also { offsetToDiagnosticMap[diagnostic.offset] = it }
+            }
+            diagnosticStartList.add(DiagnosticInfo(diagnostic, start = true))
+            val diagnosticEndList = offsetToDiagnosticMap[diagnostic.offset + diagnostic.length] ?: run {
+                mutableListOf<DiagnosticInfo>().also { offsetToDiagnosticMap[diagnostic.offset + diagnostic.length] = it }
+            }
+            diagnosticEndList.add(DiagnosticInfo(diagnostic, start = false))
+        }
+
+        return buildString {
+            for (token in refinedTokens) {
+                val diagnosticInfos = offsetToDiagnosticMap[token.offset] ?: emptyList()
+                for ((diagnostic, start) in diagnosticInfos) {
+                    if (start) {
+                        append(DIAGNOSTIC_START_BEGIN_MARKER)
+                        append(diagnostic::class.simpleName)
+                        append(DIAGNOSTIC_START_END_MARKER)
+                    } else {
+                        append(DIAGNOSTIC_END)
+                    }
+                }
+                append(token.value)
+            }
+        }
     }
 
     private fun initDiagnostic(
@@ -104,6 +138,15 @@ class AntlrGrammarDiagnosticsHandler {
                 )
             }
 
+            MissingToken::class.simpleName -> {
+                DescriptorStart(
+                    MissingToken::class,
+                    token.offset,
+                    refinedOffset,
+                    listOf(AntlrToken(AntlrTokenType.Semicolon, token.offset, 0, AntlrTokenChannel.Error, ";"))
+                )
+            }
+
             else -> {
                 error("Unknown diagnostic type `$diagnosticMarker` at ${lexer.getLineColumn(token.offset)}")
             }
@@ -122,6 +165,14 @@ class AntlrGrammarDiagnosticsHandler {
 
             ExtraToken::class -> {
                 ExtraToken(
+                    (lastDescriptorStart.info[0] as AntlrToken).shift(lastDescriptorStart.refinedOffset),
+                    lastDescriptorStart.refinedOffset,
+                    refinedOffset - lastDescriptorStart.refinedOffset
+                )
+            }
+
+            MissingToken::class -> {
+                MissingToken(
                     (lastDescriptorStart.info[0] as AntlrToken).shift(lastDescriptorStart.refinedOffset),
                     lastDescriptorStart.refinedOffset,
                     refinedOffset - lastDescriptorStart.refinedOffset
