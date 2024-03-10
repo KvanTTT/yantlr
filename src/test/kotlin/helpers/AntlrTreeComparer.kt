@@ -1,5 +1,8 @@
-package parser
+package helpers
 
+import parser.AntlrLexer
+import parser.AntlrNode
+import parser.AntlrToken
 import kotlin.math.min
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties

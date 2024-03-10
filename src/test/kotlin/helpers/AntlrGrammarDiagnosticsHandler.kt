@@ -1,8 +1,12 @@
-package parser
+package helpers
 
 import AntlrDiagnostic
 import ExtraToken
 import UnrecognizedToken
+import parser.AntlrLexer
+import parser.AntlrLexerTokenStream
+import parser.AntlrToken
+import parser.AntlrTokenType
 import kotlin.reflect.KClass
 
 class AntlrGrammarDiagnosticsHandler {
@@ -33,7 +37,9 @@ class AntlrGrammarDiagnosticsHandler {
 
             var ignoreToken = false
             if (token.type == AntlrTokenType.BlockComment) {
-                if (tokenValue.startsWith(DIAGNOSTIC_START_BEGIN_MARKER) && tokenValue.endsWith(DIAGNOSTIC_START_END_MARKER) &&
+                if (tokenValue.startsWith(DIAGNOSTIC_START_BEGIN_MARKER) && tokenValue.endsWith(
+                        DIAGNOSTIC_START_END_MARKER
+                    ) &&
                     tokenValue.length > DIAGNOSTIC_START_BEGIN_MARKER.length + DIAGNOSTIC_START_END_MARKER.length
                 ) {
                     ignoreToken = true

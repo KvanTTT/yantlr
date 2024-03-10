@@ -1,6 +1,9 @@
-package parser
+package helpers
 
 import AntlrTreeVisitor
+import parser.AntlrLexer
+import parser.AntlrNode
+import parser.AntlrToken
 
 class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit>() {
     private var indentLevel = 0
