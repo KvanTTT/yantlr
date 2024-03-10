@@ -17,5 +17,14 @@ class AntlrLexerTokenStream(private val lexer: AntlrLexer) : AntlrTokenStream(mu
         return appendableTokens[index]
     }
 
-    override fun getTokenValue(token: AntlrToken): String? = lexer.getTokenValue(token)
+    override fun getTokenValue(token: AntlrToken): String = lexer.getTokenValue(token)
+
+    override fun fetchAllTokens(): List<AntlrToken> {
+        var index = 0
+        while (getToken(index).type != AntlrTokenType.Eof) {
+            index++
+        }
+
+        return tokens
+    }
 }
