@@ -1,6 +1,12 @@
 package parser
 
-class AntlrLexer(val text: String, val initializeTokenValue: Boolean = false) {
+import UnrecognizedToken
+
+class AntlrLexer(
+    val text: String,
+    val initializeTokenValue: Boolean = false,
+    val diagnosticReporter: ((UnrecognizedToken) -> Unit)? = null
+) {
     companion object {
         private val whitespaceChars = setOf(' ', '\t')
         private val idStartChars = charSetOf(
@@ -342,7 +348,11 @@ class AntlrLexer(val text: String, val initializeTokenValue: Boolean = false) {
     private fun createToken(type: AntlrTokenType, offset: Int = -1, length: Int = -1, channel: AntlrTokenChannel = AntlrTokenChannel.Default): AntlrToken {
         return AntlrToken(type, offset, length, channel,
             value = if (initializeTokenValue) text.substring(offset, offset + length) else null
-        )
+        ).also {
+            if (diagnosticReporter != null && channel == AntlrTokenChannel.Error) {
+                diagnosticReporter.invoke(UnrecognizedToken(it, offset, length))
+            }
+        }
     }
 
     private fun checkEnd(index: Int = charIndex): Boolean = index >= text.length
