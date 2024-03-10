@@ -1,6 +1,13 @@
 package parser
 
-class AntlrParser(val tokenStream: AntlrTokenStream) {
+import ExtraToken
+import MissingToken
+import ParserDiagnostic
+
+class AntlrParser(
+    val tokenStream: AntlrTokenStream,
+    val diagnosticReporter: ((ParserDiagnostic) -> Unit)? = null
+) {
     companion object {
         private val ruleTokenTypes = setOf(
             AntlrTokenType.LexerId,
@@ -255,6 +262,10 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     }
 
     private fun emitEndNode(extraTokens: List<AntlrToken>, matchToEof: Boolean): EndNode? {
+        for (extraToken in extraTokens) {
+            diagnosticReporter?.invoke(ExtraToken(extraToken, extraToken.offset, extraToken.length))
+        }
+
         if (!matchToEof) {
             return extraTokens.takeIf { it.isNotEmpty() }?.let { EndNode(it, null) }
         }
@@ -262,6 +273,7 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
         val errorTokens = extraTokens + buildList {
             var nextToken = getToken()
             while (nextToken.type != AntlrTokenType.Eof) {
+                diagnosticReporter?.invoke(ExtraToken(nextToken, nextToken.offset, nextToken.length))
                 add(matchToken(nextToken.type))
                 nextToken = getToken()
             }
@@ -316,5 +328,6 @@ class AntlrParser(val tokenStream: AntlrTokenStream) {
     private fun emitMissingToken(tokenType: AntlrTokenType?): AntlrToken {
         // TODO: handle multiple token types (when tokenType is null)
         return AntlrToken(tokenType ?: AntlrTokenType.Error, getToken().offset, 0, channel = AntlrTokenChannel.Error)
+            .also { diagnosticReporter?.invoke(MissingToken(it, it.offset, 0)) }
     }
 }
