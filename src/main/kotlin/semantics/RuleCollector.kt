@@ -19,7 +19,7 @@ class RuleCollector(val lexer: AntlrLexer) : AntlrTreeVisitor<Unit>() {
     override fun visitToken(token: AntlrToken) {}
 
     override fun visitRuleNode(node: RuleNode) {
-        val id: String = lexer.getTokenValue(node.lexerOrParserIdToken)!!
+        val id: String = lexer.getTokenValue(node.lexerOrParserIdToken)
         if (rules.containsKey(id)) {
             // TODO: Name collision checking
             throw IllegalStateException("Rule $id already exists")

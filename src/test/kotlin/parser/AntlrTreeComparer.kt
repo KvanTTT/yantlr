@@ -113,8 +113,7 @@ class AntlrTreeComparer(val lexer: AntlrLexer?) {
     private fun Any?.getPositionSuffix(): String {
         val actualLeftToken = (this as? AntlrToken) ?: (this as? AntlrNode)?.leftToken
         val positionSuffix = if (actualLeftToken != null && actualLeftToken.offset != -1) {
-            " at " + (lexer?.lineColumn(actualLeftToken.offset)?.let { "${it.first}:${it.second}" }
-                ?: actualLeftToken.offset.toString())
+            " at " + (lexer?.getLineColumn(actualLeftToken.offset) ?: actualLeftToken.offset.toString())
         } else {
             ""
         }
