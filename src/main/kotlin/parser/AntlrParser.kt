@@ -101,7 +101,7 @@ class AntlrParser(
             var nextToken = getToken()
             while (nextToken.type == AntlrTokenType.Bar) {
                 matchToken()
-                add(BlockNode.OrAlternativeNode(nextToken, parseAlternative()))
+                add(BlockNode.OrAlternative(nextToken, parseAlternative()))
                 nextToken = getToken()
             }
         }

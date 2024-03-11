@@ -2,7 +2,7 @@ package helpers
 
 import AntlrTreeVisitor
 import parser.AntlrLexer
-import parser.AntlrNode
+import parser.AntlrTreeNode
 import parser.AntlrToken
 import parser.AntlrTokensCalculator
 
@@ -10,13 +10,13 @@ class AntlrFullFidelityDumper(val lexer: AntlrLexer, tokens: List<AntlrToken>) :
     private val tokensCalculator = AntlrTokensCalculator(tokens)
     private val result = StringBuilder()
 
-    fun dump(node: AntlrNode): String {
+    fun dump(node: AntlrTreeNode): String {
         result.clear()
         visitTreeNode(node)
         return result.toString()
     }
 
-    override fun visitTreeNode(node: AntlrNode) {
+    override fun visitTreeNode(node: AntlrTreeNode) {
         node.acceptChildren(this)
     }
 

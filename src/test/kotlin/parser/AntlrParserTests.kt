@@ -64,11 +64,11 @@ Grammar
                         AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "A"), elementSuffix = null))),
 
                         listOf(
-                            BlockNode.OrAlternativeNode(
+                            BlockNode.OrAlternative(
                                 AntlrToken(Bar, value = "|"),
                                 AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "b"), elementSuffix = null)))
                             ),
-                            BlockNode.OrAlternativeNode(
+                            BlockNode.OrAlternative(
                                 AntlrToken(Bar, value = "|"),
                                 AlternativeNode(
                                     listOf(
@@ -77,7 +77,7 @@ Grammar
                                             BlockNode(
                                                 AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(LexerId, value = "C"), elementSuffix = null))),
                                                 listOf(
-                                                    BlockNode.OrAlternativeNode(
+                                                    BlockNode.OrAlternative(
                                                         AntlrToken(Bar, value = "|"),
                                                         AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(ParserId, value = "d"), elementSuffix = null))),
                                                     ))
@@ -87,7 +87,7 @@ Grammar
                                         ))
                                 )
                             ),
-                            BlockNode.OrAlternativeNode(
+                            BlockNode.OrAlternative(
                                 AntlrToken(Bar, value = "|"),
                                 AlternativeNode(
                                     listOf(ElementNode.Empty())

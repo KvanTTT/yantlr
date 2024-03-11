@@ -2,7 +2,7 @@ package helpers
 
 import AntlrTreeVisitor
 import parser.AntlrLexer
-import parser.AntlrNode
+import parser.AntlrTreeNode
 import parser.AntlrToken
 
 class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit>() {
@@ -10,7 +10,7 @@ class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit>() {
     private val indentCache = mutableMapOf<Int, String>()
     private val result = StringBuilder()
 
-    fun prettify(node: AntlrNode): String {
+    fun prettify(node: AntlrTreeNode): String {
         indentLevel = 0
         result.clear()
         visitTreeNode(node)
@@ -24,7 +24,7 @@ class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit>() {
         return result.toString()
     }
 
-    override fun visitTreeNode(node: AntlrNode) {
+    override fun visitTreeNode(node: AntlrTreeNode) {
         result.appendIndent()
         val nodeType = node::class.simpleName!!
         result.append(if (nodeType.endsWith("Node")) nodeType.substring(0, nodeType.length - 4) else nodeType)

@@ -1,13 +1,17 @@
 package parser
 
+import SourceInterval
+
 class AntlrToken(
     val type: AntlrTokenType,
     val offset: Int = -1,
     val length: Int = -1,
     val channel: AntlrTokenChannel = AntlrTokenChannel.Default,
     val value: String? = null
-) {
+): AntlrNode() {
     fun end() = offset + length
+
+    override fun getInterval(): SourceInterval = SourceInterval(offset, length)
 
     override fun toString(): String {
         val result = StringBuilder()

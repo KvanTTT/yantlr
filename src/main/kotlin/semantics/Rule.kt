@@ -1,5 +1,5 @@
 package semantics
 
-import parser.AntlrNode
+import parser.AntlrTreeNode
 
-class Rule(val name: String, val isLexer: Boolean, val treeNode: AntlrNode)
+class Rule(val name: String, val isLexer: Boolean, val treeNode: AntlrTreeNode)
