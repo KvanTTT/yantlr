@@ -12,7 +12,7 @@ class RuleCollector(val lexer: AntlrLexer) : AntlrTreeVisitor<Unit>() {
         return rules
     }
 
-    override fun visitTreeNode(node: AntlrNode) {
+    override fun visitTreeNode(node: AntlrTreeNode) {
         node.acceptChildren(this)
     }
 

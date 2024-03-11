@@ -1,7 +1,7 @@
 package helpers
 
 import parser.AntlrLexer
-import parser.AntlrNode
+import parser.AntlrTreeNode
 import parser.AntlrToken
 import kotlin.math.min
 import kotlin.reflect.KProperty1
@@ -114,7 +114,7 @@ class AntlrTreeComparer(val lexer: AntlrLexer?) {
     }
 
     private fun Any?.getPositionSuffix(): String {
-        val actualLeftToken = (this as? AntlrToken) ?: (this as? AntlrNode)?.leftToken
+        val actualLeftToken = (this as? AntlrToken) ?: (this as? AntlrTreeNode)?.leftToken
         val positionSuffix = if (actualLeftToken != null && actualLeftToken.offset != -1) {
             " at " + (lexer?.getLineColumn(actualLeftToken.offset) ?: actualLeftToken.offset.toString())
         } else {

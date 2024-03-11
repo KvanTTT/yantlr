@@ -1,11 +1,19 @@
 package parser
 
 import AntlrTreeVisitor
+import SourceInterval
 
-sealed class AntlrNode {
+sealed class AntlrTreeNode : AntlrNode() {
     val leftToken by lazy { calculateLeftToken() }
+    val rightToken by lazy { calculateRightToken() }
 
     abstract fun calculateLeftToken(): AntlrToken?
+
+    abstract fun calculateRightToken(): AntlrToken?
+
+    override fun getInterval(): SourceInterval? {
+        return if (leftToken != null) SourceInterval(leftToken!!.offset, rightToken!!.end() - leftToken!!.offset) else null
+    }
 
     abstract fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R?
 }
@@ -17,8 +25,10 @@ class GrammarNode(
     val semicolonToken: AntlrToken,
     val ruleNodes: List<RuleNode>,
     val endNode: EndNode?,
-) : AntlrNode() {
+) : AntlrTreeNode() {
     override fun calculateLeftToken(): AntlrToken = lexerOrParserToken ?: grammarToken
+
+    override fun calculateRightToken(): AntlrToken = endNode?.eofToken ?: ruleNodes.lastOrNull()?.rightToken ?: semicolonToken
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
         lexerOrParserToken?.let { visitor.visitToken(it) }
@@ -36,8 +46,10 @@ class RuleNode(
     val colonToken: AntlrToken,
     val blockNode: BlockNode,
     val semicolonToken: AntlrToken
-) : AntlrNode() {
+) : AntlrTreeNode() {
     override fun calculateLeftToken(): AntlrToken = lexerOrParserIdToken
+
+    override fun calculateRightToken(): AntlrToken = semicolonToken
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
         visitor.visitToken(lexerOrParserIdToken)
@@ -50,10 +62,12 @@ class RuleNode(
 
 class BlockNode(
     val alternativeNode: AlternativeNode,
-    val orAlternativeNodes: List<OrAlternativeNode>
-) : AntlrNode() {
-    class OrAlternativeNode(val orToken: AntlrToken, val alternativeNode: AlternativeNode) : AntlrNode() {
+    val orAlternativeNodes: List<OrAlternative>
+) : AntlrTreeNode() {
+    class OrAlternative(val orToken: AntlrToken, val alternativeNode: AlternativeNode) : AntlrTreeNode() {
         override fun calculateLeftToken(): AntlrToken = orToken
+
+        override fun calculateRightToken(): AntlrToken? = alternativeNode.rightToken
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(orToken)
@@ -62,7 +76,9 @@ class BlockNode(
         }
     }
 
-    override fun calculateLeftToken(): AntlrToken? = alternativeNode.calculateLeftToken()
+    override fun calculateLeftToken(): AntlrToken? = alternativeNode.leftToken
+
+    override fun calculateRightToken(): AntlrToken? = orAlternativeNodes.lastOrNull()?.rightToken ?: alternativeNode.rightToken
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
         visitor.visitAlternativeNode(alternativeNode)
@@ -71,8 +87,10 @@ class BlockNode(
     }
 }
 
-class AlternativeNode(val elementNodes: List<ElementNode>) : AntlrNode() {
-    override fun calculateLeftToken(): AntlrToken? = elementNodes.firstOrNull()?.calculateLeftToken()
+class AlternativeNode(val elementNodes: List<ElementNode>) : AntlrTreeNode() {
+    override fun calculateLeftToken(): AntlrToken? = elementNodes.firstOrNull()?.leftToken
+
+    override fun calculateRightToken(): AntlrToken? = elementNodes.lastOrNull()?.rightToken
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
         elementNodes.forEach { visitor.visitElementNode(it) }
@@ -80,15 +98,19 @@ class AlternativeNode(val elementNodes: List<ElementNode>) : AntlrNode() {
     }
 }
 
-sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
+sealed class ElementNode(val endNode: EndNode?) : AntlrTreeNode() {
     class Empty(endNode: EndNode? = null) : ElementNode(endNode) {
-        override fun calculateLeftToken(): AntlrToken? = null
+        override fun calculateLeftToken(): AntlrToken? = endNode?.leftToken
+
+        override fun calculateRightToken(): AntlrToken? = endNode?.rightToken
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? = null
     }
 
     class LexerId(val lexerId: AntlrToken, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
         override fun calculateLeftToken(): AntlrToken = lexerId
+
+        override fun calculateRightToken(): AntlrToken? = endNode?.rightToken ?: elementSuffix?.rightToken ?: lexerId
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(lexerId)
@@ -100,6 +122,8 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
     class ParserId(val parserId: AntlrToken, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
         override fun calculateLeftToken(): AntlrToken = parserId
 
+        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: parserId
+
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(parserId)
             elementSuffix?.let { visitor.visitTreeNode(it) }
@@ -109,6 +133,8 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
 
     class Block(val leftParen: AntlrToken, val blockNode: BlockNode, val rightParen: AntlrToken, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
         override fun calculateLeftToken(): AntlrToken = leftParen
+
+        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: rightParen
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(leftParen)
@@ -121,6 +147,8 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
 
     class StringLiteral(val openQuote: AntlrToken, val chars: List<AntlrToken>, val closeQuote: AntlrToken, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
         override fun calculateLeftToken(): AntlrToken = openQuote
+
+        override fun calculateRightToken(): AntlrToken? = endNode?.rightToken ?: elementSuffix?.rightToken ?: closeQuote
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(openQuote)
@@ -135,9 +163,11 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
         class CharHyphenChar(
             val char: AntlrToken,
             val range: HyphenChar?
-        ) : AntlrNode() {
-            class HyphenChar(val hyphen: AntlrToken, val char: AntlrToken) : AntlrNode() {
+        ) : AntlrTreeNode() {
+            class HyphenChar(val hyphen: AntlrToken, val char: AntlrToken) : AntlrTreeNode() {
                 override fun calculateLeftToken(): AntlrToken = hyphen
+
+                override fun calculateRightToken(): AntlrToken = char
 
                 override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
                     visitor.visitToken(hyphen)
@@ -148,6 +178,8 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
 
             override fun calculateLeftToken(): AntlrToken = char
 
+            override fun calculateRightToken(): AntlrToken = range?.char ?: char
+
             override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
                 visitor.visitToken(char)
                 range?.let { visitor.visitElementCharSetCharHyphenCharHyphenCharNode(it) }
@@ -156,6 +188,8 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
         }
 
         override fun calculateLeftToken(): AntlrToken = openBracket
+
+        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: closeBracket
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
             visitor.visitToken(openBracket)
@@ -167,8 +201,10 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrNode() {
     }
 }
 
-class ElementSuffixNode(val ebnf: AntlrToken, val nonGreedy: AntlrToken?) : AntlrNode() {
+class ElementSuffixNode(val ebnf: AntlrToken, val nonGreedy: AntlrToken?) : AntlrTreeNode() {
     override fun calculateLeftToken(): AntlrToken = ebnf
+
+    override fun calculateRightToken(): AntlrToken = nonGreedy ?: ebnf
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
         visitor.visitToken(ebnf)
@@ -177,8 +213,10 @@ class ElementSuffixNode(val ebnf: AntlrToken, val nonGreedy: AntlrToken?) : Antl
     }
 }
 
-class EndNode(val extraErrorTokens: List<AntlrToken>, val eofToken: AntlrToken?) : AntlrNode() {
-    override fun calculateLeftToken(): AntlrToken? = extraErrorTokens.firstOrNull()?.let { return it }
+class EndNode(val extraErrorTokens: List<AntlrToken>, val eofToken: AntlrToken?) : AntlrTreeNode() {
+    override fun calculateLeftToken(): AntlrToken? = extraErrorTokens.firstOrNull()?.let { return it } ?: eofToken
+
+    override fun calculateRightToken(): AntlrToken? = eofToken ?: extraErrorTokens.lastOrNull()
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
         extraErrorTokens.forEach { visitor.visitToken(it) }

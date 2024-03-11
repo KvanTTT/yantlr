@@ -1,7 +1,7 @@
 import parser.*
 
 abstract class AntlrTreeVisitor<out R> {
-    abstract fun visitTreeNode(node: AntlrNode): R
+    abstract fun visitTreeNode(node: AntlrTreeNode): R
 
     abstract fun visitToken(token: AntlrToken): R
 
@@ -11,7 +11,7 @@ abstract class AntlrTreeVisitor<out R> {
 
     open fun visitBlockNode(node: BlockNode) = visitTreeNode(node)
 
-    open fun visitBlockOrAlternativeNodes(node: BlockNode.OrAlternativeNode) = visitTreeNode(node)
+    open fun visitBlockOrAlternativeNodes(node: BlockNode.OrAlternative) = visitTreeNode(node)
 
     open fun visitAlternativeNode(node: AlternativeNode) = visitTreeNode(node)
 
