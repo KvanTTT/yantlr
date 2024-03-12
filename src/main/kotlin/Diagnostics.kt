@@ -1,18 +1,14 @@
 import parser.AntlrToken
 
-abstract class AntlrDiagnostic(
-    val severity: DiagnosticSeverity,
-    val offset: Int,
-    val length: Int,
-)
+abstract class AntlrDiagnostic(val severity: DiagnosticSeverity, val sourceInterval: SourceInterval)
 
-class UnrecognizedToken(val token: AntlrToken, start: Int, length: Int) : AntlrDiagnostic(DiagnosticSeverity.Error, start, length)
+class UnrecognizedToken(val token: AntlrToken, sourceInterval: SourceInterval) : AntlrDiagnostic(DiagnosticSeverity.Error, sourceInterval)
 
-abstract class ParserDiagnostic(severity: DiagnosticSeverity, start: Int, length: Int) : AntlrDiagnostic(severity, start, length)
+abstract class ParserDiagnostic(severity: DiagnosticSeverity, sourceInterval: SourceInterval) : AntlrDiagnostic(severity, sourceInterval)
 
-class MissingToken(val token: AntlrToken, start: Int, length: Int) : ParserDiagnostic(DiagnosticSeverity.Error, start, length)
+class MissingToken(sourceInterval: SourceInterval) : ParserDiagnostic(DiagnosticSeverity.Error, sourceInterval)
 
-class ExtraToken(val token: AntlrToken, start: Int, length: Int) : ParserDiagnostic(DiagnosticSeverity.Error, start, length)
+class ExtraToken(sourceInterval: SourceInterval) : ParserDiagnostic(DiagnosticSeverity.Error, sourceInterval)
 
 enum class DiagnosticSeverity {
     Error,

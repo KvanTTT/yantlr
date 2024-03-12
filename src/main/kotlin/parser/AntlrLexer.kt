@@ -77,25 +77,9 @@ class AntlrLexer(
         }
     }
 
-    fun getLineColumn(offset: Int): LineColumn {
-        lineIndexes.binarySearch { it.compareTo(offset) }.let { lineIndex ->
-            return if (lineIndex < 0) {
-                val line = -lineIndex - 2
-                LineColumn(line + 1, offset - lineIndexes[line] + 1)
-            } else {
-                LineColumn(lineIndex + 1, 1)
-            }
-        }
-    }
+    fun getLineColumn(offset: Int): LineColumn = lineIndexes.getLineColumn(offset)
 
-    fun getOffset(lineColumn: LineColumn): Int {
-        val lineIndex = lineColumn.line - 1
-        if (lineIndex < 0 || lineIndex >= lineIndexes.size) {
-            return -1
-        }
-        val lineStart = lineIndexes[lineIndex]
-        return lineStart + lineColumn.column - 1
-    }
+    fun getOffset(lineColumn: LineColumn): Int = lineColumn.getOffset(lineIndexes)
 
     private var currentMode: AntlrMode = AntlrMode.Default
 
@@ -350,7 +334,7 @@ class AntlrLexer(
             value = if (initializeTokenValue) text.substring(offset, offset + length) else null
         ).also {
             if (diagnosticReporter != null && channel == AntlrTokenChannel.Error) {
-                diagnosticReporter.invoke(UnrecognizedToken(it, offset, length))
+                diagnosticReporter.invoke(UnrecognizedToken(it, it.getInterval()))
             }
         }
     }
