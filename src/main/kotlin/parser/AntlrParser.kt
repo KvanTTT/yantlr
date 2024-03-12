@@ -263,7 +263,7 @@ class AntlrParser(
 
     private fun emitEndNode(extraTokens: List<AntlrToken>, matchToEof: Boolean): EndNode? {
         for (extraToken in extraTokens) {
-            diagnosticReporter?.invoke(ExtraToken(extraToken, extraToken.offset, extraToken.length))
+            diagnosticReporter?.invoke(ExtraToken(extraToken.getInterval()))
         }
 
         if (!matchToEof) {
@@ -273,7 +273,7 @@ class AntlrParser(
         val errorTokens = extraTokens + buildList {
             var nextToken = getToken()
             while (nextToken.type != AntlrTokenType.Eof) {
-                diagnosticReporter?.invoke(ExtraToken(nextToken, nextToken.offset, nextToken.length))
+                diagnosticReporter?.invoke(ExtraToken(nextToken.getInterval()))
                 add(matchToken(nextToken.type))
                 nextToken = getToken()
             }
@@ -328,6 +328,6 @@ class AntlrParser(
     private fun emitMissingToken(tokenType: AntlrTokenType?): AntlrToken {
         // TODO: handle multiple token types (when tokenType is null)
         return AntlrToken(tokenType ?: AntlrTokenType.Error, getToken().offset, 0, channel = AntlrTokenChannel.Error)
-            .also { diagnosticReporter?.invoke(MissingToken(it, it.offset, 0)) }
+            .also { diagnosticReporter?.invoke(MissingToken(it.getInterval())) }
     }
 }
