@@ -1,11 +1,13 @@
 package parser
 
+import InvalidEscaping
+import LexerDiagnostic
 import UnrecognizedToken
 
 class AntlrLexer(
     val text: String,
     val initializeTokenValue: Boolean = false,
-    val diagnosticReporter: ((UnrecognizedToken) -> Unit)? = null
+    val diagnosticReporter: ((LexerDiagnostic) -> Unit)? = null
 ) {
     companion object {
         private val whitespaceChars = setOf(' ', '\t')
@@ -334,7 +336,12 @@ class AntlrLexer(
             value = if (initializeTokenValue) text.substring(offset, offset + length) else null
         ).also {
             if (diagnosticReporter != null && channel == AntlrTokenChannel.Error) {
-                diagnosticReporter.invoke(UnrecognizedToken(it, it.getInterval()))
+                val diagnostic = when (type) {
+                    AntlrTokenType.EscapedChar,
+                    AntlrTokenType.UnicodeEscapedChar -> InvalidEscaping(getTokenValue(it), it.getInterval())
+                    else -> UnrecognizedToken(getTokenValue(it), it.getInterval())
+                }
+                diagnosticReporter.invoke(diagnostic)
             }
         }
     }

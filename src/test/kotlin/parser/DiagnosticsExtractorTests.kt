@@ -2,6 +2,7 @@ package parser
 
 import AntlrDiagnostic
 import ExtraToken
+import LexerDiagnostic
 import MissingToken
 import SourceInterval
 import UnrecognizedToken
@@ -33,7 +34,7 @@ grammar test
 
         checkDiagnostic(
             UnrecognizedToken(
-                AntlrToken(AntlrTokenType.Error, channel = AntlrTokenChannel.Error, value = "`"),
+                "`",
                 SourceInterval(LineColumn(2, 1).getOffset(lineIndexes), 1)
             ),
             extractionResult.diagnostics[0],
@@ -51,12 +52,38 @@ grammar test
     @Test
     fun baseEmbedDiagnostics() {
         val actualDiagnostics = mutableListOf<AntlrDiagnostic>()
-
         val lexer = AntlrLexer(baseRefinedInput) { actualDiagnostics.add(it) }
         val parser = AntlrParser(AntlrLexerTokenStream(lexer)) { actualDiagnostics.add(it) }
         parser.parseGrammar()
 
         assertEquals(baseInput, CustomDiagnosticsHandler().embed(baseRefinedInput, actualDiagnostics))
+    }
+
+    @Test
+    fun diagnosticInStringLiteral() {
+        val input = """
+grammar test;
+a : '/*!InvalidEscaping!*/\u/*!*/';
+        """.trimIndent()
+
+        val refinedInput = """
+grammar test;
+a : '\u';
+        """.trimIndent()
+
+        val handler = CustomDiagnosticsHandler()
+        val (_, actualRefinedInput) = handler.extract(input)
+
+        assertEquals(refinedInput, actualRefinedInput)
+
+        val actualDiagnostics = buildList {
+            val lexer = AntlrLexer(refinedInput) { add(it) }
+            AntlrParser(AntlrLexerTokenStream(lexer)) { add(it) }.parseGrammar()
+        }
+
+        val actualInput = handler.embed(actualRefinedInput, actualDiagnostics)
+
+        assertEquals(input, actualInput)
     }
 
     @Test
@@ -88,6 +115,11 @@ grammar test /*!UnrecognizedToken!*/`/*!*//*!*/
 
     private fun checkDiagnostic(expectedDiagnostic: AntlrDiagnostic, actualDiagnostic: AntlrDiagnostic) {
         assertEquals(expectedDiagnostic::class, actualDiagnostic::class)
+
+        if (expectedDiagnostic is LexerDiagnostic) {
+            assertEquals(expectedDiagnostic.value, (actualDiagnostic as UnrecognizedToken).value)
+        }
+
         assertEquals(expectedDiagnostic.severity, actualDiagnostic.severity)
         assertEquals(expectedDiagnostic.sourceInterval, actualDiagnostic.sourceInterval)
     }
