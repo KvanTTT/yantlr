@@ -2,6 +2,7 @@ package helpers
 
 import AntlrDiagnostic
 import ExtraToken
+import InvalidEscaping
 import MissingToken
 import SourceInterval
 import UnrecognizedToken
@@ -44,7 +45,7 @@ class CustomDiagnosticsHandler {
                 } else {
                     val lastDescriptorStart = descriptorStartStack.removeLastOrNull()
                         ?: error("Unexpected diagnostic end marker at ${lineIndexes.getLineColumn(first)}")
-                    diagnostics.add(finalizeDiagnostic(lastDescriptorStart, length))
+                    diagnostics.add(finalizeDiagnostic(lastDescriptorStart, length, this))
                 }
 
                 offset = match.range.last + 1
@@ -111,6 +112,7 @@ class CustomDiagnosticsHandler {
     ): DescriptorStart? {
         val type: KClass<*> = when (diagnosticMarker) {
             UnrecognizedToken::class.simpleName -> UnrecognizedToken::class
+            InvalidEscaping::class.simpleName -> InvalidEscaping::class
             ExtraToken::class.simpleName -> ExtraToken::class
             MissingToken::class.simpleName -> MissingToken::class
             else -> return null
@@ -119,16 +121,18 @@ class CustomDiagnosticsHandler {
         return DescriptorStart(type, offset, refinedOffset)
     }
 
-    private fun finalizeDiagnostic(descriptorStart: DescriptorStart, refinedEndOffset: Int): AntlrDiagnostic {
+    private fun finalizeDiagnostic(descriptorStart: DescriptorStart, refinedEndOffset: Int, refinedInput: StringBuilder): AntlrDiagnostic {
         val sourceInterval = SourceInterval(descriptorStart.refinedOffset, refinedEndOffset - descriptorStart.refinedOffset)
 
         return when (descriptorStart.type) {
-            UnrecognizedToken::class -> UnrecognizedToken(AntlrToken(
-                    AntlrTokenType.Error,
-                    descriptorStart.refinedOffset,
-                refinedEndOffset - descriptorStart.refinedOffset,
-                    AntlrTokenChannel.Error),
-                sourceInterval)
+            UnrecognizedToken::class -> UnrecognizedToken(
+                refinedInput.substring(descriptorStart.refinedOffset, refinedEndOffset),
+                sourceInterval
+            )
+            InvalidEscaping::class -> InvalidEscaping(
+                refinedInput.substring(descriptorStart.refinedOffset, refinedEndOffset),
+                sourceInterval
+            )
             ExtraToken::class -> ExtraToken(sourceInterval)
             MissingToken::class -> MissingToken(sourceInterval)
             else -> error("Unknown diagnostic type `${descriptorStart.type}`")

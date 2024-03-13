@@ -1,8 +1,10 @@
-import parser.AntlrToken
-
 abstract class AntlrDiagnostic(val severity: DiagnosticSeverity, val sourceInterval: SourceInterval)
 
-class UnrecognizedToken(val token: AntlrToken, sourceInterval: SourceInterval) : AntlrDiagnostic(DiagnosticSeverity.Error, sourceInterval)
+abstract class LexerDiagnostic(val value: String, severity: DiagnosticSeverity, sourceInterval: SourceInterval) : AntlrDiagnostic(severity, sourceInterval)
+
+class UnrecognizedToken(value: String, sourceInterval: SourceInterval) : LexerDiagnostic(value, DiagnosticSeverity.Error, sourceInterval)
+
+class InvalidEscaping(value: String, sourceInterval: SourceInterval) : LexerDiagnostic(value, DiagnosticSeverity.Error, sourceInterval)
 
 abstract class ParserDiagnostic(severity: DiagnosticSeverity, sourceInterval: SourceInterval) : AntlrDiagnostic(severity, sourceInterval)
 
