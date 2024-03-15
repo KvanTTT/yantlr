@@ -26,7 +26,7 @@ grammar test
 
     @Test
     fun baseExtractDiagnostics() {
-        val extractionResult = CustomDiagnosticsHandler().extract(baseInput)
+        val extractionResult = CustomDiagnosticsHandler.extract(baseInput)
 
         assertEquals(baseRefinedInput, extractionResult.refinedInput)
 
@@ -56,7 +56,7 @@ grammar test
         val parser = AntlrParser(AntlrLexerTokenStream(lexer)) { actualDiagnostics.add(it) }
         parser.parseGrammar()
 
-        assertEquals(baseInput, CustomDiagnosticsHandler().embed(baseRefinedInput, actualDiagnostics))
+        assertEquals(baseInput, CustomDiagnosticsHandler.embed(baseRefinedInput, actualDiagnostics))
     }
 
     @Test
@@ -71,8 +71,7 @@ grammar test;
 a : '\u';
         """.trimIndent()
 
-        val handler = CustomDiagnosticsHandler()
-        val (_, actualRefinedInput) = handler.extract(input)
+        val (_, actualRefinedInput) = CustomDiagnosticsHandler.extract(input)
 
         assertEquals(refinedInput, actualRefinedInput)
 
@@ -81,14 +80,14 @@ a : '\u';
             AntlrParser(AntlrLexerTokenStream(lexer)) { add(it) }.parseGrammar()
         }
 
-        val actualInput = handler.embed(actualRefinedInput, actualDiagnostics)
+        val actualInput = CustomDiagnosticsHandler.embed(actualRefinedInput, actualDiagnostics)
 
         assertEquals(input, actualInput)
     }
 
     @Test
     fun unknownDiagnosticDescriptor() {
-        val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler().extract("""
+        val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler.extract("""
 grammar test /*!IncorrectDescriptor!*/`/*!*/
         """.trimIndent())
         }
@@ -97,7 +96,7 @@ grammar test /*!IncorrectDescriptor!*/`/*!*/
 
     @Test
     fun unclosedDiagnosticDescriptor() {
-        val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler().extract("""
+        val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler.extract("""
 grammar test /*!UnrecognizedToken!*/`
         """.trimIndent())
         }
@@ -106,7 +105,7 @@ grammar test /*!UnrecognizedToken!*/`
 
     @Test
     fun unexpectedDiagnosticEndMarker() {
-        val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler().extract("""
+        val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler.extract("""
 grammar test /*!UnrecognizedToken!*/`/*!*//*!*/
         """.trimIndent())
         }
