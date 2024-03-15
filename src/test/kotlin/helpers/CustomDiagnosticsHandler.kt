@@ -9,15 +9,17 @@ import UnrecognizedToken
 import parser.*
 import kotlin.reflect.KClass
 
-class CustomDiagnosticsHandler {
-    companion object {
-        private const val DIAGNOSTIC_NAME_MARKER = "diagnosticName"
-        private const val DIAGNOSTIC_BEGIN_MARKER = "/*!"
-        private const val DIAGNOSTIC_START_END_MARKER = "!*/"
-        private const val DIAGNOSTIC_END_END = "*/"
+object CustomDiagnosticsHandler {
+    private const val DIAGNOSTIC_NAME_MARKER = "diagnosticName"
+    private const val DIAGNOSTIC_BEGIN_MARKER = "/*!"
+    private const val DIAGNOSTIC_START_END_MARKER = "!*/"
+    private const val DIAGNOSTIC_END_END = "*/"
 
-        val markerRegex = Regex("""${Regex.escape(DIAGNOSTIC_BEGIN_MARKER)}(${Regex.escape(DIAGNOSTIC_END_END)}|(?<$DIAGNOSTIC_NAME_MARKER>.+?)${Regex.escape(DIAGNOSTIC_START_END_MARKER)})""")
-    }
+    private val markerRegex = Regex(
+        """${Regex.escape(DIAGNOSTIC_BEGIN_MARKER)}(${Regex.escape(DIAGNOSTIC_END_END)}|(?<$DIAGNOSTIC_NAME_MARKER>.+?)${
+            Regex.escape(DIAGNOSTIC_START_END_MARKER)
+        })"""
+    )
 
     private data class DescriptorStart(val type: KClass<*>, val offset: Int, val refinedOffset: Int)
 
@@ -39,8 +41,8 @@ class CustomDiagnosticsHandler {
 
                 val diagnosticName = match.groups[DIAGNOSTIC_NAME_MARKER]
                 if (diagnosticName != null) {
-                    val diagnosticStart = initDiagnostic(diagnosticName.value, first, length) ?:
-                        error("Unknown diagnostic type `${diagnosticName.value}` at ${lineIndexes.getLineColumn(first)}")
+                    val diagnosticStart = initDiagnostic(diagnosticName.value, first, length)
+                        ?: error("Unknown diagnostic type `${diagnosticName.value}` at ${lineIndexes.getLineColumn(first)}")
                     descriptorStartStack.add(diagnosticStart)
                 } else {
                     val lastDescriptorStart = descriptorStartStack.removeLastOrNull()
@@ -55,7 +57,13 @@ class CustomDiagnosticsHandler {
         }
 
         for (diagnosticStart in descriptorStartStack) {
-            error("Unclosed diagnostic descriptor `${diagnosticStart.type.simpleName}` at ${lineIndexes.getLineColumn(diagnosticStart.offset)}")
+            error(
+                "Unclosed diagnostic descriptor `${diagnosticStart.type.simpleName}` at ${
+                    lineIndexes.getLineColumn(
+                        diagnosticStart.offset
+                    )
+                }"
+            )
         }
 
         return ExtractionResult(diagnostics, refinedInput)
@@ -66,21 +74,15 @@ class CustomDiagnosticsHandler {
 
         val offsetToDiagnosticMap = linkedMapOf<Int, MutableList<DiagnosticInfo>>()
 
-        for (diagnostic in diagnostics.sortedBy { it.sourceInterval.offset }) {
-            val diagnosticStartList = offsetToDiagnosticMap[diagnostic.sourceInterval.offset] ?: run {
-                mutableListOf<DiagnosticInfo>().also {
-                    offsetToDiagnosticMap[diagnostic.sourceInterval.offset] = it
-                }
+        fun getDiagnosticsInfos(offset: Int): MutableList<DiagnosticInfo> =
+            offsetToDiagnosticMap[offset] ?: run {
+                mutableListOf<DiagnosticInfo>().also { offsetToDiagnosticMap[offset] = it }
             }
-            diagnosticStartList.add(DiagnosticInfo(diagnostic, start = true))
 
-            val end = diagnostic.sourceInterval.offset + diagnostic.sourceInterval.length
-            val diagnosticEndList = offsetToDiagnosticMap[end] ?: run {
-                mutableListOf<DiagnosticInfo>().also {
-                    offsetToDiagnosticMap[end] = it
-                }
-            }
-            diagnosticEndList.add(DiagnosticInfo(diagnostic, start = false))
+        for (diagnostic in diagnostics.sortedBy { it.sourceInterval.offset }) {
+            val interval = diagnostic.sourceInterval
+            getDiagnosticsInfos(interval.offset).add(DiagnosticInfo(diagnostic, start = true))
+            getDiagnosticsInfos(interval.end()).add(DiagnosticInfo(diagnostic, start = false))
         }
 
         var lastOffset = 0
@@ -121,18 +123,25 @@ class CustomDiagnosticsHandler {
         return DescriptorStart(type, offset, refinedOffset)
     }
 
-    private fun finalizeDiagnostic(descriptorStart: DescriptorStart, refinedEndOffset: Int, refinedInput: StringBuilder): AntlrDiagnostic {
-        val sourceInterval = SourceInterval(descriptorStart.refinedOffset, refinedEndOffset - descriptorStart.refinedOffset)
+    private fun finalizeDiagnostic(
+        descriptorStart: DescriptorStart,
+        refinedEndOffset: Int,
+        refinedInput: StringBuilder
+    ): AntlrDiagnostic {
+        val sourceInterval =
+            SourceInterval(descriptorStart.refinedOffset, refinedEndOffset - descriptorStart.refinedOffset)
 
         return when (descriptorStart.type) {
             UnrecognizedToken::class -> UnrecognizedToken(
                 refinedInput.substring(descriptorStart.refinedOffset, refinedEndOffset),
                 sourceInterval
             )
+
             InvalidEscaping::class -> InvalidEscaping(
                 refinedInput.substring(descriptorStart.refinedOffset, refinedEndOffset),
                 sourceInterval
             )
+
             ExtraToken::class -> ExtraToken(sourceInterval)
             MissingToken::class -> MissingToken(sourceInterval)
             else -> error("Unknown diagnostic type `${descriptorStart.type}`")
