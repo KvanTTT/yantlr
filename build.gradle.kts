@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.0.0-Beta4"
+    id("org.jetbrains.intellij") version "1.13.0"
     application
 }
 
@@ -15,12 +16,16 @@ dependencies {
     testImplementation(kotlin("reflect"))
 }
 
+intellij {
+    version.set("2023.1")
+}
+
 tasks.test {
     useJUnitPlatform()
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 application {

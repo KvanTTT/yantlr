@@ -1,3 +1,4 @@
+import com.intellij.rt.execution.junit.FileComparisonFailure
 import helpers.CustomDiagnosticsHandler
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest.dynamicTest
@@ -9,7 +10,6 @@ import parser.AntlrLexerTokenStream
 import parser.AntlrParser
 import java.io.File
 import java.nio.file.Paths
-import kotlin.test.assertEquals
 
 object Grammar {
     @TestFactory
@@ -26,25 +26,23 @@ object Grammar {
                         AntlrParser(AntlrLexerTokenStream(lexer)) { add(it) }.parseGrammar()
                     }
 
-                    val inputWithDiagnostics = CustomDiagnosticsHandler.embed(refinedInput, actualDiagnostics)
+                    val inputWithActualDiagnostics = CustomDiagnosticsHandler.embed(refinedInput, actualDiagnostics)
 
-                    assertEquals(input, inputWithDiagnostics)
+                    if (input != inputWithActualDiagnostics) {
+                        throw FileComparisonFailure(
+                            "Diagnostics are not equal.",
+                            input,
+                            inputWithActualDiagnostics,
+                            grammarFile.absolutePath
+                        )
+                    }
                 })
             }
         }.iterator()
     }
 
     private fun getGrammarFiles(): Sequence<File> {
-        var path = this::class.java.protectionDomain.codeSource.location.path
-        if (isWindows()) {
-            path = path.replaceFirst("/", "")
-        }
-        val resourcesPath = Paths.get(path, "..", "..", "..", "..", "src", "test", "resources").normalize().toAbsolutePath()
-
+        val resourcesPath = Paths.get(System.getProperty("user.dir"), "src", "test", "resources")
         return resourcesPath.toFile().walk().filter { it.isFile && it.extension == "g4" }
-    }
-
-    private fun isWindows(): Boolean {
-        return System.getProperty("os.name").contains("Windows")
     }
 }
