@@ -17,7 +17,7 @@ dependencies {
 }
 
 intellij {
-    version.set("2023.1")
+    version.set("2023.3")
 }
 
 tasks.test {
