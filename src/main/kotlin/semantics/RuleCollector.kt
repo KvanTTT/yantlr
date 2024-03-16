@@ -1,9 +1,14 @@
 package semantics
 
 import AntlrTreeVisitor
+import RuleRedefinition
+import SemanticsDiagnostics
 import parser.*
 
-class RuleCollector(val lexer: AntlrLexer) : AntlrTreeVisitor<Unit>() {
+class RuleCollector(
+    val lexer: AntlrLexer,
+    val diagnosticsReporter: ((SemanticsDiagnostics) -> Unit)? = null
+) : AntlrTreeVisitor<Unit>() {
     private val rules = sortedMapOf<String, Rule>()
 
     fun collect(grammarNode: GrammarNode): Map<String, Rule> {
@@ -20,9 +25,13 @@ class RuleCollector(val lexer: AntlrLexer) : AntlrTreeVisitor<Unit>() {
 
     override fun visitRuleNode(node: RuleNode) {
         val id: String = lexer.getTokenValue(node.lexerOrParserIdToken)
-        if (rules.containsKey(id)) {
-            // TODO: Name collision checking
-            throw IllegalStateException("Rule $id already exists")
+        val existingRule = rules[id]
+        if (existingRule != null) {
+            diagnosticsReporter?.invoke(RuleRedefinition(
+                id,
+                existingRule.ruleNode.lexerOrParserIdToken.getInterval(),
+                node.lexerOrParserIdToken.getInterval()
+            ))
         } else {
             rules[id] = Rule(id, node.lexerOrParserIdToken.type == AntlrTokenType.LexerId, node)
         }

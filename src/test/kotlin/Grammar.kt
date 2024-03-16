@@ -5,9 +5,6 @@ import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import parser.AntlrLexer
-import parser.AntlrLexerTokenStream
-import parser.AntlrParser
 import java.io.File
 import java.nio.file.Paths
 
@@ -22,8 +19,7 @@ object Grammar {
                     val refinedInput = CustomDiagnosticsHandler.extract(input).refinedInput
 
                     val actualDiagnostics = buildList {
-                        val lexer = AntlrLexer(refinedInput) { add(it) }
-                        AntlrParser(AntlrLexerTokenStream(lexer)) { add(it) }.parseGrammar()
+                        GrammarPipeline.process(refinedInput) { add(it) }
                     }
 
                     val inputWithActualDiagnostics = CustomDiagnosticsHandler.embed(refinedInput, actualDiagnostics)

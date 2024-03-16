@@ -2,6 +2,7 @@ package parser
 
 import InvalidEscaping
 import LexerDiagnostic
+import LineColumn
 import UnrecognizedToken
 
 class AntlrLexer(
