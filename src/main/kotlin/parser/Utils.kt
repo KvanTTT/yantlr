@@ -1,5 +1,7 @@
 package parser
 
+import LineColumn
+
 fun List<Int>.getLineColumn(offset: Int): LineColumn {
     binarySearch { it.compareTo(offset) }.let { lineIndex ->
         return if (lineIndex < 0) {
