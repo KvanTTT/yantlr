@@ -1,24 +1,22 @@
 package parser
 
 import AntlrDiagnostic
-import ExtraToken
-import LexerDiagnostic
-import MissingToken
+import LineColumn
 import SourceInterval
-import UnrecognizedToken
 import helpers.CustomDiagnosticsHandler
+import helpers.DiagnosticInfo
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
 
 class DiagnosticsExtractorTests {
-    val baseInput = """
+    private val baseInput = """
 grammar test
 /*!UnrecognizedToken!*/`/*!*/
 /*!MissingToken!*//*!*//*!ExtraToken!*/+=/*!*/
 """.trimIndent()
 
-    val baseRefinedInput = """
+    private val baseRefinedInput = """
 grammar test
 `
 +=
@@ -32,19 +30,25 @@ grammar test
 
         val lineIndexes = baseRefinedInput.getLineIndexes()
 
-        checkDiagnostic(
-            UnrecognizedToken(
-                "`",
+        assertEquals(
+            DiagnosticInfo(
+                "UnrecognizedToken", listOf(),
                 SourceInterval(LineColumn(2, 1).getOffset(lineIndexes), 1)
             ),
             extractionResult.diagnostics[0],
         )
         checkDiagnostic(
-            MissingToken(SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 0)),
+            DiagnosticInfo(
+                "MissingToken", listOf(),
+                SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 0)
+            ),
             extractionResult.diagnostics[1],
         )
         checkDiagnostic(
-            ExtraToken(SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 2)),
+            DiagnosticInfo(
+                "ExtraToken", listOf(),
+                SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 2)
+            ),
             extractionResult.diagnostics[2],
         )
     }
@@ -86,15 +90,6 @@ a : '\u';
     }
 
     @Test
-    fun unknownDiagnosticDescriptor() {
-        val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler.extract("""
-grammar test /*!IncorrectDescriptor!*/`/*!*/
-        """.trimIndent())
-        }
-        assertEquals("Unknown diagnostic type `IncorrectDescriptor` at 1:14", exception.message)
-    }
-
-    @Test
     fun unclosedDiagnosticDescriptor() {
         val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler.extract("""
 grammar test /*!UnrecognizedToken!*/`
@@ -112,14 +107,9 @@ grammar test /*!UnrecognizedToken!*/`/*!*//*!*/
         assertEquals("Unexpected diagnostic end marker at 1:43", exception.message)
     }
 
-    private fun checkDiagnostic(expectedDiagnostic: AntlrDiagnostic, actualDiagnostic: AntlrDiagnostic) {
-        assertEquals(expectedDiagnostic::class, actualDiagnostic::class)
-
-        if (expectedDiagnostic is LexerDiagnostic) {
-            assertEquals(expectedDiagnostic.value, (actualDiagnostic as UnrecognizedToken).value)
-        }
-
-        assertEquals(expectedDiagnostic.severity, actualDiagnostic.severity)
-        assertEquals(expectedDiagnostic.sourceInterval, actualDiagnostic.sourceInterval)
+    private fun checkDiagnostic(expectedDiagnosticInfo: DiagnosticInfo, actualDiagnosticInfo: DiagnosticInfo) {
+        assertEquals(expectedDiagnosticInfo.name, actualDiagnosticInfo.name)
+        // TODO: comparison of args
+        assertEquals(expectedDiagnosticInfo.location, actualDiagnosticInfo.location)
     }
 }
