@@ -5,6 +5,7 @@ import LineColumn
 import SourceInterval
 import helpers.CustomDiagnosticsHandler
 import helpers.DiagnosticInfo
+import helpers.ExtractionResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
@@ -30,26 +31,28 @@ grammar test
 
         val lineIndexes = baseRefinedInput.getLineIndexes()
 
+        val diagnostics = extractionResult.diagnostics.flatMap { it.value }
+
         assertEquals(
             DiagnosticInfo(
-                "UnrecognizedToken", listOf(),
+                "UnrecognizedToken", null,
                 SourceInterval(LineColumn(2, 1).getOffset(lineIndexes), 1)
             ),
-            extractionResult.diagnostics[0],
+            diagnostics[0],
         )
         checkDiagnostic(
             DiagnosticInfo(
-                "MissingToken", listOf(),
+                "MissingToken", null,
                 SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 0)
             ),
-            extractionResult.diagnostics[1],
+            diagnostics[1],
         )
         checkDiagnostic(
             DiagnosticInfo(
-                "ExtraToken", listOf(),
+                "ExtraToken", null,
                 SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 2)
             ),
-            extractionResult.diagnostics[2],
+            diagnostics[2],
         )
     }
 
@@ -60,7 +63,8 @@ grammar test
         val parser = AntlrParser(AntlrLexerTokenStream(lexer)) { actualDiagnostics.add(it) }
         parser.parseGrammar()
 
-        assertEquals(baseInput, CustomDiagnosticsHandler.embed(baseRefinedInput, actualDiagnostics))
+        assertEquals(baseInput, CustomDiagnosticsHandler.embed(
+            ExtractionResult(emptyMap(), baseRefinedInput), actualDiagnostics))
     }
 
     @Test
@@ -75,16 +79,16 @@ grammar test;
 a : '\u';
         """.trimIndent()
 
-        val (_, actualRefinedInput) = CustomDiagnosticsHandler.extract(input)
+        val extractionResult = CustomDiagnosticsHandler.extract(input)
 
-        assertEquals(refinedInput, actualRefinedInput)
+        assertEquals(refinedInput, extractionResult.refinedInput)
 
         val actualDiagnostics = buildList {
             val lexer = AntlrLexer(refinedInput) { add(it) }
             AntlrParser(AntlrLexerTokenStream(lexer)) { add(it) }.parseGrammar()
         }
 
-        val actualInput = CustomDiagnosticsHandler.embed(actualRefinedInput, actualDiagnostics)
+        val actualInput = CustomDiagnosticsHandler.embed(extractionResult, actualDiagnostics)
 
         assertEquals(input, actualInput)
     }
