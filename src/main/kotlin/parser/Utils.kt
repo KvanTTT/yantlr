@@ -2,11 +2,11 @@ package parser
 
 import LineColumn
 
-fun List<Int>.getLineColumn(offset: Int): LineColumn {
-    binarySearch { it.compareTo(offset) }.let { lineIndex ->
+fun Int.getLineColumn(lineIndexes: List<Int>): LineColumn {
+    lineIndexes.binarySearch { it.compareTo(this) }.let { lineIndex ->
         return if (lineIndex < 0) {
             val line = -lineIndex - 2
-            LineColumn(line + 1, offset - this[line] + 1)
+            LineColumn(line + 1, this - lineIndexes[line] + 1)
         } else {
             LineColumn(lineIndex + 1, 1)
         }
@@ -27,7 +27,7 @@ fun String.getLineIndexes(): List<Int> {
         add(0)
         for (i in this@getLineIndexes.indices) {
             if (this@getLineIndexes[i].let {
-                    it == '\r' && i + 1 < length && this@getLineIndexes[i + 1] == '\n' || it == '\n'
+                    it == '\r' && i + 1 < length && this@getLineIndexes[i + 1] != '\n' || it == '\n'
                 }) {
                 add(i + 1)
             }
