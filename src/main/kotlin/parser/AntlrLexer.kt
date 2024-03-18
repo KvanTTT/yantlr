@@ -80,7 +80,7 @@ class AntlrLexer(
         }
     }
 
-    fun getLineColumn(offset: Int): LineColumn = lineIndexes.getLineColumn(offset)
+    fun getLineColumn(offset: Int): LineColumn = offset.getLineColumn(lineIndexes)
 
     fun getOffset(lineColumn: LineColumn): Int = lineColumn.getOffset(lineIndexes)
 
