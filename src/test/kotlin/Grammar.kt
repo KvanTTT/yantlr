@@ -16,13 +16,13 @@ object Grammar {
             for (grammarFile in getGrammarFiles()) {
                 yield(dynamicTest(grammarFile.nameWithoutExtension, grammarFile.toURI()) {
                     val input = grammarFile.readText()
-                    val refinedInput = CustomDiagnosticsHandler.extract(input).refinedInput
+                    val extractionResult = CustomDiagnosticsHandler.extract(input)
 
                     val actualDiagnostics = buildList {
-                        GrammarPipeline.process(refinedInput) { add(it) }
+                        GrammarPipeline.process(extractionResult.refinedInput) { add(it) }
                     }
 
-                    val inputWithActualDiagnostics = CustomDiagnosticsHandler.embed(refinedInput, actualDiagnostics)
+                    val inputWithActualDiagnostics = CustomDiagnosticsHandler.embed(extractionResult, actualDiagnostics)
 
                     if (input != inputWithActualDiagnostics) {
                         throw FileComparisonFailure(
