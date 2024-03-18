@@ -13,8 +13,8 @@ import kotlin.test.Test
 class DiagnosticsExtractorTests {
     private val baseInput = """
 grammar test
-/*!UnrecognizedToken!*/`/*!*/
-/*!MissingToken!*//*!*//*!ExtraToken!*/+=/*!*/
+/*❗UnrecognizedToken❗*/`/*❗*/
+/*❗MissingToken❗*//*❗*//*❗ExtraToken❗*/+=/*❗*/
 """.trimIndent()
 
     private val baseRefinedInput = """
@@ -71,7 +71,7 @@ grammar test
     fun diagnosticInStringLiteral() {
         val input = """
 grammar test;
-a : '/*!InvalidEscaping!*/\u/*!*/';
+a : '/*❗InvalidEscaping❗*/\u/*❗*/';
         """.trimIndent()
 
         val refinedInput = """
@@ -96,7 +96,7 @@ a : '\u';
     @Test
     fun unclosedDiagnosticDescriptor() {
         val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler.extract("""
-grammar test /*!UnrecognizedToken!*/`
+grammar test /*❗UnrecognizedToken❗*/`
         """.trimIndent())
         }
         assertEquals("Unclosed diagnostic descriptor `UnrecognizedToken` at 1:14", exception.message)
@@ -105,7 +105,7 @@ grammar test /*!UnrecognizedToken!*/`
     @Test
     fun unexpectedDiagnosticEndMarker() {
         val exception = assertThrows<IllegalStateException> { CustomDiagnosticsHandler.extract("""
-grammar test /*!UnrecognizedToken!*/`/*!*//*!*/
+grammar test /*❗UnrecognizedToken❗*/`/*❗*//*❗*/
         """.trimIndent())
         }
         assertEquals("Unexpected diagnostic end marker at 1:43", exception.message)
