@@ -14,6 +14,7 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     testImplementation(kotlin("reflect"))
+    testRuntimeOnly("com.jetbrains.intellij.markdown:markdown-core:233.14808.21")
 }
 
 intellij {
