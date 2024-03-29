@@ -1,3 +1,3 @@
 grammar grammarWithSyntaxErrors
-/*❗UnrecognizedToken❗*/`/*❗*/
-/*❗MissingToken❗*//*❗*//*❗ExtraToken❗*/+/*❗*/
+/*❗UnrecognizedToken*/`/*❗*/
+/*❗MissingToken*//*❗*//*❗ExtraToken*/+/*❗*/

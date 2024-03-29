@@ -12,7 +12,7 @@ object CustomDiagnosticsHandler {
     private const val DIAGNOSTIC_NAME_MARKER = "diagnosticName"
     private const val DIAGNOSTIC_ARGS = "args"
     private const val DIAGNOSTIC_BEGIN_MARKER = "/*❗"
-    private const val DIAGNOSTIC_START_END_MARKER = "❗*/"
+    private const val DIAGNOSTIC_START_END_MARKER = "*/"
     private const val DIAGNOSTIC_END_END = "*/"
 
     private val markerRegex = Regex(
