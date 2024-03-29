@@ -1,17 +1,22 @@
 package helpers.testDescriptors
 
+import SourceInterval
 import java.io.File
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
 
-class TestDescriptorExtractor private constructor(file: File) {
+class TestDescriptorExtractor private constructor(
+    private val file: File,
+    private val diagnosticReporter: ((TestDescriptorDiagnostic) -> Unit)? = null
+) {
     companion object {
         private val testDescriptorProperties = TestDescriptor::class.declaredMemberProperties.associateBy { it.name }
         private val lineBreakChars = charArrayOf('\r', '\n')
         private val whitespaceChars = lineBreakChars + charArrayOf(' ', '\t')
+        private const val NOTES_NAME = "notes"
 
-        fun extract(file: File): TestDescriptor {
-            return TestDescriptorExtractor(file).extract(file)
+        fun extract(file: File, diagnosticReporter: ((TestDescriptorDiagnostic) -> Unit)? = null): TestDescriptor {
+            return TestDescriptorExtractor(file, diagnosticReporter).extract()
         }
     }
 
@@ -26,7 +31,7 @@ class TestDescriptorExtractor private constructor(file: File) {
     private var propertyValue: Any? = null
     private var textType: TextType? = null
 
-    fun extract(file: File): TestDescriptor {
+    fun extract(): TestDescriptor {
         val lineOffsets = mutableListOf<Int>()
 
         var lineStartOffset = 0
@@ -61,7 +66,7 @@ class TestDescriptorExtractor private constructor(file: File) {
                 when {
                     firstChar == '#' -> {
                         finalizeTextValue(elementStartOffset, skipBackWhitespaces(lineStartOffset - 1))
-                        processHeader(lineValue)
+                        processHeader(lineStartOffset, lineEndOffset)
                     }
                     firstChar == '`' && checkCodeFence(lineValue) -> {
                         finalizeTextValue(elementStartOffset, skipBackWhitespaces(lineStartOffset - 1))
@@ -85,13 +90,21 @@ class TestDescriptorExtractor private constructor(file: File) {
         finalizeTextValue(input.length, input.length)
         finalizePreviousProperty()
 
-        // TODO: report missing properties
         @Suppress("UNCHECKED_CAST")
         return TestDescriptor(
-            name = file.nameWithoutExtension,
-            notes = getPropertyValue("notes") as PropertyValue?,
-            grammars = getPropertyValue("grammars") as List<PropertyValue>,
-            input = getPropertyValue("input") as PropertyValue?,
+            name = getPropertyValue("name") as? String ?: file.nameWithoutExtension,
+            notes = getPropertyValue(NOTES_NAME) as? List<PropertyValue> ?: emptyList(),
+            grammars = getPropertyValue("grammars") as? List<PropertyValue> ?: run {
+                diagnosticReporter?.invoke(
+                    TestDescriptorDiagnostic(
+                        TestDescriptorDiagnosticType.MissingProperty,
+                        "Grammars",
+                        SourceInterval(input.length, 0)
+                    )
+                )
+                emptyList()
+            },
+            input = getPropertyValue("input") as? List<PropertyValue> ?: emptyList(),
         )
     }
 
@@ -105,17 +118,35 @@ class TestDescriptorExtractor private constructor(file: File) {
         return currentOffset + 1
     }
 
-    private fun processHeader(lineValue: CharSequence) {
+    private fun processHeader(lineStart: Int, lineEnd: Int) {
         finalizePreviousProperty()
 
-        val headerValue = lineValue.dropWhile { it == '#' }.trim().toString().lowercase()
-        // TODO: report not found property
-        val descriptorProperty = testDescriptorProperties[headerValue]!!
-        if (!propertyValues.containsKey(descriptorProperty)) {
-            property = descriptorProperty
-            propertyValue = null
+        val subSequence = input.subSequence(lineStart, lineEnd)
+        val headerValue = subSequence.dropWhile { it == '#' }.trim().toString()
+
+        val descriptorProperty = testDescriptorProperties[headerValue.lowercase()]
+
+        if (descriptorProperty != null) {
+            if (!propertyValues.containsKey(descriptorProperty)) {
+                property = descriptorProperty
+                propertyValue = null
+            } else {
+                diagnosticReporter?.invoke(
+                    TestDescriptorDiagnostic(
+                        TestDescriptorDiagnosticType.DuplicatedProperty,
+                        headerValue,
+                        SourceInterval(lineStart, lineEnd)
+                    )
+                )
+            }
         } else {
-            // TODO: report duplicate property
+            diagnosticReporter?.invoke(
+                TestDescriptorDiagnostic(
+                    TestDescriptorDiagnosticType.UnknownProperty,
+                    headerValue,
+                    SourceInterval(lineStart, lineEnd)
+                )
+            )
         }
     }
 
@@ -129,31 +160,41 @@ class TestDescriptorExtractor private constructor(file: File) {
     @Suppress("UNCHECKED_CAST")
     private fun finalizeTextValue(startOffset: Int, endOffset: Int) {
         if (textType == null) return
-        textType = null
 
-        val currentProperty = property
-        if (currentProperty == null) {
-            if (propertyValue != null) {
-                // TODO: report missing descriptor property
-            }
-            return
+        val currentProperty = property ?: run {
+            // Use `Notes` property for first headless paragraph
+            testDescriptorProperties.getValue(NOTES_NAME).also { property = it }
         }
 
         val currentPropertyValue = TextPropertyValue(input.subSequence(startOffset, endOffset), startOffset)
-        if (currentProperty.returnType.classifier == List::class) {
-            val value = (propertyValue ?: run {
-                propertyValue = mutableListOf<PropertyValue>()
-                propertyValue
-            }) as MutableList<PropertyValue>
-            value.add(currentPropertyValue)
-        } else {
-            val value = propertyValue as? PropertyValue
-            if (value != null) {
-                // TODO: report duplicated value
-            } else {
-                propertyValue = currentPropertyValue
+        when (currentProperty.returnType.classifier) {
+            List::class -> {
+                val value = (propertyValue ?: run {
+                    propertyValue = mutableListOf<PropertyValue>()
+                    propertyValue
+                }) as MutableList<PropertyValue>
+                value.add(currentPropertyValue)
+            }
+            String::class -> {
+                val value = propertyValue as? String
+                if (value == null) {
+                    propertyValue = currentPropertyValue.value.toString()
+                } else {
+                    diagnosticReporter?.invoke(
+                        TestDescriptorDiagnostic(
+                            TestDescriptorDiagnosticType.DuplicatedValue,
+                            currentProperty.name,
+                            SourceInterval(startOffset, endOffset)
+                        )
+                    )
+                }
+            }
+            else -> {
+                error("Unexpected property type: ${currentProperty.returnType.classifier}")
             }
         }
+
+        textType = null
     }
 
     private fun finalizePreviousProperty() {
