@@ -1,4 +1,4 @@
-abstract class AntlrDiagnostic(val severity: DiagnosticSeverity, val sourceInterval: SourceInterval)
+abstract class AntlrDiagnostic(val severity: DiagnosticSeverity, sourceInterval: SourceInterval) : Diagnostic(sourceInterval)
 
 abstract class LexerDiagnostic(val value: String, severity: DiagnosticSeverity, sourceInterval: SourceInterval) : AntlrDiagnostic(severity, sourceInterval)
 

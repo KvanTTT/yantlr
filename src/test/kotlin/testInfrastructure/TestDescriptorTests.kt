@@ -1,6 +1,7 @@
 package testInfrastructure
 
 import LineColumn
+import helpers.resourcesFile
 import helpers.testDescriptors.TestDescriptor
 import helpers.testDescriptors.TestDescriptorDiagnostic
 import helpers.testDescriptors.TestDescriptorDiagnosticType
@@ -12,8 +13,6 @@ import java.nio.file.Paths
 import kotlin.test.assertEquals
 
 object TestDescriptorTests {
-    private val resourcesPath = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toFile().absolutePath
-
     @Test
     fun twoGrammars() {
         val (descriptor, _, lineOffsets) = parseTestDescriptor("TwoGrammars.md")
@@ -63,7 +62,7 @@ object TestDescriptorTests {
         val diagnostic = diagnostics.single()
         assertEquals(TestDescriptorDiagnosticType.UnknownProperty, diagnostic.type)
         assertEquals("UnknownProperty", diagnostic.arg)
-        assertEquals(LineColumn(5, 1), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
+        assertEquals(LineColumn(5, 3), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
     }
 
     @Test
@@ -73,7 +72,7 @@ object TestDescriptorTests {
         val diagnostic = diagnostics.single()
         assertEquals(TestDescriptorDiagnosticType.DuplicatedProperty, diagnostic.type)
         assertEquals("Grammars", diagnostic.arg)
-        assertEquals(LineColumn(12, 1), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
+        assertEquals(LineColumn(12, 3), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
     }
 
     @Test
@@ -97,9 +96,9 @@ object TestDescriptorTests {
     }
 
     private fun parseTestDescriptor(name: String): Triple<TestDescriptor, List<TestDescriptorDiagnostic>, List<Int>> {
-        val file = Paths.get(resourcesPath, "TestDescriptors", name).toFile()
+        val file = Paths.get(resourcesFile.toString(), "TestDescriptors", name).toFile()
         val diagnostics = mutableListOf<TestDescriptorDiagnostic>()
-        val testDescriptor = TestDescriptorExtractor.extract(file) { diagnostics.add(it) }
+        val testDescriptor = TestDescriptorExtractor.extract(file.readText(), file.nameWithoutExtension) { diagnostics.add(it) }
         return Triple(testDescriptor, diagnostics, file.readText().getLineOffsets())
     }
 }

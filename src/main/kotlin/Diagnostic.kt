@@ -1,0 +1,1 @@
+abstract class Diagnostic(val sourceInterval: SourceInterval)

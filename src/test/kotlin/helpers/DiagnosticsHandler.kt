@@ -1,6 +1,6 @@
 package helpers
 
-import AntlrDiagnostic
+import Diagnostic
 import SourceInterval
 import parser.getLineColumn
 import parser.getLineOffsets
@@ -8,16 +8,20 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 
-object CustomDiagnosticsHandler {
-    private const val DIAGNOSTIC_NAME_MARKER = "diagnosticName"
-    private const val DIAGNOSTIC_ARGS = "args"
-    private const val DIAGNOSTIC_BEGIN_MARKER = "/*❗"
-    private const val DIAGNOSTIC_START_END_MARKER = "*/"
-    private const val DIAGNOSTIC_END_END = "*/"
+abstract class DiagnosticsHandler<T : Diagnostic>(
+    private val diagnosticStartMarker: String,
+    private val diagnosticEndMarker: String,
+    private val getDiagnosticName: (T) -> String,
+    private val ignoredPropertyNames: Set<String>,
+) {
+    companion object {
+        private const val DIAGNOSTIC_NAME_MARKER = "diagnosticName"
+        private const val DIAGNOSTIC_ARGS = "args"
+    }
 
     private val markerRegex = Regex(
-        """${Regex.escape(DIAGNOSTIC_BEGIN_MARKER)}(${Regex.escape(DIAGNOSTIC_END_END)}|((?<$DIAGNOSTIC_NAME_MARKER>\w+)(?<$DIAGNOSTIC_ARGS>.*?))${
-            Regex.escape(DIAGNOSTIC_START_END_MARKER)
+        """${Regex.escape(diagnosticStartMarker)}(${Regex.escape(diagnosticEndMarker)}|((?<$DIAGNOSTIC_NAME_MARKER>\w+)(?<$DIAGNOSTIC_ARGS>.*?))${
+            Regex.escape(diagnosticEndMarker)
         })"""
     )
 
@@ -28,7 +32,7 @@ object CustomDiagnosticsHandler {
         val descriptorStartStack = ArrayDeque<DescriptorStart>()
         val diagnosticInfos = linkedMapOf<Int, MutableList<DiagnosticInfo>>()
 
-        val lineOffsets = input.getLineOffsets()
+        val lineOffsets by lazy(LazyThreadSafetyMode.NONE) { input.getLineOffsets() }
 
         val refinedInput = buildString {
             while (true) {
@@ -102,8 +106,8 @@ object CustomDiagnosticsHandler {
         return result
     }
 
-    fun embed(extractionResult: ExtractionResult, actualDiagnostics: List<AntlrDiagnostic>): String {
-        data class DiagnosticInfo(val diagnostic: AntlrDiagnostic, val start: Boolean)
+    fun embed(extractionResult: ExtractionResult, actualDiagnostics: List<T>): String {
+        data class DiagnosticInfo(val diagnostic: T, val start: Boolean)
 
         val offsetToDiagnosticMap = linkedMapOf<Int, MutableList<DiagnosticInfo>>()
 
@@ -119,7 +123,7 @@ object CustomDiagnosticsHandler {
         }
 
         val input = extractionResult.refinedInput
-        val lineOffsets = input.getLineOffsets()
+        val lineOffsets by lazy(LazyThreadSafetyMode.NONE) { input.getLineOffsets() }
 
         var lastOffset = 0
         return buildString {
@@ -127,20 +131,17 @@ object CustomDiagnosticsHandler {
                 append(input.subSequence(lastOffset, offset))
 
                 for (diagnosticInfo in diagnosticInfos) {
-                    append(DIAGNOSTIC_BEGIN_MARKER)
+                    append(diagnosticStartMarker)
                     if (diagnosticInfo.start) {
-                        val actualDiagnosticsName = diagnosticInfo.diagnostic::class.simpleName
+                        val actualDiagnosticsName = getDiagnosticName(diagnosticInfo.diagnostic)
                         append(actualDiagnosticsName)
 
                         val expectedDiagnostic = extractionResult.diagnostics[offset]?.single { it.name == actualDiagnosticsName }
                         if (expectedDiagnostic?.args != null) {
                             appendArgs(diagnosticInfo.diagnostic, lineOffsets)
                         }
-
-                        append(DIAGNOSTIC_START_END_MARKER)
-                    } else {
-                        append(DIAGNOSTIC_END_END)
                     }
+                    append(diagnosticEndMarker)
                 }
 
                 lastOffset = offset
@@ -150,12 +151,12 @@ object CustomDiagnosticsHandler {
         }
     }
 
-    private fun StringBuilder.appendArgs(diagnostic: AntlrDiagnostic, lineOffsets: List<Int>) {
+    private fun StringBuilder.appendArgs(diagnostic: T, lineOffsets: List<Int>) {
         val nameToPropertyMap = diagnostic::class.memberProperties.associateBy { it.name }
         for (member in diagnostic::class.primaryConstructor!!.parameters) {
             @Suppress("UNCHECKED_CAST")
             val property = nameToPropertyMap[member.name] as KProperty1<Any, *>
-            if (member.name.let { it == "severity" || it == "sourceInterval" }) continue
+            if (member.name.let { it == "sourceInterval" } || ignoredPropertyNames.contains(member.name)) continue
 
             append(' ')
 

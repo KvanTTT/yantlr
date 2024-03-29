@@ -1,12 +1,12 @@
 package helpers.testDescriptors
 
 import SourceInterval
-import java.io.File
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
 
 class TestDescriptorExtractor private constructor(
-    private val file: File,
+    private val input: String,
+    private val name: String,
     private val diagnosticReporter: ((TestDescriptorDiagnostic) -> Unit)? = null
 ) {
     companion object {
@@ -15,8 +15,8 @@ class TestDescriptorExtractor private constructor(
         private val whitespaceChars = lineBreakChars + charArrayOf(' ', '\t')
         private const val NOTES_NAME = "notes"
 
-        fun extract(file: File, diagnosticReporter: ((TestDescriptorDiagnostic) -> Unit)? = null): TestDescriptor {
-            return TestDescriptorExtractor(file, diagnosticReporter).extract()
+        fun extract(input: String, name: String, diagnosticReporter: ((TestDescriptorDiagnostic) -> Unit)? = null): TestDescriptor {
+            return TestDescriptorExtractor(input, name, diagnosticReporter).extract()
         }
     }
 
@@ -25,7 +25,6 @@ class TestDescriptorExtractor private constructor(
         Code,
     }
 
-    private var input: String = file.readText()
     private val propertyValues: MutableMap<KProperty1<TestDescriptor, *>, Any?> = mutableMapOf()
     private var property: KProperty1<TestDescriptor, *>? = null
     private var propertyValue: Any? = null
@@ -92,7 +91,7 @@ class TestDescriptorExtractor private constructor(
 
         @Suppress("UNCHECKED_CAST")
         return TestDescriptor(
-            name = getPropertyValue("name") as? String ?: file.nameWithoutExtension,
+            name = getPropertyValue("name") as? String ?: name,
             notes = getPropertyValue(NOTES_NAME) as? List<PropertyValue> ?: emptyList(),
             grammars = getPropertyValue("grammars") as? List<PropertyValue> ?: run {
                 diagnosticReporter?.invoke(
@@ -122,7 +121,9 @@ class TestDescriptorExtractor private constructor(
         finalizePreviousProperty()
 
         val subSequence = input.subSequence(lineStart, lineEnd)
-        val headerValue = subSequence.dropWhile { it == '#' }.trim().toString()
+        val headerValueStart = subSequence.indexOfFirst { it != '#' && !it.isWhitespace() }
+        val headerValueStop = subSequence.indexOfLast { !whitespaceChars.contains(it) } + 1
+        val headerValue = subSequence.subSequence(headerValueStart, headerValueStop).toString()
 
         val descriptorProperty = testDescriptorProperties[headerValue.lowercase()]
 
@@ -135,7 +136,7 @@ class TestDescriptorExtractor private constructor(
                     TestDescriptorDiagnostic(
                         TestDescriptorDiagnosticType.DuplicatedProperty,
                         headerValue,
-                        SourceInterval(lineStart, lineEnd)
+                        SourceInterval(lineStart + headerValueStart, headerValue.length)
                     )
                 )
             }
@@ -144,7 +145,7 @@ class TestDescriptorExtractor private constructor(
                 TestDescriptorDiagnostic(
                     TestDescriptorDiagnosticType.UnknownProperty,
                     headerValue,
-                    SourceInterval(lineStart, lineEnd)
+                    SourceInterval(lineStart + headerValueStart, headerValue.length)
                 )
             )
         }
@@ -184,7 +185,7 @@ class TestDescriptorExtractor private constructor(
                         TestDescriptorDiagnostic(
                             TestDescriptorDiagnosticType.DuplicatedValue,
                             currentProperty.name,
-                            SourceInterval(startOffset, endOffset)
+                            SourceInterval(startOffset, endOffset - startOffset)
                         )
                     )
                 }
