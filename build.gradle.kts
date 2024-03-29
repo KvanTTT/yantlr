@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm") version "2.0.0-Beta4"
-    id("org.jetbrains.intellij") version "1.13.0"
     application
 }
 
@@ -14,10 +13,7 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     testImplementation(kotlin("reflect"))
-}
-
-intellij {
-    version.set("2023.3")
+    testImplementation(files("libs/idea_rt.jar", "libs/junit.jar"))
 }
 
 tasks.test {
