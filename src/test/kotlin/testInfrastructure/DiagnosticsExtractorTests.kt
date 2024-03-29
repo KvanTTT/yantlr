@@ -30,28 +30,28 @@ grammar test
 
         assertEquals(baseRefinedInput, extractionResult.refinedInput)
 
-        val lineIndexes = baseRefinedInput.getLineIndexes()
+        val lineOffsets = baseRefinedInput.getLineOffsets()
 
         val diagnostics = extractionResult.diagnostics.flatMap { it.value }
 
         assertEquals(
             DiagnosticInfo(
                 "UnrecognizedToken", null,
-                SourceInterval(LineColumn(2, 1).getOffset(lineIndexes), 1)
+                SourceInterval(LineColumn(2, 1).getOffset(lineOffsets), 1)
             ),
             diagnostics[0],
         )
         checkDiagnostic(
             DiagnosticInfo(
                 "MissingToken", null,
-                SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 0)
+                SourceInterval(LineColumn(3, 1).getOffset(lineOffsets), 0)
             ),
             diagnostics[1],
         )
         checkDiagnostic(
             DiagnosticInfo(
                 "ExtraToken", null,
-                SourceInterval(LineColumn(3, 1).getOffset(lineIndexes), 2)
+                SourceInterval(LineColumn(3, 1).getOffset(lineOffsets), 2)
             ),
             diagnostics[2],
         )

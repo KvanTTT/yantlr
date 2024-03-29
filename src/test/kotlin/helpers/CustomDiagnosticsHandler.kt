@@ -3,7 +3,7 @@ package helpers
 import AntlrDiagnostic
 import SourceInterval
 import parser.getLineColumn
-import parser.getLineIndexes
+import parser.getLineOffsets
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
@@ -28,7 +28,7 @@ object CustomDiagnosticsHandler {
         val descriptorStartStack = ArrayDeque<DescriptorStart>()
         val diagnosticInfos = linkedMapOf<Int, MutableList<DiagnosticInfo>>()
 
-        val lineIndexes = input.getLineIndexes()
+        val lineOffsets = input.getLineOffsets()
 
         val refinedInput = buildString {
             while (true) {
@@ -42,7 +42,7 @@ object CustomDiagnosticsHandler {
                     descriptorStartStack.add(DescriptorStart(diagnosticName.value, parseArgs(match.groups[DIAGNOSTIC_ARGS]?.value), first, length))
                 } else {
                     val lastDescriptorStart = descriptorStartStack.removeLastOrNull()
-                        ?: error("Unexpected diagnostic end marker at ${first.getLineColumn(lineIndexes)}")
+                        ?: error("Unexpected diagnostic end marker at ${first.getLineColumn(lineOffsets)}")
                     val location =
                         SourceInterval(lastDescriptorStart.refinedOffset, length - lastDescriptorStart.refinedOffset)
                     val list = diagnosticInfos.getOrPut(lastDescriptorStart.refinedOffset) { mutableListOf() }
@@ -58,7 +58,7 @@ object CustomDiagnosticsHandler {
         for (diagnosticStart in descriptorStartStack) {
             error(
                 "Unclosed diagnostic descriptor `${diagnosticStart.name}` at ${
-                    diagnosticStart.offset.getLineColumn(lineIndexes)
+                    diagnosticStart.offset.getLineColumn(lineOffsets)
                 }"
             )
         }
@@ -119,7 +119,7 @@ object CustomDiagnosticsHandler {
         }
 
         val input = extractionResult.refinedInput
-        val lineIndexes = input.getLineIndexes()
+        val lineOffsets = input.getLineOffsets()
 
         var lastOffset = 0
         return buildString {
@@ -134,7 +134,7 @@ object CustomDiagnosticsHandler {
 
                         val expectedDiagnostic = extractionResult.diagnostics[offset]?.single { it.name == actualDiagnosticsName }
                         if (expectedDiagnostic?.args != null) {
-                            appendArgs(diagnosticInfo.diagnostic, lineIndexes)
+                            appendArgs(diagnosticInfo.diagnostic, lineOffsets)
                         }
 
                         append(DIAGNOSTIC_START_END_MARKER)
@@ -150,7 +150,7 @@ object CustomDiagnosticsHandler {
         }
     }
 
-    private fun StringBuilder.appendArgs(diagnostic: AntlrDiagnostic, lineIndexes: List<Int>) {
+    private fun StringBuilder.appendArgs(diagnostic: AntlrDiagnostic, lineOffsets: List<Int>) {
         val nameToPropertyMap = diagnostic::class.memberProperties.associateBy { it.name }
         for (member in diagnostic::class.primaryConstructor!!.parameters) {
             @Suppress("UNCHECKED_CAST")
@@ -160,7 +160,7 @@ object CustomDiagnosticsHandler {
             append(' ')
 
             val normalizedValue = when (val value = property.get(diagnostic)) {
-                is SourceInterval -> value.offset.getLineColumn(lineIndexes)
+                is SourceInterval -> value.offset.getLineColumn(lineOffsets)
                 else -> value
             }
             val valueString = normalizedValue.toString()

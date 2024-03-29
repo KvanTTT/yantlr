@@ -2,32 +2,32 @@ package parser
 
 import LineColumn
 
-fun Int.getLineColumn(lineIndexes: List<Int>): LineColumn {
-    lineIndexes.binarySearch { it.compareTo(this) }.let { lineIndex ->
-        return if (lineIndex < 0) {
-            val line = -lineIndex - 2
-            LineColumn(line + 1, this - lineIndexes[line] + 1)
+fun Int.getLineColumn(lineOffsets: List<Int>): LineColumn {
+    lineOffsets.binarySearch { it.compareTo(this) }.let { lineOffset ->
+        return if (lineOffset < 0) {
+            val line = -lineOffset - 2
+            LineColumn(line + 1, this - lineOffsets[line] + 1)
         } else {
-            LineColumn(lineIndex + 1, 1)
+            LineColumn(lineOffset + 1, 1)
         }
     }
 }
 
-fun LineColumn.getOffset(lineIndexes: List<Int>): Int {
-    val lineIndex = line - 1
-    if (lineIndex < 0 || lineIndex >= lineIndexes.size) {
+fun LineColumn.getOffset(lineOffsets: List<Int>): Int {
+    val lineOffset = line - 1
+    if (lineOffset < 0 || lineOffset >= lineOffsets.size) {
         return -1
     }
-    val lineStart = lineIndexes[lineIndex]
+    val lineStart = lineOffsets[lineOffset]
     return lineStart + column - 1
 }
 
-fun String.getLineIndexes(): List<Int> {
+fun String.getLineOffsets(): List<Int> {
     return buildList {
         add(0)
-        for (i in this@getLineIndexes.indices) {
-            if (this@getLineIndexes[i].let {
-                    it == '\r' && i + 1 < length && this@getLineIndexes[i + 1] != '\n' || it == '\n'
+        for (i in this@getLineOffsets.indices) {
+            if (this@getLineOffsets[i].let {
+                    it == '\r' && i + 1 < length && this@getLineOffsets[i + 1] != '\n' || it == '\n'
                 }) {
                 add(i + 1)
             }

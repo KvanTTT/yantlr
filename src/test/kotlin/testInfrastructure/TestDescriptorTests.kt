@@ -7,7 +7,7 @@ import helpers.testDescriptors.TestDescriptorDiagnosticType
 import helpers.testDescriptors.TestDescriptorExtractor
 import org.junit.jupiter.api.Test
 import parser.getLineColumn
-import parser.getLineIndexes
+import parser.getLineOffsets
 import java.nio.file.Paths
 import kotlin.test.assertEquals
 
@@ -100,6 +100,6 @@ object TestDescriptorTests {
         val file = Paths.get(resourcesPath, "TestDescriptors", name).toFile()
         val diagnostics = mutableListOf<TestDescriptorDiagnostic>()
         val testDescriptor = TestDescriptorExtractor.extract(file) { diagnostics.add(it) }
-        return Triple(testDescriptor, diagnostics, file.readText().getLineIndexes())
+        return Triple(testDescriptor, diagnostics, file.readText().getLineOffsets())
     }
 }
