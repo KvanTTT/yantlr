@@ -1,4 +1,4 @@
-package parser
+package testInfrastructure
 
 import AntlrDiagnostic
 import LineColumn
@@ -8,6 +8,7 @@ import helpers.DiagnosticInfo
 import helpers.ExtractionResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
+import parser.*
 import kotlin.test.Test
 
 class DiagnosticsExtractorTests {
