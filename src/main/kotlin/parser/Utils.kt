@@ -1,6 +1,12 @@
 package parser
 
 import LineColumn
+import LineColumnBorders
+import SourceInterval
+
+fun SourceInterval.getLineColumnBorders(lineOffsets: List<Int>): LineColumnBorders {
+    return LineColumnBorders(offset.getLineColumn(lineOffsets), end().getLineColumn(lineOffsets))
+}
 
 fun Int.getLineColumn(lineOffsets: List<Int>): LineColumn {
     lineOffsets.binarySearch { it.compareTo(this) }.let { lineOffset ->

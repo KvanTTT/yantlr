@@ -1,5 +1,7 @@
 package helpers.testDescriptors
 
-abstract class PropertyValue(val offset: Int) {
+import SourceInterval
+
+abstract class PropertyValue(val sourceInterval: SourceInterval) {
     abstract val value: CharSequence
 }

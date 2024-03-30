@@ -167,7 +167,8 @@ class TestDescriptorExtractor private constructor(
             testDescriptorProperties.getValue(NOTES_NAME).also { property = it }
         }
 
-        val currentPropertyValue = TextPropertyValue(input.subSequence(startOffset, endOffset), startOffset)
+        val sourceInterval = SourceInterval(startOffset, endOffset - startOffset)
+        val currentPropertyValue = TextPropertyValue(input.subSequence(startOffset, endOffset), sourceInterval)
         when (currentProperty.returnType.classifier) {
             List::class -> {
                 val value = (propertyValue ?: run {
@@ -185,7 +186,7 @@ class TestDescriptorExtractor private constructor(
                         TestDescriptorDiagnostic(
                             TestDescriptorDiagnosticType.DuplicatedValue,
                             currentProperty.name,
-                            SourceInterval(startOffset, endOffset - startOffset)
+                            sourceInterval
                         )
                     )
                 }

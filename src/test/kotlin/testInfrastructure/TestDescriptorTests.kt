@@ -1,13 +1,13 @@
 package testInfrastructure
 
-import LineColumn
+import LineColumnBorders
 import helpers.resourcesFile
 import helpers.testDescriptors.TestDescriptor
 import helpers.testDescriptors.TestDescriptorDiagnostic
 import helpers.testDescriptors.TestDescriptorDiagnosticType
 import helpers.testDescriptors.TestDescriptorExtractor
 import org.junit.jupiter.api.Test
-import parser.getLineColumn
+import parser.getLineColumnBorders
 import parser.getLineOffsets
 import java.nio.file.Paths
 import kotlin.test.assertEquals
@@ -22,23 +22,31 @@ object TestDescriptorTests {
         assertEquals(2, descriptor.grammars.size)
 
         val firstGrammar = descriptor.grammars[0]
-        assertEquals("""
+        assertEquals(
+            """
             grammar B;
             Y : 'y';
         """.trimIndent().replace("\n", System.lineSeparator()),
             firstGrammar.value
         )
-        assertEquals(LineColumn(7, 1), firstGrammar.offset.getLineColumn(lineOffsets))
+        assertEquals(
+            LineColumnBorders(7, 1, 8, 9),
+            firstGrammar.sourceInterval.getLineColumnBorders(lineOffsets)
+        )
 
         val secondGrammar = descriptor.grammars[1]
-        assertEquals("""
+        assertEquals(
+            """
             grammar A;
             /*❗UnrecognizedToken❗*/`/*❗*/;
             X : 'x';
         """.trimIndent().replace("\n", System.lineSeparator()),
             secondGrammar.value
         )
-        assertEquals(LineColumn(11, 1), secondGrammar.offset.getLineColumn(lineOffsets))
+        assertEquals(
+            LineColumnBorders(11, 1, 13, 9),
+            secondGrammar.sourceInterval.getLineColumnBorders(lineOffsets)
+        )
 
         assertEquals("", descriptor.input.single().value)
     }
@@ -62,7 +70,7 @@ object TestDescriptorTests {
         val diagnostic = diagnostics.single()
         assertEquals(TestDescriptorDiagnosticType.UnknownProperty, diagnostic.type)
         assertEquals("UnknownProperty", diagnostic.arg)
-        assertEquals(LineColumn(5, 3), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
+        assertEquals(LineColumnBorders(5, 3, 18), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
 
     @Test
@@ -72,7 +80,7 @@ object TestDescriptorTests {
         val diagnostic = diagnostics.single()
         assertEquals(TestDescriptorDiagnosticType.DuplicatedProperty, diagnostic.type)
         assertEquals("Grammars", diagnostic.arg)
-        assertEquals(LineColumn(12, 3), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
+        assertEquals(LineColumnBorders(12, 3, 11), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
 
     @Test
@@ -82,7 +90,7 @@ object TestDescriptorTests {
         val diagnostic = diagnostics.single()
         assertEquals(TestDescriptorDiagnosticType.DuplicatedValue, diagnostic.type)
         assertEquals("name", diagnostic.arg)
-        assertEquals(LineColumn(5, 1), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
+        assertEquals(LineColumnBorders(5, 1, 14), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
 
     @Test
@@ -92,13 +100,14 @@ object TestDescriptorTests {
         val diagnostic = diagnostics.single()
         assertEquals(TestDescriptorDiagnosticType.MissingProperty, diagnostic.type)
         assertEquals("Grammars", diagnostic.arg)
-        assertEquals(LineColumn(4, 1), diagnostic.sourceInterval.offset.getLineColumn(lineOffsets))
+        assertEquals(LineColumnBorders(4, 1, 1), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
 
     private fun parseTestDescriptor(name: String): Triple<TestDescriptor, List<TestDescriptorDiagnostic>, List<Int>> {
         val file = Paths.get(resourcesFile.toString(), "TestDescriptors", name).toFile()
         val diagnostics = mutableListOf<TestDescriptorDiagnostic>()
-        val testDescriptor = TestDescriptorExtractor.extract(file.readText(), file.nameWithoutExtension) { diagnostics.add(it) }
+        val testDescriptor =
+            TestDescriptorExtractor.extract(file.readText(), file.nameWithoutExtension) { diagnostics.add(it) }
         return Triple(testDescriptor, diagnostics, file.readText().getLineOffsets())
     }
 }

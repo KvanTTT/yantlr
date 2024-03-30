@@ -1,3 +1,5 @@
 package helpers.testDescriptors
 
-class TextPropertyValue(override val value: CharSequence, offset: Int) : PropertyValue(offset)
+import SourceInterval
+
+class TextPropertyValue(override val value: CharSequence, sourceInterval: SourceInterval) : PropertyValue(sourceInterval)
