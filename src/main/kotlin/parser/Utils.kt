@@ -28,7 +28,7 @@ fun LineColumn.getOffset(lineOffsets: List<Int>): Int {
     return lineStart + column - 1
 }
 
-fun String.getLineOffsets(): List<Int> {
+fun CharSequence.getLineOffsets(): List<Int> {
     return buildList {
         add(0)
         for (i in this@getLineOffsets.indices) {

@@ -6,9 +6,10 @@ import LineColumn
 import UnrecognizedToken
 
 class AntlrLexer(
-    val text: String,
+    val text: CharSequence,
     val initializeTokenValue: Boolean = false,
-    val diagnosticReporter: ((LexerDiagnostic) -> Unit)? = null
+    private val textOffset: Int = 0,
+    val diagnosticReporter: ((LexerDiagnostic) -> Unit)? = null,
 ) {
     companion object {
         private val whitespaceChars = setOf(' ', '\t')
@@ -333,8 +334,8 @@ class AntlrLexer(
     }
 
     private fun createToken(type: AntlrTokenType, offset: Int = -1, length: Int = -1, channel: AntlrTokenChannel = AntlrTokenChannel.Default): AntlrToken {
-        return AntlrToken(type, offset, length, channel,
-            value = if (initializeTokenValue) text.substring(offset, offset + length) else null
+        return AntlrToken(type, textOffset + offset, length, channel,
+            value = if (initializeTokenValue || textOffset != 0) text.substring(offset, offset + length) else null
         ).also {
             if (diagnosticReporter != null && channel == AntlrTokenChannel.Error) {
                 val diagnostic = when (type) {
