@@ -4,10 +4,10 @@ import parser.AntlrParser
 import semantics.RuleCollector
 
 object GrammarPipeline {
-    fun process(grammarText: String, diagnosticReporter: ((AntlrDiagnostic) -> Unit)? = null) {
-        val lexer = AntlrLexer(grammarText) { diagnosticReporter?.invoke(it) }
-        val tree = AntlrParser(AntlrLexerTokenStream(lexer)) { diagnosticReporter?.invoke(it) }.parseGrammar()
+    fun process(grammarText: CharSequence, grammarOffset: Int = 0, diagnosticReporter: ((AntlrDiagnostic) -> Unit)? = null) {
+        val lexer = AntlrLexer(grammarText, textOffset = grammarOffset, diagnosticReporter = diagnosticReporter)
+        val tree = AntlrParser(AntlrLexerTokenStream(lexer), diagnosticReporter = diagnosticReporter).parseGrammar()
 
-        RuleCollector(lexer) { diagnosticReporter?.invoke(it) }.collect(tree)
+        RuleCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
     }
 }

@@ -7,7 +7,7 @@ import parser.*
 
 class RuleCollector(
     val lexer: AntlrLexer,
-    val diagnosticsReporter: ((SemanticsDiagnostics) -> Unit)? = null
+    val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)? = null
 ) : AntlrTreeVisitor<Unit>() {
     private val rules = sortedMapOf<String, Rule>()
 
@@ -27,7 +27,7 @@ class RuleCollector(
         val id: String = lexer.getTokenValue(node.lexerOrParserIdToken)
         val existingRule = rules[id]
         if (existingRule != null) {
-            diagnosticsReporter?.invoke(RuleRedefinition(
+            diagnosticReporter?.invoke(RuleRedefinition(
                 id,
                 existingRule.ruleNode.lexerOrParserIdToken.getInterval(),
                 node.lexerOrParserIdToken.getInterval()

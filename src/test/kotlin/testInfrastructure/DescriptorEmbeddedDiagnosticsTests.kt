@@ -7,38 +7,37 @@ import java.nio.file.Paths
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DescriptorEmbeddedDiagnosticsTests {
+object DescriptorEmbeddedDiagnosticsTests {
+    val reifiedInput = """
+        # Name
+
+        Custom name 0
+
+        Custom name 1
+
+        # Input
+
+        ```
+        INPUT 0
+        ```
+
+        # Input
+
+        ```
+        INPUT 1
+        ```
+
+        # UnknownProperty
+    """.trimIndent().replace("\n", System.lineSeparator())
+
     @Test
     fun example() {
-        val inputFile = Paths.get(resourcesFile.toString(), "Infrastructure", "EmbeddedDiagnostics", "Example.md").toFile()
+        val inputFile = Paths.get(resourcesFile.toString(), "Infrastructure", "TestDescriptorWithErrors.md").toFile()
         val input = inputFile.readText()
 
         val extractionResult = TestDescriptorDiagnosticsHandler.extract(inputFile.readText())
 
-        assertEquals("""
-            # Name
-
-            Custom name 0
-
-            Custom name 1
-
-            # Input
-
-            ```
-            INPUT 0
-            ```
-
-            # Input
-
-            ```
-            INPUT 1
-            ```
-
-            # UnknownProperty
-        """.trimIndent().replace("\n", System.lineSeparator()),
-
-            extractionResult.refinedInput
-        )
+        assertEquals(reifiedInput, extractionResult.refinedInput)
 
         val actualDiagnostics = buildList {
             TestDescriptorExtractor.extract(extractionResult.refinedInput, inputFile.nameWithoutExtension) { add(it) }

@@ -27,7 +27,7 @@ abstract class DiagnosticsHandler<T : Diagnostic>(
 
     private data class DescriptorStart(val name: String, val args: List<String>?, val offset: Int, val refinedOffset: Int)
 
-    fun extract(input: String): ExtractionResult {
+    fun extract(input: CharSequence, inputOffset: Int = 0): ExtractionResult {
         var offset = 0
         val descriptorStartStack = ArrayDeque<DescriptorStart>()
         val diagnosticInfos = linkedMapOf<Int, MutableList<DiagnosticInfo>>()
@@ -47,9 +47,10 @@ abstract class DiagnosticsHandler<T : Diagnostic>(
                 } else {
                     val lastDescriptorStart = descriptorStartStack.removeLastOrNull()
                         ?: error("Unexpected diagnostic end marker at ${first.getLineColumn(lineOffsets)}")
+                    val diagnosticInfoOffset = lastDescriptorStart.refinedOffset + inputOffset
+                    val list = diagnosticInfos.getOrPut(diagnosticInfoOffset) { mutableListOf() }
                     val location =
-                        SourceInterval(lastDescriptorStart.refinedOffset, length - lastDescriptorStart.refinedOffset)
-                    val list = diagnosticInfos.getOrPut(lastDescriptorStart.refinedOffset) { mutableListOf() }
+                        SourceInterval(diagnosticInfoOffset, length - lastDescriptorStart.refinedOffset)
                     list.add(DiagnosticInfo(lastDescriptorStart.name, lastDescriptorStart.args, location))
                 }
 
@@ -107,6 +108,8 @@ abstract class DiagnosticsHandler<T : Diagnostic>(
     }
 
     fun embed(extractionResult: ExtractionResult, actualDiagnostics: List<T>): String {
+        if (extractionResult.diagnostics.isEmpty() && actualDiagnostics.isEmpty()) return extractionResult.refinedInput
+
         data class DiagnosticInfo(val diagnostic: T, val start: Boolean)
 
         val offsetToDiagnosticMap = linkedMapOf<Int, MutableList<DiagnosticInfo>>()
