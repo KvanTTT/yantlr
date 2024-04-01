@@ -1,6 +1,6 @@
 package parser
 
-import helpers.AntlrFullFidelityDumper
+import infrastructure.AntlrFullFidelityDumper
 import parser.AntlrParserWithLexerTests.Companion.defaultGrammar
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

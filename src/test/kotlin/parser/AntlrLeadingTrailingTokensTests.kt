@@ -1,6 +1,6 @@
 package parser
 
-import helpers.AntlrTreeComparer
+import infrastructure.AntlrTreeComparer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

@@ -1,6 +1,6 @@
 package parser
 
-import helpers.AntlrPrettier
+import infrastructure.AntlrPrettier
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import parser.AntlrTokenType.*

@@ -1,4 +1,4 @@
-package helpers.testDescriptors
+package infrastructure.testDescriptors
 
 class TestDescriptor(
     val name: String,

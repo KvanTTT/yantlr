@@ -1,11 +1,11 @@
-package testInfrastructure
+package infrastructureTests
 
 import LineColumnBorders
-import helpers.resourcesFile
-import helpers.testDescriptors.TestDescriptor
-import helpers.testDescriptors.TestDescriptorDiagnostic
-import helpers.testDescriptors.TestDescriptorDiagnosticType
-import helpers.testDescriptors.TestDescriptorExtractor
+import infrastructure.resourcesFile
+import infrastructure.testDescriptors.TestDescriptor
+import infrastructure.testDescriptors.TestDescriptorDiagnostic
+import infrastructure.testDescriptors.TestDescriptorDiagnosticType
+import infrastructure.testDescriptors.TestDescriptorExtractor
 import org.junit.jupiter.api.Test
 import parser.getLineColumnBorders
 import parser.getLineOffsets

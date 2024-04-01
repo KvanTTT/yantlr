@@ -1,4 +1,4 @@
-package helpers
+package infrastructure
 
 import Diagnostic
 import SourceInterval

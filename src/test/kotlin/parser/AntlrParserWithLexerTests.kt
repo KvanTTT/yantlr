@@ -20,12 +20,12 @@ x
 
     @Test
     fun parserWithLexer() {
-        helpers.check(defaultTreeNode, defaultGrammar) { it.parseGrammar() }
+        infrastructure.check(defaultTreeNode, defaultGrammar) { it.parseGrammar() }
     }
 
     @Test
     fun stringLiteral() {
-        helpers.check(
+        infrastructure.check(
             ElementNode.StringLiteral(
                 AntlrToken(AntlrTokenType.Quote),
                 listOf(
@@ -44,7 +44,7 @@ x
 
     @Test
     fun unterminatedStringLiteral() {
-        helpers.check(
+        infrastructure.check(
             ElementNode.StringLiteral(
                 AntlrToken(AntlrTokenType.Quote),
                 listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
@@ -57,7 +57,7 @@ x
 
     @Test
     fun stringLiteralWithIncorrectEscaping() {
-        helpers.check(
+        infrastructure.check(
             ElementNode.StringLiteral(
                 AntlrToken(AntlrTokenType.Quote),
                 // Unrecognized token '\u' can be extract from hidden channel
@@ -71,7 +71,7 @@ x
 
     @Test
     fun charSet() {
-        helpers.check(
+        infrastructure.check(
             ElementNode.CharSet(
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
@@ -111,7 +111,7 @@ x
 
     @Test
     fun unterminatedCharSet() {
-        helpers.check(
+        infrastructure.check(
             ElementNode.CharSet(
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
@@ -133,7 +133,7 @@ x
 
     @Test
     fun elementSuffix() {
-        helpers.check(
+        infrastructure.check(
             AlternativeNode(
                 listOf(
                     ElementNode.LexerId(

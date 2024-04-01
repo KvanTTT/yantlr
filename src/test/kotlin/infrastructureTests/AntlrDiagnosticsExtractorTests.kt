@@ -1,17 +1,17 @@
-package testInfrastructure
+package infrastructureTests
 
 import AntlrDiagnostic
 import LineColumn
 import SourceInterval
-import helpers.AntlrDiagnosticsHandler
-import helpers.DiagnosticInfo
-import helpers.ExtractionResult
+import infrastructure.AntlrDiagnosticsHandler
+import infrastructure.DiagnosticInfo
+import infrastructure.ExtractionResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import parser.*
 import kotlin.test.Test
 
-class AntlrDiagnosticsExtractorTests {
+object AntlrDiagnosticsExtractorTests {
     private val baseInput = """
 grammar test
 /*❗UnrecognizedToken*/`/*❗*/

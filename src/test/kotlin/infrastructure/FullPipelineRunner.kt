@@ -1,10 +1,10 @@
-package helpers
+package infrastructure
 
 import AntlrDiagnostic
 import GrammarPipeline
 import com.intellij.rt.execution.junit.FileComparisonFailure
-import helpers.testDescriptors.TestDescriptorDiagnostic
-import helpers.testDescriptors.TestDescriptorExtractor
+import infrastructure.testDescriptors.TestDescriptorDiagnostic
+import infrastructure.testDescriptors.TestDescriptorExtractor
 import java.io.File
 
 object FullPipelineRunner {

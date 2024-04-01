@@ -1,8 +1,8 @@
-package testInfrastructure
+package infrastructureTests
 
 import com.intellij.rt.execution.junit.FileComparisonFailure
-import helpers.FullPipelineRunner
-import helpers.resourcesFile
+import infrastructure.FullPipelineRunner
+import infrastructure.resourcesFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import java.nio.file.Paths

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 class AntlrParseWithErrors {
     @Test
     fun elementWithErrors() {
-        helpers.check(
+        infrastructure.check(
             ElementNode.Empty(endNode = null),
             "+"
         ) { it.parseElement(matchToEof = false) }
@@ -13,7 +13,7 @@ class AntlrParseWithErrors {
 
     @Test
     fun elementWithErrorsToEof() {
-        helpers.check(
+        infrastructure.check(
             ElementNode.Empty(
                 EndNode(
                     listOf(
@@ -27,7 +27,7 @@ class AntlrParseWithErrors {
 
     @Test
     fun grammarWithErrorsToEof() {
-        helpers.check(
+        infrastructure.check(
             GrammarNode(
                 null,
                 AntlrToken(AntlrTokenType.Grammar, value = "grammar"),

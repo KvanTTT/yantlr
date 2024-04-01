@@ -1,4 +1,4 @@
-package helpers.testDescriptors
+package infrastructure.testDescriptors
 
 import Diagnostic
 import SourceInterval

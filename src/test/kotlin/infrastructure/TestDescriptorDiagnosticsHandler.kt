@@ -1,6 +1,6 @@
-package helpers
+package infrastructure
 
-import helpers.testDescriptors.TestDescriptorDiagnostic
+import infrastructure.testDescriptors.TestDescriptorDiagnostic
 
 object TestDescriptorDiagnosticsHandler : DiagnosticsHandler<TestDescriptorDiagnostic>(
     diagnosticStartMarker = "<!--❌",

@@ -1,8 +1,8 @@
-package testInfrastructure
+package infrastructureTests
 
-import helpers.TestDescriptorDiagnosticsHandler
-import helpers.resourcesFile
-import helpers.testDescriptors.TestDescriptorExtractor
+import infrastructure.TestDescriptorDiagnosticsHandler
+import infrastructure.resourcesFile
+import infrastructure.testDescriptors.TestDescriptorExtractor
 import java.nio.file.Paths
 import kotlin.test.Test
 import kotlin.test.assertEquals
