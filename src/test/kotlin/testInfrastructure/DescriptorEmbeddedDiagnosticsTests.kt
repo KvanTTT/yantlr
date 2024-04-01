@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 class DescriptorEmbeddedDiagnosticsTests {
     @Test
     fun example() {
-        val inputFile = Paths.get(resourcesFile.toString(), "TestDescriptors", "EmbeddedDiagnostics", "Example.md").toFile()
+        val inputFile = Paths.get(resourcesFile.toString(), "Infrastructure", "EmbeddedDiagnostics", "Example.md").toFile()
         val input = inputFile.readText()
 
         val extractionResult = TestDescriptorDiagnosticsHandler.extract(inputFile.readText())

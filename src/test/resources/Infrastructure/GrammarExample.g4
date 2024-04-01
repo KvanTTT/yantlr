@@ -1,3 +1,3 @@
-grammar grammarWithSyntaxErrors
+grammar grammarExample
 /*❗UnrecognizedToken*/`/*❗*/
 /*❗MissingToken*//*❗*//*❗ExtraToken*/+/*❗*/

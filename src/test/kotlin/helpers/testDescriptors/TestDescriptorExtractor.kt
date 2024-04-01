@@ -12,7 +12,6 @@ class TestDescriptorExtractor private constructor(
     companion object {
         private val testDescriptorProperties = TestDescriptor::class.declaredMemberProperties.associateBy { it.name }
         private val lineBreakChars = charArrayOf('\r', '\n')
-        private val whitespaceChars = lineBreakChars + charArrayOf(' ', '\t')
         private const val NOTES_NAME = "notes"
 
         fun extract(input: String, name: String, diagnosticReporter: ((TestDescriptorDiagnostic) -> Unit)? = null): TestDescriptor {
@@ -21,63 +20,72 @@ class TestDescriptorExtractor private constructor(
     }
 
     enum class TextType {
+        Empty, // Used to mark sections with empty headers
         Paragraph,
         Code,
     }
 
+    data class TextTypeWithOffset(val type: TextType, val offset: Int)
+
     private val propertyValues: MutableMap<KProperty1<TestDescriptor, *>, Any?> = mutableMapOf()
-    private var property: KProperty1<TestDescriptor, *>? = null
-    private var propertyValue: Any? = null
-    private var textType: TextType? = null
+    // Use `Notes` property for first headless paragraph
+    private var property: KProperty1<TestDescriptor, *> = testDescriptorProperties.getValue(NOTES_NAME)
+    private var textInfo: TextTypeWithOffset? = null
 
     fun extract(): TestDescriptor {
         val lineOffsets = mutableListOf<Int>()
 
         var lineStartOffset = 0
         var previousLineEndOffset = 0
-        var elementStartOffset = 0
 
         do {
             lineOffsets.add(lineStartOffset)
 
-            val lineEndOffset = input.indexOfAny(lineBreakChars, lineStartOffset).let { if (it == -1) input.length else it }
+            val lineEndOffset =
+                input.indexOfAny(lineBreakChars, lineStartOffset).let { if (it == -1) input.length else it }
             val nextLineStartOffset = when {
                 lineEndOffset == input.length -> lineEndOffset
                 input[lineEndOffset] == '\r' && input.getOrNull(lineEndOffset + 1) == '\n' -> {
                     lineEndOffset + 2
                 }
+
                 else -> {
                     lineEndOffset + 1
                 }
             }
 
             val lineValue = input.subSequence(lineStartOffset, lineEndOffset)
-            if (textType == TextType.Code) {
-                if (checkCodeFence(lineValue)) {
-                    finalizeTextValue(elementStartOffset, previousLineEndOffset)
+            val firstChar = lineValue.getOrNull(0)
+
+            when {
+                textInfo?.type == TextType.Code -> {
+                    if (checkCodeFence(lineValue)) {
+                        finalizeTextValue(previousLineEndOffset)
+                    }
                 }
-            } else if (lineValue.isBlank()) {
-                if (textType == TextType.Paragraph) {
-                    finalizeTextValue(elementStartOffset, skipBackWhitespaces(lineStartOffset - 1))
+
+                firstChar == '#' -> {
+                    finalizeTextValue(
+                        skipBackWhitespaces(lineStartOffset - 1),
+                        addEmptyValueIfNoElements = true
+                    )
+                    processHeader(lineStartOffset, lineEndOffset)
+                    textInfo = TextTypeWithOffset(TextType.Empty, lineEndOffset)
                 }
-            } else {
-                val firstChar = lineValue[0]
-                when {
-                    firstChar == '#' -> {
-                        finalizeTextValue(elementStartOffset, skipBackWhitespaces(lineStartOffset - 1))
-                        processHeader(lineStartOffset, lineEndOffset)
+
+                firstChar == '`' && checkCodeFence(lineValue) -> {
+                    finalizeTextValue(skipBackWhitespaces(lineStartOffset - 1))
+                    textInfo = TextTypeWithOffset(TextType.Code, nextLineStartOffset)
+                }
+
+                lineValue.isBlank() -> {
+                    if (textInfo?.type == TextType.Paragraph) {
+                        finalizeTextValue(skipBackWhitespaces(lineStartOffset - 1))
                     }
-                    firstChar == '`' && checkCodeFence(lineValue) -> {
-                        finalizeTextValue(elementStartOffset, skipBackWhitespaces(lineStartOffset - 1))
-                        elementStartOffset = nextLineStartOffset
-                        textType = TextType.Code
-                    }
-                    else -> {
-                        if (textType == null) {
-                            textType = TextType.Paragraph
-                            elementStartOffset = lineStartOffset
-                        }
-                    }
+                }
+
+                textInfo.let { it == null || it.type == TextType.Empty } -> {
+                    textInfo = TextTypeWithOffset(TextType.Paragraph, lineStartOffset)
                 }
             }
 
@@ -85,13 +93,15 @@ class TestDescriptorExtractor private constructor(
             lineStartOffset = nextLineStartOffset
         } while (nextLineStartOffset < input.length)
 
-        textType = TextType.Paragraph
-        finalizeTextValue(input.length, input.length)
-        finalizePreviousProperty()
+        // Finalize trailing text blocks
+        finalizeTextValue(
+            if (textInfo?.type == TextType.Code) previousLineEndOffset else skipBackWhitespaces(lineStartOffset - 1),
+            addEmptyValueIfNoElements = true
+        )
 
         @Suppress("UNCHECKED_CAST")
         return TestDescriptor(
-            name = getPropertyValue("name") as? String ?: name,
+            name = (getPropertyValue("name") as? PropertyValue)?.value?.toString() ?: name,
             notes = getPropertyValue(NOTES_NAME) as? List<PropertyValue> ?: emptyList(),
             grammars = getPropertyValue("grammars") as? List<PropertyValue> ?: run {
                 diagnosticReporter?.invoke(
@@ -111,27 +121,25 @@ class TestDescriptorExtractor private constructor(
         if (offset <= 0) return 0
 
         var currentOffset = offset
-        while (currentOffset > 0 && input[currentOffset] in whitespaceChars) {
+        while (currentOffset > 0 && input[currentOffset].isWhitespace()) {
             currentOffset--
         }
         return currentOffset + 1
     }
 
     private fun processHeader(lineStart: Int, lineEnd: Int) {
-        finalizePreviousProperty()
-
         val subSequence = input.subSequence(lineStart, lineEnd)
         val headerValueStart = subSequence.indexOfFirst { it != '#' && !it.isWhitespace() }
-        val headerValueStop = subSequence.indexOfLast { !whitespaceChars.contains(it) } + 1
+        val headerValueStop = subSequence.indexOfLast { !it.isWhitespace() } + 1
         val headerValue = subSequence.subSequence(headerValueStart, headerValueStop).toString()
 
         val descriptorProperty = testDescriptorProperties[headerValue.lowercase()]
 
         if (descriptorProperty != null) {
-            if (!propertyValues.containsKey(descriptorProperty)) {
-                property = descriptorProperty
-                propertyValue = null
-            } else {
+            val existingPropertyValue = propertyValues[descriptorProperty]
+            property = descriptorProperty
+
+            if (existingPropertyValue != null && (existingPropertyValue as? List<*>)?.isNotEmpty() == true) {
                 diagnosticReporter?.invoke(
                     TestDescriptorDiagnostic(
                         TestDescriptorDiagnosticType.DuplicatedProperty,
@@ -159,52 +167,44 @@ class TestDescriptorExtractor private constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun finalizeTextValue(startOffset: Int, endOffset: Int) {
-        if (textType == null) return
+    private fun finalizeTextValue(endOffset: Int, addEmptyValueIfNoElements: Boolean = false) {
+        val localTextInfo = textInfo ?: return
 
-        val currentProperty = property ?: run {
-            // Use `Notes` property for first headless paragraph
-            testDescriptorProperties.getValue(NOTES_NAME).also { property = it }
+        fun getTextValue(): PropertyValue {
+            val sourceInterval = SourceInterval(localTextInfo.offset, endOffset - localTextInfo.offset)
+            return TextPropertyValue(input.subSequence(localTextInfo.offset, endOffset), sourceInterval)
         }
 
-        val sourceInterval = SourceInterval(startOffset, endOffset - startOffset)
-        val currentPropertyValue = TextPropertyValue(input.subSequence(startOffset, endOffset), sourceInterval)
-        when (currentProperty.returnType.classifier) {
+        when (property.returnType.classifier) {
             List::class -> {
-                val value = (propertyValue ?: run {
-                    propertyValue = mutableListOf<PropertyValue>()
-                    propertyValue
+                val propertyValue = (propertyValues[property] ?: run {
+                    mutableListOf<PropertyValue>().also { propertyValues[property] = it }
                 }) as MutableList<PropertyValue>
-                value.add(currentPropertyValue)
+                if (localTextInfo.type != TextType.Empty || propertyValue.isEmpty() && addEmptyValueIfNoElements) {
+                    propertyValue.add(getTextValue())
+                }
             }
             String::class -> {
-                val value = propertyValue as? String
-                if (value == null) {
-                    propertyValue = currentPropertyValue.value.toString()
-                } else {
-                    diagnosticReporter?.invoke(
-                        TestDescriptorDiagnostic(
-                            TestDescriptorDiagnosticType.DuplicatedValue,
-                            currentProperty.name,
-                            sourceInterval
+                val propertyValue = propertyValues[property] as? PropertyValue
+                if (localTextInfo.type != TextType.Empty || propertyValue == null && addEmptyValueIfNoElements) {
+                    if (propertyValue == null) {
+                        propertyValues[property] = getTextValue()
+                    } else {
+                        diagnosticReporter?.invoke(
+                            TestDescriptorDiagnostic(
+                                TestDescriptorDiagnosticType.DuplicatedValue,
+                                property.name,
+                                SourceInterval(localTextInfo.offset, endOffset - localTextInfo.offset)
+                            )
                         )
-                    )
+                    }
                 }
             }
             else -> {
-                error("Unexpected property type: ${currentProperty.returnType.classifier}")
+                error("Unexpected property type: ${property.returnType.classifier}")
             }
         }
 
-        textType = null
-    }
-
-    private fun finalizePreviousProperty() {
-        val currentProperty = property
-        if (currentProperty != null) {
-            propertyValues[currentProperty] = propertyValue
-            property = null
-            propertyValue = null
-        }
+        textInfo = null
     }
 }

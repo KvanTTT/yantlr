@@ -12,5 +12,3 @@ grammar A;
 /*❗UnrecognizedToken❗*/`/*❗*/;
 X : 'x';
 ```
-
-# Input

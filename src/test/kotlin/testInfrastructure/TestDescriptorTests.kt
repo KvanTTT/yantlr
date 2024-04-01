@@ -47,8 +47,28 @@ object TestDescriptorTests {
             LineColumnBorders(11, 1, 13, 9),
             secondGrammar.sourceInterval.getLineColumnBorders(lineOffsets)
         )
+    }
 
-        assertEquals("", descriptor.input.single().value)
+    @Test
+    fun noEmptyGrammarAtTheEnd() {
+        val (descriptor, _, _) = parseTestDescriptor("CodeFenceAtTheEnd.md")
+        assertEquals(1, descriptor.grammars.size)
+    }
+
+    @Test
+    fun emptyPropertyValueForEmptySectionAtTheEnd() {
+        val (descriptor, _, lineOffsets) = parseTestDescriptor("EmptyPropertyValueForEmptySectionAtTheEnd.md")
+        val inputElement = descriptor.input.single()
+
+        assertEquals(LineColumnBorders(12, 8) , inputElement.sourceInterval.getLineColumnBorders(lineOffsets))
+    }
+
+    @Test
+    fun emptyPropertyValueForEmptySectionAtTheMiddle() {
+        val (descriptor, _, lineOffsets) = parseTestDescriptor("EmptyPropertyValueForEmptySectionAtTheMiddle.md")
+        val inputElement = descriptor.input.single()
+
+        assertEquals(LineColumnBorders(5, 8) , inputElement.sourceInterval.getLineColumnBorders(lineOffsets))
     }
 
     @Test
@@ -104,7 +124,7 @@ object TestDescriptorTests {
     }
 
     private fun parseTestDescriptor(name: String): Triple<TestDescriptor, List<TestDescriptorDiagnostic>, List<Int>> {
-        val file = Paths.get(resourcesFile.toString(), "TestDescriptors", name).toFile()
+        val file = Paths.get(resourcesFile.toString(), "Infrastructure", name).toFile()
         val diagnostics = mutableListOf<TestDescriptorDiagnostic>()
         val testDescriptor =
             TestDescriptorExtractor.extract(file.readText(), file.nameWithoutExtension) { diagnostics.add(it) }
