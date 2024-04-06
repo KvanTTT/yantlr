@@ -4,7 +4,7 @@ import infrastructure.AntlrTreeComparer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class AntlrLeadingTrailingTokensTests {
+object AntlrLeadingTrailingTokensTests {
     @Test
     fun empty() {
         val tokensCalculator = AntlrTokensCalculator(emptyList())

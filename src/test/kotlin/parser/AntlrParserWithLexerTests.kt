@@ -1,26 +1,11 @@
 package parser
 
 import org.junit.jupiter.api.Test
-import parser.AntlrParserTests.Companion.defaultTreeNode
 
-class AntlrParserWithLexerTests {
-    companion object {
-        val defaultGrammar = """
-// Begin comment
-grammar test;
-x
-    : A
-    | b
-    | (C | d)
-    |
-    ;
-// End comment
-""".trimIndent()
-    }
-
+object AntlrParserWithLexerTests {
     @Test
     fun parserWithLexer() {
-        infrastructure.check(defaultTreeNode, defaultGrammar) { it.parseGrammar() }
+        infrastructure.check(ExampleData.TreeNode, ExampleData.GRAMMAR) { it.parseGrammar() }
     }
 
     @Test

@@ -39,7 +39,7 @@ class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit>() {
             appendIndent()
             append("Token (")
             append(token.type)
-            (token.value ?: lexer?.getTokenValue(token))?.let {
+            token.value?.let {
                 append(", ")
                 append(it)
             }

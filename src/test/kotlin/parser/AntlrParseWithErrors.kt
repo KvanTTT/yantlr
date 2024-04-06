@@ -2,7 +2,7 @@ package parser
 
 import org.junit.jupiter.api.Test
 
-class AntlrParseWithErrors {
+object AntlrParseWithErrors {
     @Test
     fun elementWithErrors() {
         infrastructure.check(

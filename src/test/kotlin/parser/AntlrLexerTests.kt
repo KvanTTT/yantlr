@@ -4,7 +4,7 @@ import infrastructure.AntlrTreeComparer
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class AntlrLexerTests {
+object AntlrLexerTests {
     @Test
     fun testEmpty() {
         checkTokens("", listOf())

@@ -6,7 +6,7 @@ import parser.AntlrParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class RuleCollectorTests {
+object RuleCollectorTests {
     @Test
     fun rules() {
         val grammar = """

@@ -1,14 +1,13 @@
 package parser
 
 import infrastructure.AntlrFullFidelityDumper
-import parser.AntlrParserWithLexerTests.Companion.defaultGrammar
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class AntlrFullFidelityTests {
+object AntlrFullFidelityTests {
     @Test
     fun fullFidelityTree() {
-        check(defaultGrammar)
+        check(ExampleData.GRAMMAR)
     }
 
     @Test
