@@ -30,8 +30,8 @@ object AntlrParseWithErrors {
         infrastructure.check(
             GrammarNode(
                 null,
-                AntlrToken(AntlrTokenType.Grammar, value = "grammar"),
-                AntlrToken(AntlrTokenType.ParserId, channel = AntlrTokenChannel.Error),
+                AntlrToken(AntlrTokenType.Grammar),
+                AntlrToken(AntlrTokenType.Error, channel = AntlrTokenChannel.Error),
                 AntlrToken(AntlrTokenType.Semicolon, channel = AntlrTokenChannel.Error),
                 emptyList(),
                 EndNode(

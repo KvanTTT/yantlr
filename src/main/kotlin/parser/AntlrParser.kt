@@ -41,7 +41,7 @@ class AntlrParser(
         get
 
     // grammar
-    //   : (Lexer | Parser)? Grammar ParserId ';' rule*
+    //   : (Lexer | Parser)? Grammar id ';' rule*
     //   ;
     fun parseGrammar(matchToEof: Boolean = true): GrammarNode {
         val lexerOrParserToken = when (getToken().type) {
@@ -51,7 +51,7 @@ class AntlrParser(
 
         val grammarToken = matchToken(AntlrTokenType.Grammar)
 
-        val idToken = matchToken(AntlrTokenType.ParserId)
+        val idToken = parseId()
 
         val semicolonToken = matchToken(AntlrTokenType.Semicolon)
 
@@ -69,13 +69,10 @@ class AntlrParser(
     }
 
     // rule
-    //   : (LexerId | ParserId) ':' block ';'
+    //   : id ':' block ';'
     //   ;
     fun parseRule(): RuleNode {
-        val lexerIdOrParserIdToken = when (getToken().type) {
-            AntlrTokenType.LexerId, AntlrTokenType.ParserId -> matchToken()
-            else -> emitMissingToken(tokenType = null)
-        }
+        val lexerIdOrParserIdToken = parseId()
 
         val colonToken = matchToken(AntlrTokenType.Colon)
 
@@ -259,6 +256,17 @@ class AntlrParser(
         }
 
         return ElementSuffixNode(ebnfToken, nonGreedyToken)
+    }
+
+    // id
+    //   : LexerId
+    //   | ParserId
+    //   ;
+    private fun parseId(): AntlrToken {
+        return when (getToken().type) {
+            AntlrTokenType.LexerId, AntlrTokenType.ParserId -> matchToken()
+            else -> emitMissingToken(tokenType = null)
+        }
     }
 
     private fun emitEndNode(extraTokens: List<AntlrToken>, matchToEof: Boolean): EndNode? {
