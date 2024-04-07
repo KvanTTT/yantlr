@@ -40,3 +40,19 @@ fun CharSequence.getLineOffsets(): List<Int> {
         }
     }
 }
+
+private val commonEscapeToLiteralChars = mapOf(
+    '\n' to 'n',
+    '\r' to 'r',
+    '\t' to 't',
+    '\b' to 'b',
+    '\\' to '\\'
+)
+
+val antlrEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf('\'' to '\'')
+
+val antlrLiteralToEscapeChars = antlrEscapeToLiteralChars.entries.associate { (k, v) -> v to k }
+
+val stringEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf('"' to '\"')
+
+val stringLiteralToEscapeChars = stringEscapeToLiteralChars.entries.associate { (k, v) -> v to k }

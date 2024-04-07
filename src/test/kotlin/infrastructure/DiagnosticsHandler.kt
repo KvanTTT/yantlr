@@ -4,6 +4,8 @@ import Diagnostic
 import SourceInterval
 import parser.getLineColumn
 import parser.getLineOffsets
+import parser.stringEscapeToLiteralChars
+import parser.stringLiteralToEscapeChars
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
@@ -85,7 +87,9 @@ abstract class DiagnosticsHandler<T : Diagnostic>(
                         while (offset < str.length) {
                             when (str[offset]) {
                                 '\\' -> {
-                                    str.elementAtOrNull(offset + 1)?.let { append(it) }
+                                    str.elementAtOrNull(offset + 1)?.let {
+                                        append(stringLiteralToEscapeChars[it] ?: it)
+                                    }
                                     offset += 2
                                 }
                                 '"' -> {
@@ -168,10 +172,10 @@ abstract class DiagnosticsHandler<T : Diagnostic>(
                 else -> value
             }
             val valueString = normalizedValue.toString()
-            if (valueString.contains('\\') || valueString.contains('"')) {
+            if (valueString.any { stringEscapeToLiteralChars.containsKey(it) }) {
                 append('"')
                 valueString.forEach {
-                    if (it == '\\' || it == '"') append('\\')
+                    if (stringEscapeToLiteralChars.containsKey(it)) append('\\')
                     append(it)
                 }
                 append('"')
