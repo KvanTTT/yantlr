@@ -2,15 +2,13 @@ package infrastructureTests
 
 import LineColumnBorders
 import infrastructure.resourcesFile
-import infrastructure.testDescriptors.TestDescriptor
-import infrastructure.testDescriptors.TestDescriptorDiagnostic
-import infrastructure.testDescriptors.TestDescriptorDiagnosticType
-import infrastructure.testDescriptors.TestDescriptorExtractor
+import infrastructure.testDescriptors.*
 import org.junit.jupiter.api.Test
 import parser.getLineColumnBorders
 import parser.getLineOffsets
 import java.nio.file.Paths
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 object TestDescriptorTests {
     @Test
@@ -88,7 +86,7 @@ object TestDescriptorTests {
         val (_, diagnostics, lineOffsets) = parseTestDescriptor("Errors/UnknownProperty.md")
 
         val diagnostic = diagnostics.single()
-        assertEquals(TestDescriptorDiagnosticType.UnknownProperty, diagnostic.type)
+        assertIs<UnknownPropertyDiagnostic>(diagnostic)
         assertEquals("UnknownProperty", diagnostic.arg)
         assertEquals(LineColumnBorders(5, 3, 18), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
@@ -98,7 +96,7 @@ object TestDescriptorTests {
         val (_, diagnostics, lineOffsets) = parseTestDescriptor("Errors/DuplicatedProperty.md")
 
         val diagnostic = diagnostics.single()
-        assertEquals(TestDescriptorDiagnosticType.DuplicatedProperty, diagnostic.type)
+        assertIs<DuplicatedPropertyDiagnostic>(diagnostic)
         assertEquals("Grammars", diagnostic.arg)
         assertEquals(LineColumnBorders(12, 3, 11), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
@@ -108,7 +106,7 @@ object TestDescriptorTests {
         val (_, diagnostics, lineOffsets) = parseTestDescriptor("Errors/DuplicatedValue.md")
 
         val diagnostic = diagnostics.single()
-        assertEquals(TestDescriptorDiagnosticType.DuplicatedValue, diagnostic.type)
+        assertIs<DuplicatedValueDiagnostic>(diagnostic)
         assertEquals("name", diagnostic.arg)
         assertEquals(LineColumnBorders(5, 1, 14), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
@@ -118,7 +116,7 @@ object TestDescriptorTests {
         val (_, diagnostics, lineOffsets) = parseTestDescriptor("Errors/MissingGrammars.md")
 
         val diagnostic = diagnostics.single()
-        assertEquals(TestDescriptorDiagnosticType.MissingProperty, diagnostic.type)
+        assertIs<MissingPropertyDiagnostic>(diagnostic)
         assertEquals("Grammars", diagnostic.arg)
         assertEquals(LineColumnBorders(4, 1, 1), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }

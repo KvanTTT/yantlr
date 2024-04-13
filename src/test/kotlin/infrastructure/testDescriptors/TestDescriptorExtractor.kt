@@ -105,11 +105,7 @@ class TestDescriptorExtractor private constructor(
             notes = getPropertyValue(NOTES_NAME) as? List<PropertyValue> ?: emptyList(),
             grammars = getPropertyValue("grammars") as? List<PropertyValue> ?: run {
                 diagnosticReporter?.invoke(
-                    TestDescriptorDiagnostic(
-                        TestDescriptorDiagnosticType.MissingProperty,
-                        "Grammars",
-                        SourceInterval(input.length, 0)
-                    )
+                    MissingPropertyDiagnostic("Grammars", SourceInterval(input.length, 0))
                 )
                 emptyList()
             },
@@ -141,8 +137,7 @@ class TestDescriptorExtractor private constructor(
 
             if (existingPropertyValue != null && (existingPropertyValue as? List<*>)?.isNotEmpty() == true) {
                 diagnosticReporter?.invoke(
-                    TestDescriptorDiagnostic(
-                        TestDescriptorDiagnosticType.DuplicatedProperty,
+                    DuplicatedPropertyDiagnostic(
                         headerValue,
                         SourceInterval(lineStart + headerValueStart, headerValue.length)
                     )
@@ -150,8 +145,7 @@ class TestDescriptorExtractor private constructor(
             }
         } else {
             diagnosticReporter?.invoke(
-                TestDescriptorDiagnostic(
-                    TestDescriptorDiagnosticType.UnknownProperty,
+                UnknownPropertyDiagnostic(
                     headerValue,
                     SourceInterval(lineStart + headerValueStart, headerValue.length)
                 )
@@ -191,8 +185,7 @@ class TestDescriptorExtractor private constructor(
                         propertyValues[property] = getTextValue()
                     } else {
                         diagnosticReporter?.invoke(
-                            TestDescriptorDiagnostic(
-                                TestDescriptorDiagnosticType.DuplicatedValue,
+                            DuplicatedValueDiagnostic(
                                 property.name,
                                 SourceInterval(localTextInfo.offset, endOffset - localTextInfo.offset)
                             )

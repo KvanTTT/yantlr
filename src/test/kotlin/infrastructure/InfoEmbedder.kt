@@ -58,11 +58,7 @@ object InfoEmbedder {
                     if (descriptor is DiagnosticInfoDescriptor<*>) {
                         append(descriptor.startMarker)
                         if (infoWithOffset.start) {
-                            @Suppress("UNCHECKED_CAST")
-                            val actualDiagnosticsName =
-                                (descriptor as DiagnosticInfoDescriptor<Diagnostic>).getName(
-                                    infoWithDescriptor.info as Diagnostic
-                                )
+                            val actualDiagnosticsName = (infoWithDescriptor.info as Diagnostic)::class.simpleName!!.removeSuffix("Diagnostic")
                             append(actualDiagnosticsName)
 
                             val expectedDiagnostic =
