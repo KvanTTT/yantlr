@@ -3,9 +3,10 @@ package infrastructureTests
 import AntlrDiagnostic
 import LineColumn
 import SourceInterval
-import infrastructure.AntlrDiagnosticsHandler
+import infrastructure.AntlrDiagnosticsExtractor
 import infrastructure.DiagnosticInfo
 import infrastructure.ExtractionResult
+import infrastructure.InfoEmbedder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import parser.*
@@ -26,7 +27,7 @@ grammar test
 
     @Test
     fun baseExtractDiagnostics() {
-        val extractionResult = AntlrDiagnosticsHandler.extract(baseInput)
+        val extractionResult = AntlrDiagnosticsExtractor.extract(baseInput)
 
         assertEquals(baseRefinedInput, extractionResult.refinedInput)
 
@@ -64,7 +65,7 @@ grammar test
         val parser = AntlrParser(AntlrLexerTokenStream(lexer)) { actualDiagnostics.add(it) }
         parser.parseGrammar()
 
-        assertEquals(baseInput, AntlrDiagnosticsHandler.embed(
+        assertEquals(baseInput, InfoEmbedder.embedDiagnostics(
             ExtractionResult(emptyMap(), baseRefinedInput), actualDiagnostics))
     }
 
@@ -80,7 +81,7 @@ grammar test;
 a : '\u';
         """.trimIndent()
 
-        val extractionResult = AntlrDiagnosticsHandler.extract(input)
+        val extractionResult = AntlrDiagnosticsExtractor.extract(input)
 
         assertEquals(refinedInput, extractionResult.refinedInput)
 
@@ -89,14 +90,14 @@ a : '\u';
             AntlrParser(AntlrLexerTokenStream(lexer)) { add(it) }.parseGrammar()
         }
 
-        val actualInput = AntlrDiagnosticsHandler.embed(extractionResult, actualDiagnostics)
+        val actualInput = InfoEmbedder.embedDiagnostics(extractionResult, actualDiagnostics)
 
         assertEquals(input, actualInput)
     }
 
     @Test
     fun unclosedDiagnosticDescriptor() {
-        val exception = assertThrows<IllegalStateException> { AntlrDiagnosticsHandler.extract("""
+        val exception = assertThrows<IllegalStateException> { AntlrDiagnosticsExtractor.extract("""
 grammar test /*❗UnrecognizedToken*/`
         """.trimIndent())
         }
@@ -105,7 +106,7 @@ grammar test /*❗UnrecognizedToken*/`
 
     @Test
     fun unexpectedDiagnosticEndMarker() {
-        val exception = assertThrows<IllegalStateException> { AntlrDiagnosticsHandler.extract("""
+        val exception = assertThrows<IllegalStateException> { AntlrDiagnosticsExtractor.extract("""
 grammar test /*❗UnrecognizedToken*/`/*❗*//*❗*/
         """.trimIndent())
         }

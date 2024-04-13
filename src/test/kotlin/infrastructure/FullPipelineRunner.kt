@@ -17,20 +17,20 @@ object FullPipelineRunner {
 
                 val extractionResult = runGrammar(content, 0, expectedGrammarDiagnosticsInfos, actualGrammarDiagnostics)
 
-                val grammarWithActualDiagnostics = AntlrDiagnosticsHandler.embed(extractionResult, actualGrammarDiagnostics)
+                val grammarWithActualDiagnostics = InfoEmbedder.embedDiagnostics(extractionResult, actualGrammarDiagnostics)
 
                 failFileComparisonIfNotEqual(
                     "Grammar diagnostics are not equal", content, grammarWithActualDiagnostics, file)
             }
             "md" -> {
-                val testDescriptorExtractionResult = TestDescriptorDiagnosticsHandler.extract(content)
+                val testDescriptorExtractionResult = TestDescriptorDiagnosticsExtractor.extract(content)
 
                 val testDescriptorDiagnostics = mutableListOf<TestDescriptorDiagnostic>()
                 val testDescriptor = TestDescriptorExtractor.extract(testDescriptorExtractionResult.refinedInput, file.nameWithoutExtension) {
                     testDescriptorDiagnostics.add(it)
                 }
 
-                val inputWithEmbeddedDiagnostics = TestDescriptorDiagnosticsHandler.embed(testDescriptorExtractionResult, testDescriptorDiagnostics)
+                val inputWithEmbeddedDiagnostics = InfoEmbedder.embedDiagnostics(testDescriptorExtractionResult, testDescriptorDiagnostics)
 
                 failFileComparisonIfNotEqual(
                     "Test descriptor diagnostics are not equal", content, inputWithEmbeddedDiagnostics, file)
@@ -51,11 +51,11 @@ object FullPipelineRunner {
                     runGrammar(grammar.value, grammar.sourceInterval.offset, expectedGrammarDiagnostics, grammarDiagnostics)
                 }
 
-                val (_, refinedInput) = AntlrDiagnosticsHandler.extract(testDescriptorExtractionResult.refinedInput)
+                val (_, refinedInput) = AntlrDiagnosticsExtractor.extract(testDescriptorExtractionResult.refinedInput)
 
                 val antlrDiagnosticsExtractionResult = ExtractionResult(expectedGrammarDiagnostics, refinedInput)
                 val testDescriptorWithActualDiagnostics =
-                    AntlrDiagnosticsHandler.embed(antlrDiagnosticsExtractionResult, grammarDiagnostics)
+                    InfoEmbedder.embedDiagnostics(antlrDiagnosticsExtractionResult, grammarDiagnostics)
 
                 failFileComparisonIfNotEqual(
                     "Grammar diagnostics are not equal", content, testDescriptorWithActualDiagnostics, file)
@@ -76,7 +76,7 @@ object FullPipelineRunner {
         expectedGrammarDiagnostics: MutableMap<Int, List<DiagnosticInfo>>,
         grammarDiagnostics: MutableList<AntlrDiagnostic>,
     ) : ExtractionResult {
-        val grammarDiagnosticsInfo = AntlrDiagnosticsHandler.extract(grammar, grammarOffset)
+        val grammarDiagnosticsInfo = AntlrDiagnosticsExtractor.extract(grammar, grammarOffset)
 
         expectedGrammarDiagnostics.putAll(grammarDiagnosticsInfo.diagnostics)
 

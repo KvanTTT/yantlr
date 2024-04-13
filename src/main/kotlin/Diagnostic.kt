@@ -1,1 +1,1 @@
-abstract class Diagnostic(val sourceInterval: SourceInterval)
+abstract class Diagnostic(sourceInterval: SourceInterval) : InfoWithSourceInterval(sourceInterval)

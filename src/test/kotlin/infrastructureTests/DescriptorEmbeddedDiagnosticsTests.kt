@@ -1,6 +1,7 @@
 package infrastructureTests
 
-import infrastructure.TestDescriptorDiagnosticsHandler
+import infrastructure.InfoEmbedder
+import infrastructure.TestDescriptorDiagnosticsExtractor
 import infrastructure.resourcesFile
 import infrastructure.testDescriptors.TestDescriptorExtractor
 import java.nio.file.Paths
@@ -35,7 +36,7 @@ object DescriptorEmbeddedDiagnosticsTests {
         val inputFile = Paths.get(resourcesFile.toString(), "Infrastructure", "TestDescriptorWithErrors.md").toFile()
         val input = inputFile.readText()
 
-        val extractionResult = TestDescriptorDiagnosticsHandler.extract(inputFile.readText())
+        val extractionResult = TestDescriptorDiagnosticsExtractor.extract(inputFile.readText())
 
         assertEquals(reifiedInput, extractionResult.refinedInput)
 
@@ -43,7 +44,7 @@ object DescriptorEmbeddedDiagnosticsTests {
             TestDescriptorExtractor.extract(extractionResult.refinedInput, inputFile.nameWithoutExtension) { add(it) }
         }
 
-        val inputWithEmbeddedActualDiagnostics = TestDescriptorDiagnosticsHandler.embed(extractionResult, actualDiagnostics)
+        val inputWithEmbeddedActualDiagnostics = InfoEmbedder.embedDiagnostics(extractionResult, actualDiagnostics)
 
         assertEquals(input, inputWithEmbeddedActualDiagnostics)
     }
