@@ -31,4 +31,4 @@ object TestDescriptorDiagnosticInfoDescriptor : DiagnosticInfoDescriptor<TestDes
     ignoredPropertyNames = setOf("type"),
 )
 
-object DumpInfoDescriptor : EmbeddedInfoDescriptor<InfoWithSourceInterval>()
+object DumpInfoDescriptor : EmbeddedInfoDescriptor<DumpInfo>()

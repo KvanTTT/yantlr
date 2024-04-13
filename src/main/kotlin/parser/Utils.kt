@@ -28,17 +28,48 @@ fun LineColumn.getOffset(lineOffsets: List<Int>): Int {
     return lineStart + column - 1
 }
 
-fun CharSequence.getLineOffsets(): List<Int> {
-    return buildList {
-        add(0)
-        for (i in this@getLineOffsets.indices) {
-            if (this@getLineOffsets[i].let {
-                    it == '\r' && i + 1 < length && this@getLineOffsets[i + 1] != '\n' || it == '\n'
-                }) {
-                add(i + 1)
+fun CharSequence.getLineOffsets(): List<Int> = getLineOffsetsAndMainLineBreak().lineOffsets
+
+data class LineOffsetsAndMainLineBreak(val lineOffsets: List<Int>, val lineBreak: String)
+
+fun CharSequence.getLineOffsetsAndMainLineBreak(): LineOffsetsAndMainLineBreak {
+    val lineOffsets = mutableListOf(0)
+    var rnCount = 0
+    var nCount = 0
+    var rCount = 0
+
+    var index = 0
+    while (index < length) {
+        when (this[index]) {
+            '\r' -> {
+                if (index + 1 < length && this[index + 1] == '\n') {
+                    rnCount++
+                    index += 2
+                    lineOffsets.add(index)
+                } else {
+                    rCount++
+                    index++
+                    lineOffsets.add(index)
+                }
+            }
+            '\n' -> {
+                nCount++
+                index++
+                lineOffsets.add(index)
+            }
+            else -> {
+                index++
             }
         }
     }
+
+    val mainLineBreak = if (rnCount >= nCount) {
+        if (rnCount >= rCount) "\r\n" else "\r"
+    } else {
+        if (nCount >= rCount) "\n" else "\r"
+    }
+
+    return LineOffsetsAndMainLineBreak(lineOffsets, mainLineBreak)
 }
 
 private val commonEscapeToLiteralChars = mapOf(

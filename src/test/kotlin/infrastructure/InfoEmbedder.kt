@@ -2,10 +2,11 @@ package infrastructure
 
 import AntlrDiagnostic
 import Diagnostic
+import InfoWithSourceInterval
 import SourceInterval
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import parser.getLineColumn
-import parser.getLineOffsets
+import parser.getLineOffsetsAndMainLineBreak
 import parser.stringEscapeToLiteralChars
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
@@ -24,9 +25,9 @@ object InfoEmbedder {
         })
     }
 
-    fun embed(extractionResult: ExtractionResult, embeddedInfos: List<InfoWithDescriptor<*>>): String {
-        data class InfoWithOffset(val infoWithDescriptor: InfoWithDescriptor<*>, val start: Boolean)
+    private data class InfoWithOffset(val infoWithDescriptor: InfoWithDescriptor<*>, val start: Boolean)
 
+    fun embed(extractionResult: ExtractionResult, embeddedInfos: List<InfoWithDescriptor<*>>): String {
         if (embeddedInfos.isEmpty()) return extractionResult.refinedInput
 
         val offsetToInfoMap = linkedMapOf<Int, MutableList<InfoWithOffset>>()
@@ -45,7 +46,9 @@ object InfoEmbedder {
         }
 
         val input = extractionResult.refinedInput
-        val lineOffsets by lazy(LazyThreadSafetyMode.NONE) { input.getLineOffsets() }
+        val lineOffsetsAndMainLineBreak by lazy(LazyThreadSafetyMode.NONE) {
+            input.getLineOffsetsAndMainLineBreak()
+        }
 
         var lastOffset = 0
         return buildString {
@@ -53,37 +56,119 @@ object InfoEmbedder {
                 append(input.subSequence(lastOffset, offset))
 
                 for (infoWithOffset in infosWithOffset) {
-                    val infoWithDescriptor = infoWithOffset.infoWithDescriptor
-                    val descriptor = infoWithDescriptor.descriptor
+                    val (info, descriptor) = infoWithOffset.infoWithDescriptor
+
                     if (descriptor is DiagnosticInfoDescriptor<*>) {
                         append(descriptor.startMarker)
                         if (infoWithOffset.start) {
-                            val actualDiagnosticsName = (infoWithDescriptor.info as Diagnostic)::class.simpleName!!.removeSuffix("Diagnostic")
+                            val actualDiagnosticsName = info::class.simpleName!!.removeSuffix("Diagnostic")
                             append(actualDiagnosticsName)
 
                             val expectedDiagnostic =
                                 extractionResult.diagnostics[offset]?.single { it.name == actualDiagnosticsName }
                             if (expectedDiagnostic?.args != null) {
-                                appendArgs(infoWithDescriptor, lineOffsets)
+                                appendDiagnosticArgs(info, descriptor, lineOffsetsAndMainLineBreak.lineOffsets)
                             }
                         }
                         append(descriptor.endMarker)
-                    } else {
-                        // TODO: implement dumps embedding
+                        lastOffset = offset
+                    } else if (descriptor == DumpInfoDescriptor) {
+                        info as DumpInfo
+                        val lineBreak = lineOffsetsAndMainLineBreak.lineBreak
+                        ensureBackTwoLineBreaks(lineBreak)
+                        append("```")
+                        append(info.format)
+                        append(lineBreak)
+                        append(info.dump)
+                        append(lineBreak)
+                        append("```")
+                        ensureNextTwoLineBreaks(lineBreak, input, info.sourceInterval.end())
+                        lastOffset = info.sourceInterval.end()
                     }
                 }
-
-                lastOffset = offset
             }
 
             append(input.subSequence(lastOffset, input.length))
         }
     }
 
-    private fun StringBuilder.appendArgs(infoWithDescriptor: InfoWithDescriptor<*>, lineOffsets: List<Int>) {
-        val (info, descriptor) = infoWithDescriptor
-        descriptor as DiagnosticInfoDescriptor<*>
+    private fun StringBuilder.ensureBackTwoLineBreaks(lineBreak: String) {
+        if (isEmpty()) return
 
+        var lineBreaksCount = 0
+        var index = length - 1
+
+        fun checkAndDecrement(): Boolean {
+            if (index < 0) return false
+
+            when (get(index)) {
+                '\r' -> {
+                    lineBreaksCount++
+                    index--
+                    return true
+                }
+                '\n' -> {
+                    lineBreaksCount++
+                    index--
+                    if (index >= 0 && get(index) == '\r') {
+                        index--
+                    }
+                    return true
+                }
+            }
+
+            return false
+        }
+
+        if (checkAndDecrement()) {
+            checkAndDecrement()
+        }
+
+        for (i in 0..<2 - lineBreaksCount) {
+            append(lineBreak)
+        }
+    }
+
+    private fun StringBuilder.ensureNextTwoLineBreaks(lineBreak: String, input: String, offset: Int) {
+        if (offset >= input.length) return
+
+        var lineBreaksCount = 0
+        var index = offset
+
+        fun checkAndIncrement(): Boolean {
+            if (index >= input.length) return false
+
+            when (input[index]) {
+                '\r' -> {
+                    lineBreaksCount++
+                    index++
+                    if (index < input.length && input[index] == '\n') {
+                        index++
+                    }
+                    return true
+                }
+                '\n' -> {
+                    lineBreaksCount++
+                    index++
+                    return true
+                }
+            }
+
+            return false
+        }
+
+        if (checkAndIncrement()) {
+            checkAndIncrement()
+        }
+
+        for (i in 0..<2 - lineBreaksCount) {
+            append(lineBreak)
+        }
+    }
+
+    private fun StringBuilder.appendDiagnosticArgs(
+        info: InfoWithSourceInterval, descriptor: DiagnosticInfoDescriptor<*>, lineOffsets: List<Int>
+    ) {
         val nameToPropertyMap = info::class.memberProperties.associateBy { it.name }
         for (member in info::class.primaryConstructor!!.parameters) {
             @Suppress("UNCHECKED_CAST")

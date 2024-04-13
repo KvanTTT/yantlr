@@ -48,7 +48,6 @@ class TestDescriptorExtractor private constructor(
                 input[lineEndOffset] == '\r' && input.getOrNull(lineEndOffset + 1) == '\n' -> {
                     lineEndOffset + 2
                 }
-
                 else -> {
                     lineEndOffset + 1
                 }
@@ -109,6 +108,7 @@ class TestDescriptorExtractor private constructor(
                 )
                 emptyList()
             },
+            atn = getPropertyValue("atn") as? PropertyValue,
             input = getPropertyValue("input") as? List<PropertyValue> ?: emptyList(),
         )
     }
@@ -178,7 +178,8 @@ class TestDescriptorExtractor private constructor(
                     propertyValue.add(getTextValue())
                 }
             }
-            String::class -> {
+            String::class,
+            PropertyValue::class -> {
                 val propertyValue = propertyValues[property] as? PropertyValue
                 if (localTextInfo.type != TextType.Empty || propertyValue == null && addEmptyValueIfNoElements) {
                     if (propertyValue == null) {
