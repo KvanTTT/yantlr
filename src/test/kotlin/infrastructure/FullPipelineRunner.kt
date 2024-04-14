@@ -27,7 +27,7 @@ object FullPipelineRunner {
                     "Grammar diagnostics are not equal", content, grammarWithActualDiagnostics, file)
             }
             "md" -> {
-                val (testDescriptor, refinedInput, diagnostics) = getAndCheckTestDescriptor(content, file)
+                val (testDescriptor, refinedInput, diagnosticInfos) = getAndCheckTestDescriptor(content, file)
 
                 val grammarResults = mutableListOf<GrammarPipelineResult>()
                 val actualGrammarDiagnostics = mutableListOf<AntlrDiagnostic>()
@@ -39,7 +39,7 @@ object FullPipelineRunner {
                     grammarResults.add(result)
                 }
 
-                val expectDiagnosticInfos = diagnostics.groupBy { it.sourceInterval.offset }
+                val expectDiagnosticInfos = diagnosticInfos.groupBy { it.sourceInterval.offset }
 
                 val antlrDiagnosticsExtractionResult = ExtractionResult(expectDiagnosticInfos, refinedInput)
                 val testDescriptorWithActualDiagnostics =
@@ -61,32 +61,28 @@ object FullPipelineRunner {
             actualDescriptorDiagnostics.add(it)
         }
 
-        val notTestDescriptorDiagnostics = allDiagnosticsExtractionResult.diagnostics.flatMap { it.value }
+        val otherDiagnostics = allDiagnosticsExtractionResult.diagnostics.flatMap { it.value }
             .filterNot { it.descriptor is TestDescriptorDiagnosticInfoDescriptor }
 
-        val inputWithActualDescriptorDiagnostics =
-            InfoEmbedder.embed(allDiagnosticsExtractionResult,
-                (actualDescriptorDiagnostics + notTestDescriptorDiagnostics).map { it.toInfoWithDescriptor() }
-            )
-
-        failFileComparisonIfNotEqual(
-            "Test descriptor diagnostics are not equal", content, inputWithActualDescriptorDiagnostics, file
-        )
-
         if (actualDescriptorDiagnostics.isNotEmpty()) {
-            val refinedInputWithoutDescriptorErrors = InfoEmbedder.embed(
+            val otherDiagnosticInfos = otherDiagnostics.map { it.toInfoWithDescriptor() }
+            val inputWithoutDescriptorErrors = InfoEmbedder.embed(
                 allDiagnosticsExtractionResult,
-                notTestDescriptorDiagnostics.map { it.toInfoWithDescriptor() }
+                otherDiagnosticInfos,
+            )
+            val inputWithDescriptorErrors = InfoEmbedder.embed(
+                allDiagnosticsExtractionResult,
+                actualDescriptorDiagnostics.map { it.toInfoWithDescriptor() } + otherDiagnosticInfos
             )
             throw FileComparisonFailure(
                 "Test descriptor contains errors",
-                refinedInputWithoutDescriptorErrors,
-                inputWithActualDescriptorDiagnostics,
+                inputWithoutDescriptorErrors,
+                inputWithDescriptorErrors,
                 file.path
             )
         }
 
-        return TestDescriptorInfo(testDescriptor, refinedInput, notTestDescriptorDiagnostics)
+        return TestDescriptorInfo(testDescriptor, refinedInput, otherDiagnostics)
     }
 
     private data class TestDescriptorInfo(
