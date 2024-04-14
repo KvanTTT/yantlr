@@ -54,6 +54,7 @@ fun InfoWithSourceInterval.toInfoWithDescriptor(): InfoWithDescriptor<InfoWithSo
         is AntlrDiagnostic -> AntlrDiagnosticInfoDescriptor
         is TestDescriptorDiagnostic -> TestDescriptorDiagnosticInfoDescriptor
         is DiagnosticInfo -> this.descriptor
+        is DumpInfo -> DumpInfoDescriptor
         else -> error("Unknown diagnostic type")
     }
     @Suppress("UNCHECKED_CAST")

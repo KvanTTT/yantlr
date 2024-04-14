@@ -1,0 +1,26 @@
+# Grammars
+
+```antlrv4
+lexer grammar Test;
+StringLiteral: 'abc' '\n' '\u00A9';
+```
+
+# Atn
+
+```dot
+digraph ATN {
+  rankdir=LR;
+
+  StringLiteral -> s0 [label="ε"]
+  s0 -> s1 [label="ε"]
+  s1 -> s2 [label="a"]
+  s2 -> s3 [label="b"]
+  s3 -> s4 [label="c"]
+  s4 -> s5 [label="ε"]
+  s5 -> s6 [label="\\n"]
+  s6 -> s7 [label="ε"]
+  s7 -> s8 [label="©"]
+  s8 -> s9 [label="ε"]
+  s9 -> s10 [label="ε"]
+}
+```

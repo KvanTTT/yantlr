@@ -1,8 +1,13 @@
 package infrastructure
 
 import InfoWithSourceInterval
+import atn.Atn
 import infrastructure.testDescriptors.PropertyValue
 
-abstract class DumpInfo(val dump: String, val format: String, propertyValue: PropertyValue) : InfoWithSourceInterval(propertyValue.sourceInterval)
+abstract class DumpInfo(val format: String, val propertyValue: PropertyValue) : InfoWithSourceInterval(propertyValue.sourceInterval) {
+    abstract fun getDump(lineBreak: String): String
+}
 
-class AtnDumpInfo(dump: String, propertyValue: PropertyValue) : DumpInfo(dump, "dot", propertyValue)
+class AtnDumpInfo(val atn: Atn, propertyValue: PropertyValue) : DumpInfo("dot", propertyValue) {
+    override fun getDump(lineBreak: String): String = AtnDumper(lineBreak = lineBreak).dump(atn)
+}

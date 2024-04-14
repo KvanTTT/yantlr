@@ -30,23 +30,27 @@ object FullPipelineRunner {
                 val (testDescriptor, refinedInput, diagnosticInfos) = getAndCheckTestDescriptor(content, file)
 
                 val grammarResults = mutableListOf<GrammarPipelineResult>()
-                val actualGrammarDiagnostics = mutableListOf<AntlrDiagnostic>()
+                val embeddedInfos = mutableListOf<InfoWithDescriptor<*>>()
 
                 for (grammar in testDescriptor.grammars) {
                     val result = GrammarPipeline.run(grammar.value, grammar.sourceInterval.offset) {
-                        actualGrammarDiagnostics.add(it)
+                        embeddedInfos.add(it.toInfoWithDescriptor())
                     }
                     grammarResults.add(result)
+                }
+
+                if (testDescriptor.atn != null) {
+                    // TODO: support dump of several grammars
+                    embeddedInfos.add(AtnDumpInfo(grammarResults.first().atn, testDescriptor.atn).toInfoWithDescriptor())
                 }
 
                 val expectDiagnosticInfos = diagnosticInfos.groupBy { it.sourceInterval.offset }
 
                 val antlrDiagnosticsExtractionResult = ExtractionResult(expectDiagnosticInfos, refinedInput)
-                val testDescriptorWithActualDiagnostics =
-                    InfoEmbedder.embedDiagnostics(antlrDiagnosticsExtractionResult, actualGrammarDiagnostics)
+                val actual = InfoEmbedder.embed(antlrDiagnosticsExtractionResult, embeddedInfos)
 
                 failFileComparisonIfNotEqual(
-                    "Grammar diagnostics are not equal", content, testDescriptorWithActualDiagnostics, file)
+                    "Grammar diagnostics or dumps are not equal", content, actual, file)
             }
             else -> error("Valid extensions are `g4` and `md`")
         }

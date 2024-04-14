@@ -19,12 +19,6 @@ class TestDescriptorExtractor private constructor(
         }
     }
 
-    enum class TextType {
-        Empty, // Used to mark sections with empty headers
-        Paragraph,
-        Code,
-    }
-
     data class TextTypeWithOffset(val type: TextType, val offset: Int)
 
     private val propertyValues: MutableMap<KProperty1<TestDescriptor, *>, Any?> = mutableMapOf()
@@ -135,7 +129,7 @@ class TestDescriptorExtractor private constructor(
             val existingPropertyValue = propertyValues[descriptorProperty]
             property = descriptorProperty
 
-            if (existingPropertyValue != null && (existingPropertyValue as? List<*>)?.isNotEmpty() == true) {
+            if ((existingPropertyValue as? List<*>)?.isNotEmpty() == true) {
                 diagnosticReporter?.invoke(
                     DuplicatedPropertyDiagnostic(
                         headerValue,
@@ -166,7 +160,7 @@ class TestDescriptorExtractor private constructor(
 
         fun getTextValue(): PropertyValue {
             val sourceInterval = SourceInterval(localTextInfo.offset, endOffset - localTextInfo.offset)
-            return TextPropertyValue(input.subSequence(localTextInfo.offset, endOffset), sourceInterval)
+            return TextPropertyValue(input.subSequence(localTextInfo.offset, endOffset), localTextInfo.type, sourceInterval)
         }
 
         when (property.returnType.classifier) {
@@ -201,4 +195,10 @@ class TestDescriptorExtractor private constructor(
 
         textInfo = null
     }
+}
+
+enum class TextType {
+    Empty, // Used to mark sections with empty headers
+    Paragraph,
+    Code,
 }

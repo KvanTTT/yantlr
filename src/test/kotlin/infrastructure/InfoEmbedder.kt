@@ -2,6 +2,8 @@ package infrastructure
 
 import Diagnostic
 import SourceInterval
+import infrastructure.testDescriptors.TextPropertyValue
+import infrastructure.testDescriptors.TextType
 import parser.getLineColumn
 import parser.getLineOffsetsAndMainLineBreak
 import parser.stringEscapeToLiteralChars
@@ -80,14 +82,23 @@ object InfoEmbedder {
                     } else if (descriptor == DumpInfoDescriptor) {
                         info as DumpInfo
                         val lineBreak = lineOffsetsAndMainLineBreak.lineBreak
-                        ensureBackTwoLineBreaks(lineBreak)
-                        append("```")
-                        append(info.format)
-                        append(lineBreak)
-                        append(info.dump)
-                        append(lineBreak)
-                        append("```")
-                        ensureNextTwoLineBreaks(lineBreak, input, info.sourceInterval.end())
+                        val isCodeType = (info.propertyValue as? TextPropertyValue)?.textType == TextType.Code
+
+                        if (!isCodeType) {
+                            ensureBackTwoLineBreaks(lineBreak)
+                            append("```")
+                            append(info.format)
+                            append(lineBreak)
+                        }
+
+                        append(info.getDump(lineBreak))
+
+                        if (!isCodeType) {
+                            append(lineBreak)
+                            append("```")
+                            ensureNextTwoLineBreaks(lineBreak, input, info.sourceInterval.end())
+                        }
+
                         lastOffset = info.sourceInterval.end()
                     }
                 }

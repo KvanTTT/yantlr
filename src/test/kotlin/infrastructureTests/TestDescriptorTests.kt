@@ -121,27 +121,6 @@ object TestDescriptorTests {
         assertEquals(LineColumnBorders(4, 1, 1), diagnostic.sourceInterval.getLineColumnBorders(lineOffsets))
     }
 
-    @Test
-    fun embedDumpExample() {
-        val content = Paths.get(resourcesFile.toString(), "Infrastructure", "DumpEmbeddingExample.md").toFile().readText()
-        val (descriptor, _, _) = parseTestDescriptor("DumpEmbeddingExample.md")
-
-        val extractionResult = ExtractionResult(emptyMap(), content)
-        val exampleDump =
-"""digraph {
-    rankdir=LR;
-
-    StringLiteral -> s1 [label="a"]
-    s1 -> s2 [label="b"]
-    s2 -> s3 [label="c"]
-}""".replace("\n", System.lineSeparator())
-        val embeddedInfos = listOf(InfoWithDescriptor(AtnDumpInfo(exampleDump, descriptor.atn!!), DumpInfoDescriptor))
-        val actualOutput = InfoEmbedder.embed(extractionResult, embeddedInfos)
-        val expectedOutput = Paths.get(resourcesFile.toString(), "Infrastructure", "DumpEmbeddingExampleOutput.md").toFile().readText()
-
-        assertEquals(expectedOutput, actualOutput)
-    }
-
     private fun parseTestDescriptor(name: String): Triple<TestDescriptor, List<TestDescriptorDiagnostic>, List<Int>> {
         val file = Paths.get(resourcesFile.toString(), "Infrastructure", name).toFile()
         val diagnostics = mutableListOf<TestDescriptorDiagnostic>()

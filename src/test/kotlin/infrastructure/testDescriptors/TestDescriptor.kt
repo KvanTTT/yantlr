@@ -7,3 +7,5 @@ class TestDescriptor(
     val atn: PropertyValue?,
     val input: List<PropertyValue>,
 )
+
+val outputProperties = setOf("atn")
