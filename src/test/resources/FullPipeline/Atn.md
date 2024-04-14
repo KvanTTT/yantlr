@@ -5,6 +5,7 @@ lexer grammar Test;
 StringLiteral: 'abc' '\n' '\u00A9';
 CharSet: [de-g\-\r];
 Alternative: 'x' | 'y';
+Block: '{' ('w' | 'z') '}';
 ```
 
 # Atn
@@ -40,5 +41,23 @@ digraph ATN {
   s21 -> s22 [label="ε"]
   s22 -> s23 [label="y"]
   s23 -> s19 [label="ε"]
+
+  Block -> s24 [label="ε"]
+  s24 -> s25 [label="ε"]
+  s25 -> s26 [label="{"]
+  s26 -> s27 [label="ε"]
+  s27 -> s28 [label="ε"]
+  s28 -> s29 [label="ε"]
+  s29 -> s30 [label="ε"]
+  s30 -> s31 [label="w"]
+  s31 -> s32 [label="ε"]
+  s32 -> s33 [label="ε"]
+  s33 -> s34 [label="}"]
+  s34 -> s35 [label="ε"]
+  s35 -> s36 [label="ε"]
+  s28 -> s37 [label="ε"]
+  s37 -> s38 [label="ε"]
+  s38 -> s39 [label="z"]
+  s39 -> s32 [label="ε"]
 }
 ```

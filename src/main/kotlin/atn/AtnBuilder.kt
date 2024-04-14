@@ -97,7 +97,11 @@ class AtnBuilder(
                 endTransitions.add(SetTransition(IntervalSet(intervals), State(newTransitions), treeNodes))
                 endTransitions = newTransitions
             }
-
+            is ElementNode.Block -> {
+                val blockNodeHandle = visitBlockNode(node.blockNode)
+                endTransitions.add(EpsilonTransition(blockNodeHandle.start, listOf(node.blockNode)))
+                endTransitions = blockNodeHandle.endTransitions
+            }
             else -> TODO("Not yet implemented")
         }
 
