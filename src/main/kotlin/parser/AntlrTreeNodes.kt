@@ -159,12 +159,12 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrTreeNode() {
         }
     }
 
-    class CharSet(val openBracket: AntlrToken, val children: List<CharHyphenChar>, val closeBracket: AntlrToken, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
-        class CharHyphenChar(
+    class CharSet(val openBracket: AntlrToken, val children: List<CharOrRange>, val closeBracket: AntlrToken, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
+        class CharOrRange(
             val char: AntlrToken,
-            val range: HyphenChar?
+            val range: Range?
         ) : AntlrTreeNode() {
-            class HyphenChar(val hyphen: AntlrToken, val char: AntlrToken) : AntlrTreeNode() {
+            class Range(val hyphen: AntlrToken, val char: AntlrToken) : AntlrTreeNode() {
                 override fun calculateLeftToken(): AntlrToken = hyphen
 
                 override fun calculateRightToken(): AntlrToken = char

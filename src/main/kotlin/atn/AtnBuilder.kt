@@ -55,40 +55,64 @@ class AtnBuilder(
     }
 
     override fun visitAlternativeNode(node: AlternativeNode): Handle {
-        var transitions = mutableListOf<Transition>()
-        val start = State(transitions)
+        var endTransitions = mutableListOf<Transition>()
+        val start = State(endTransitions)
 
         node.elementNodes.forEach {
             val newHandle = visitElementNode(it)
-            transitions.add(EpsilonTransition(newHandle.start, listOf(it)))
-            transitions = newHandle.endTransitions
+            endTransitions.add(EpsilonTransition(newHandle.start, listOf(it)))
+            endTransitions = newHandle.endTransitions
         }
 
-        return Handle(start, transitions)
+        return Handle(start, endTransitions)
     }
 
     override fun visitElementNode(node: ElementNode): Handle {
-        var transitions = mutableListOf<Transition>()
-        val start = State(transitions)
+        var endTransitions = mutableListOf<Transition>()
+        val start = State(endTransitions)
 
         when (node) {
             is ElementNode.StringLiteral -> {
-                for (char in node.chars) {
-                    val value = char.value!!
-                    val code = when (char.type) {
-                        AntlrTokenType.Char -> value[0].code
-                        AntlrTokenType.EscapedChar -> value[1].let { antlrLiteralToEscapeChars[it] ?: it }.code
-                        AntlrTokenType.UnicodeEscapedChar -> value.substring(2).toInt(16)
-                        else -> error("Unexpected token type: ${char.type}") // TODO: handle error tokens?
-                    }
+                for (charToken in node.chars) {
                     val newTransitions = mutableListOf<Transition>()
-                    transitions.add(SetTransition(IntervalSet(code), State(newTransitions), listOf(char)))
-                    transitions = newTransitions
+                    val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
+                    endTransitions.add(SetTransition(intervalSet, State(newTransitions), listOf(charToken)))
+                    endTransitions = newTransitions
                 }
             }
+            is ElementNode.CharSet -> {
+                val intervals = mutableListOf<Interval>()
+                val treeNodes = mutableListOf<AntlrTreeNode>()
+                for (child in node.children) {
+                    val startChar = getCharCode(child.char, stringLiteral = false)
+                    val endChar = if (child.range != null) {
+                        getCharCode(child.range.char, stringLiteral = false)
+                    } else {
+                        startChar
+                    }
+                    intervals.add(Interval(startChar, endChar))
+                    treeNodes.add(child)
+                }
+                val newTransitions = mutableListOf<Transition>()
+                endTransitions.add(SetTransition(IntervalSet(intervals), State(newTransitions), treeNodes))
+                endTransitions = newTransitions
+            }
+
             else -> TODO("Not yet implemented")
         }
 
-        return Handle(start, transitions)
+        return Handle(start, endTransitions)
+    }
+
+    private fun getCharCode(charToken: AntlrToken, stringLiteral: Boolean): Int {
+        val literalToEscapeChars = if (stringLiteral) antlrStringLiteralToEscapeChars else antlrCharSetLiteralToEscapeChars
+        val value = charToken.value!!
+        val code = when (charToken.type) {
+            AntlrTokenType.Char -> value[0].code
+            AntlrTokenType.EscapedChar -> value[1].let { literalToEscapeChars[it] ?: it }.code
+            AntlrTokenType.UnicodeEscapedChar -> value.substring(2).toInt(16)
+            else -> error("Unexpected token type: ${charToken.type}") // TODO: handle error tokens?
+        }
+        return code
     }
 }

@@ -208,15 +208,15 @@ class AntlrParser(
                             }
                             AntlrTokenType.Hyphen, AntlrTokenType.Char, AntlrTokenType.EscapedChar, AntlrTokenType.UnicodeEscapedChar -> {
                                 if (getToken(1).type == AntlrTokenType.Hyphen && getToken(2).type in charSetTokenTypes) {
-                                    add(ElementNode.CharSet.CharHyphenChar(
+                                    add(ElementNode.CharSet.CharOrRange(
                                         matchToken(),
-                                        ElementNode.CharSet.CharHyphenChar.HyphenChar(
+                                        ElementNode.CharSet.CharOrRange.Range(
                                             matchToken(),
                                             matchToken(),
                                         )
                                     ))
                                 } else {
-                                    add(ElementNode.CharSet.CharHyphenChar(matchToken(), null))
+                                    add(ElementNode.CharSet.CharOrRange(matchToken(), null))
                                 }
                             }
                             else -> {

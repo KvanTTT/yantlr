@@ -80,10 +80,11 @@ private val commonEscapeToLiteralChars = mapOf(
     '\\' to '\\'
 )
 
-val antlrEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf('\'' to '\'')
+val antlrStringEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf('\'' to '\'')
+val antlrStringLiteralToEscapeChars = antlrStringEscapeToLiteralChars.entries.associate { (k, v) -> v to k }
 
-val antlrLiteralToEscapeChars = antlrEscapeToLiteralChars.entries.associate { (k, v) -> v to k }
+val antlrCharSetEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf(']' to ']', '-' to '-')
+val antlrCharSetLiteralToEscapeChars = antlrCharSetEscapeToLiteralChars.entries.associate { (k, v) -> v to k }
 
 val stringEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf('"' to '\"')
-
 val stringLiteralToEscapeChars = stringEscapeToLiteralChars.entries.associate { (k, v) -> v to k }

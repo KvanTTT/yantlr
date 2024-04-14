@@ -60,29 +60,29 @@ object AntlrParserWithLexerTests {
             ElementNode.CharSet(
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
-                    ElementNode.CharSet.CharHyphenChar(
+                    ElementNode.CharSet.CharOrRange(
                         AntlrToken(AntlrTokenType.Hyphen, value = "-"),
                         range = null
                     ),
-                    ElementNode.CharSet.CharHyphenChar(
+                    ElementNode.CharSet.CharOrRange(
                         AntlrToken(AntlrTokenType.Char, value = "a"),
-                        ElementNode.CharSet.CharHyphenChar.HyphenChar(
+                        ElementNode.CharSet.CharOrRange.Range(
                             AntlrToken(AntlrTokenType.Hyphen),
                             AntlrToken(AntlrTokenType.Char, value = "z")
                         )
                     ),
-                    ElementNode.CharSet.CharHyphenChar(
+                    ElementNode.CharSet.CharOrRange(
                         AntlrToken(AntlrTokenType.Char, value = "0"),
-                        ElementNode.CharSet.CharHyphenChar.HyphenChar(
+                        ElementNode.CharSet.CharOrRange.Range(
                             AntlrToken(AntlrTokenType.Hyphen),
                             AntlrToken(AntlrTokenType.Char, value = "9")
                         )
                     ),
-                    ElementNode.CharSet.CharHyphenChar(
+                    ElementNode.CharSet.CharOrRange(
                         AntlrToken(AntlrTokenType.Char, value = "Z"),
                         range = null
                     ),
-                    ElementNode.CharSet.CharHyphenChar(
+                    ElementNode.CharSet.CharOrRange(
                         AntlrToken(AntlrTokenType.Hyphen, value = "-"),
                         range = null
                     ),
@@ -100,11 +100,11 @@ object AntlrParserWithLexerTests {
             ElementNode.CharSet(
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
-                    ElementNode.CharSet.CharHyphenChar(
+                    ElementNode.CharSet.CharOrRange(
                         AntlrToken(AntlrTokenType.Char, value = "a"),
                         range = null
                     ),
-                    ElementNode.CharSet.CharHyphenChar(
+                    ElementNode.CharSet.CharOrRange(
                         AntlrToken(AntlrTokenType.Hyphen, value = "-"),
                         range = null
                     ),

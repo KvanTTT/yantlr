@@ -2,9 +2,9 @@ package atn
 
 import parser.stringEscapeToLiteralChars
 
-data class Interval(val start: Int, val end: Int) {
+data class Interval(val start: Int, val end: Int = start) {
     override fun toString(): String {
-        return "[${start.renderElement()}]" + (if (start != end) "..${end.renderElement()}" else "")
+        return "[${start.renderElement()}" + (if (start != end) "..${end.renderElement()}]" else "]")
     }
 
     private fun Int.renderElement(): String {

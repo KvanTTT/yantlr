@@ -3,6 +3,7 @@
 ```antlrv4
 lexer grammar Test;
 StringLiteral: 'abc' '\n' '\u00A9';
+CharSet: [de-g\-\r];
 Alternative: 'x' | 'y';
 ```
 
@@ -24,14 +25,20 @@ digraph ATN {
   s8 -> s9 [label="ε"]
   s9 -> s10 [label="ε"]
 
-  Alternative -> s11 [label="ε"]
+  CharSet -> s11 [label="ε"]
   s11 -> s12 [label="ε"]
-  s12 -> s13 [label="x"]
+  s12 -> s13 [label="d, e..g, -, \\r"]
   s13 -> s14 [label="ε"]
   s14 -> s15 [label="ε"]
+
   Alternative -> s16 [label="ε"]
   s16 -> s17 [label="ε"]
-  s17 -> s18 [label="y"]
-  s18 -> s14 [label="ε"]
+  s17 -> s18 [label="x"]
+  s18 -> s19 [label="ε"]
+  s19 -> s20 [label="ε"]
+  Alternative -> s21 [label="ε"]
+  s21 -> s22 [label="ε"]
+  s22 -> s23 [label="y"]
+  s23 -> s19 [label="ε"]
 }
 ```

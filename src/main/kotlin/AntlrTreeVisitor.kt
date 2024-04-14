@@ -27,7 +27,7 @@ abstract class AntlrTreeVisitor<out R> {
 
     open fun visitElementCharSet(node: ElementNode.CharSet) = visitElementNode(node)
 
-    open fun visitElementCharSetCharHyphenCharNode(node: ElementNode.CharSet.CharHyphenChar) = visitTreeNode(node)
+    open fun visitElementCharSetCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange) = visitTreeNode(node)
 
-    open fun visitElementCharSetCharHyphenCharHyphenCharNode(node: ElementNode.CharSet.CharHyphenChar.HyphenChar) = visitTreeNode(node)
+    open fun visitElementCharSetCharHyphenCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange.Range) = visitTreeNode(node)
 }
