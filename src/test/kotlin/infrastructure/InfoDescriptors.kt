@@ -5,12 +5,6 @@ import Diagnostic
 import InfoWithSourceInterval
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 
-class InfoWithDescriptor<T : InfoWithSourceInterval>(val info: T, val descriptor: EmbeddedInfoDescriptor<T>) {
-    operator fun component1(): T = info
-
-    operator fun component2(): EmbeddedInfoDescriptor<T> = descriptor
-}
-
 abstract class EmbeddedInfoDescriptor<T : InfoWithSourceInterval>
 
 abstract class DiagnosticInfoDescriptor<T : Diagnostic>(

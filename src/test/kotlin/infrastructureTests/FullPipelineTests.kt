@@ -20,13 +20,38 @@ object FullPipelineTests {
     }
 
     @Test
-    fun dontRunPipelineIfTestDescriptorErrors() {
+    fun dontRunPipelineIfTestDescriptorContainsErrors() {
         val file = Paths.get(resourcesFile.toString(), "Infrastructure", "TestDescriptorWithErrors.md").toFile()
 
         val exception = assertThrows<FileComparisonFailure> { FullPipelineRunner.run(file) }
 
-        assertEquals(DescriptorEmbeddedDiagnosticsTests.reifiedInput, exception.expected)
+        assertEquals(DescriptorEmbeddedDiagnosticsTests.refinedInput, exception.expected)
         assertEquals(file.readText(), exception.actual)
         assertEquals(file.path, exception.filePath)
+    }
+
+    @Test
+    fun descriptorAndAntlrDiagnosticsInTheSameFile() {
+        val file = Paths.get(resourcesFile.toString(), "Infrastructure", "TestDescriptorWithAllErrors.md").toFile()
+
+        val exception = assertThrows<FileComparisonFailure> { FullPipelineRunner.run(file) }
+
+        val expected = """
+# Notes
+
+Test runner should report `UnknownProperty` but preserved ANTLR errors
+
+# Grammars
+
+```antlrv4
+grammar grammarExample
+/*❗UnrecognizedToken*/`/*❗*/
+/*❗MissingToken*//*❗*//*❗ExtraToken*/+/*❗*/
+```
+
+# UnknownProperty
+""".trimIndent().replace("\n", System.lineSeparator())
+
+        assertEquals(expected, exception.expected)
     }
 }

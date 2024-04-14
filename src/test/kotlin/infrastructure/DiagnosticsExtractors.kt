@@ -2,35 +2,71 @@ package infrastructure
 
 import AntlrDiagnostic
 import Diagnostic
+import InfoWithSourceInterval
 import SourceInterval
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import parser.getLineColumn
 import parser.getLineOffsets
 import parser.stringLiteralToEscapeChars
 
-data class DiagnosticInfo(val name: String, val args: List<String>?, val location: SourceInterval)
+data class DiagnosticInfo(
+    val descriptor: EmbeddedInfoDescriptor<*>,
+    val name: String,
+    val args: List<String>?,
+    val location: SourceInterval
+) : InfoWithSourceInterval(location)
 
 data class ExtractionResult(val diagnostics: Map<Int, List<DiagnosticInfo>>, val refinedInput: String)
 
-object AntlrDiagnosticsExtractor : DiagnosticsExtractor<AntlrDiagnostic>(AntlrDiagnosticInfoDescriptor)
+object AllDiagnosticsExtractor : DiagnosticsExtractor<Diagnostic>(
+    listOf(AntlrDiagnosticInfoDescriptor, TestDescriptorDiagnosticInfoDescriptor)
+)
 
-object TestDescriptorDiagnosticsExtractor : DiagnosticsExtractor<TestDescriptorDiagnostic>(TestDescriptorDiagnosticInfoDescriptor)
+object AntlrDiagnosticsExtractor : DiagnosticsExtractor<AntlrDiagnostic>(listOf(AntlrDiagnosticInfoDescriptor))
 
-abstract class DiagnosticsExtractor<T : Diagnostic>(diagnosticInfoDescriptor: DiagnosticInfoDescriptor<T>) {
+object TestDescriptorDiagnosticsExtractor : DiagnosticsExtractor<TestDescriptorDiagnostic>(listOf(TestDescriptorDiagnosticInfoDescriptor))
+
+abstract class DiagnosticsExtractor<T : Diagnostic>(private val descriptors: List<DiagnosticInfoDescriptor<out T>>) {
     companion object {
-        private const val DIAGNOSTIC_NAME_MARKER = "diagnosticName"
-        private const val DIAGNOSTIC_ARGS = "args"
+        private const val DESCRIPTOR_MARKER = "descriptor"
+        private const val NAME_MARKER = "name"
+        private const val ARGS_MARKER = "args"
     }
 
-    private val markerRegex = Regex(
-        """${Regex.escape(diagnosticInfoDescriptor.startMarker)}(${Regex.escape(diagnosticInfoDescriptor.endMarker)}|((?<$DIAGNOSTIC_NAME_MARKER>\w+)(?<$DIAGNOSTIC_ARGS>.*?))${
-            Regex.escape(diagnosticInfoDescriptor.endMarker)
-        })"""
+    private val matchRegex: Regex
+
+    init {
+        val descriptorSet = mutableSetOf<String>()
+        val regexString = buildString {
+            for ((index, descriptor) in descriptors.withIndex()) {
+                if (!descriptorSet.add(descriptor.startMarker)) {
+                    error("Duplicate descriptor start marker: ${descriptor.startMarker}")
+                }
+
+                append(
+                    """((?<${DESCRIPTOR_MARKER + index}>${Regex.escape(descriptor.startMarker)})(${
+                        Regex.escape(
+                            descriptor.endMarker
+                        )
+                    }|((?<${NAME_MARKER + index}>\w+)(?<${ARGS_MARKER + index}>.*?))${Regex.escape(descriptor.endMarker)}))"""
+                )
+                if (index < descriptors.size - 1)
+                    append('|')
+            }
+        }
+
+        matchRegex = Regex(regexString)
+    }
+
+    private data class DescriptorStart(
+        val descriptor: DiagnosticInfoDescriptor<*>,
+        val name: String,
+        val args: List<String>?,
+        val offset: Int,
+        val refinedOffset: Int,
     )
 
-    private data class DescriptorStart(val name: String, val args: List<String>?, val offset: Int, val refinedOffset: Int)
-
-    fun extract(input: CharSequence, inputOffset: Int = 0): ExtractionResult {
+    fun extract(input: CharSequence): ExtractionResult {
         var offset = 0
         val descriptorStartStack = ArrayDeque<DescriptorStart>()
         val diagnosticInfos = linkedMapOf<Int, MutableList<DiagnosticInfo>>()
@@ -39,22 +75,38 @@ abstract class DiagnosticsExtractor<T : Diagnostic>(diagnosticInfoDescriptor: Di
 
         val refinedInput = buildString {
             while (true) {
-                val match = markerRegex.find(input, offset) ?: break
+                val match = matchRegex.find(input, offset) ?: break
 
                 val first = match.range.first
                 append(input.subSequence(offset, first))
 
-                val diagnosticName = match.groups[DIAGNOSTIC_NAME_MARKER]
+                val matchGroups = match.groups
+                val descriptorIndex = descriptors.indices.first { matchGroups[DESCRIPTOR_MARKER + it] != null }
+
+                val diagnosticName = matchGroups[NAME_MARKER + descriptorIndex]
                 if (diagnosticName != null) {
-                    descriptorStartStack.add(DescriptorStart(diagnosticName.value, parseArgs(match.groups[DIAGNOSTIC_ARGS]?.value), first, length))
+                    descriptorStartStack.add(DescriptorStart(
+                        descriptors[descriptorIndex],
+                        diagnosticName.value,
+                        parseArgs(matchGroups[ARGS_MARKER + descriptorIndex]?.value),
+                        first,
+                        length
+                    ))
                 } else {
                     val lastDescriptorStart = descriptorStartStack.removeLastOrNull()
                         ?: error("Unexpected diagnostic end marker at ${first.getLineColumn(lineOffsets)}")
-                    val diagnosticInfoOffset = lastDescriptorStart.refinedOffset + inputOffset
+                    val diagnosticInfoOffset = lastDescriptorStart.refinedOffset
                     val list = diagnosticInfos.getOrPut(diagnosticInfoOffset) { mutableListOf() }
                     val location =
                         SourceInterval(diagnosticInfoOffset, length - lastDescriptorStart.refinedOffset)
-                    list.add(DiagnosticInfo(lastDescriptorStart.name, lastDescriptorStart.args, location))
+                    list.add(
+                        DiagnosticInfo(
+                            lastDescriptorStart.descriptor,
+                            lastDescriptorStart.name,
+                            lastDescriptorStart.args,
+                            location
+                        )
+                    )
                 }
 
                 offset = match.range.last + 1

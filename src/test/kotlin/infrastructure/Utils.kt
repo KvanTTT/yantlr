@@ -1,5 +1,8 @@
 package infrastructure
 
+import AntlrDiagnostic
+import InfoWithSourceInterval
+import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
@@ -46,3 +49,13 @@ private fun File.createTest(fileType: TestFileType): DynamicNode {
     }
 }
 
+fun InfoWithSourceInterval.toInfoWithDescriptor(): InfoWithDescriptor<InfoWithSourceInterval> {
+    val descriptor = when (this) {
+        is AntlrDiagnostic -> AntlrDiagnosticInfoDescriptor
+        is TestDescriptorDiagnostic -> TestDescriptorDiagnosticInfoDescriptor
+        is DiagnosticInfo -> this.descriptor
+        else -> error("Unknown diagnostic type")
+    }
+    @Suppress("UNCHECKED_CAST")
+    return InfoWithDescriptor(this, descriptor as EmbeddedInfoDescriptor<InfoWithSourceInterval>)
+}

@@ -9,7 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 object DescriptorEmbeddedDiagnosticsTests {
-    val reifiedInput = """
+    val refinedInput = """
         # Name
 
         Custom name 0
@@ -38,7 +38,7 @@ object DescriptorEmbeddedDiagnosticsTests {
 
         val extractionResult = TestDescriptorDiagnosticsExtractor.extract(inputFile.readText())
 
-        assertEquals(reifiedInput, extractionResult.refinedInput)
+        assertEquals(refinedInput, extractionResult.refinedInput)
 
         val actualDiagnostics = buildList {
             TestDescriptorExtractor.extract(extractionResult.refinedInput, inputFile.nameWithoutExtension) { add(it) }

@@ -2,7 +2,9 @@ package infrastructure
 
 import AntlrDiagnostic
 import GrammarPipeline
+import GrammarPipelineResult
 import com.intellij.rt.execution.junit.FileComparisonFailure
+import infrastructure.testDescriptors.TestDescriptor
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import infrastructure.testDescriptors.TestDescriptorExtractor
 import java.io.File
@@ -12,10 +14,12 @@ object FullPipelineRunner {
         val content = file.readText()
         when (file.extension) {
             "g4" -> {
-                val expectedGrammarDiagnosticsInfos = mutableMapOf<Int, List<DiagnosticInfo>>()
+                val extractionResult = AntlrDiagnosticsExtractor.extract(content)
                 val actualGrammarDiagnostics = mutableListOf<AntlrDiagnostic>()
 
-                val extractionResult = runGrammar(content, 0, expectedGrammarDiagnosticsInfos, actualGrammarDiagnostics)
+                GrammarPipeline.run(extractionResult.refinedInput, 0) {
+                    actualGrammarDiagnostics.add(it)
+                }
 
                 val grammarWithActualDiagnostics = InfoEmbedder.embedDiagnostics(extractionResult, actualGrammarDiagnostics)
 
@@ -23,39 +27,23 @@ object FullPipelineRunner {
                     "Grammar diagnostics are not equal", content, grammarWithActualDiagnostics, file)
             }
             "md" -> {
-                val testDescriptorExtractionResult = TestDescriptorDiagnosticsExtractor.extract(content)
+                val (testDescriptor, refinedInput, diagnostics) = getAndCheckTestDescriptor(content, file)
 
-                val testDescriptorDiagnostics = mutableListOf<TestDescriptorDiagnostic>()
-                val testDescriptor = TestDescriptorExtractor.extract(testDescriptorExtractionResult.refinedInput, file.nameWithoutExtension) {
-                    testDescriptorDiagnostics.add(it)
-                }
-
-                val inputWithEmbeddedDiagnostics = InfoEmbedder.embedDiagnostics(testDescriptorExtractionResult, testDescriptorDiagnostics)
-
-                failFileComparisonIfNotEqual(
-                    "Test descriptor diagnostics are not equal", content, inputWithEmbeddedDiagnostics, file)
-
-                if (testDescriptorDiagnostics.isNotEmpty()) {
-                    throw FileComparisonFailure(
-                        "Test descriptor contains errors",
-                        testDescriptorExtractionResult.refinedInput,
-                        inputWithEmbeddedDiagnostics,
-                        file.path
-                    )
-                }
-
-                val grammarDiagnostics = mutableListOf<AntlrDiagnostic>()
-                val expectedGrammarDiagnostics = mutableMapOf<Int, List<DiagnosticInfo>>()
+                val grammarResults = mutableListOf<GrammarPipelineResult>()
+                val actualGrammarDiagnostics = mutableListOf<AntlrDiagnostic>()
 
                 for (grammar in testDescriptor.grammars) {
-                    runGrammar(grammar.value, grammar.sourceInterval.offset, expectedGrammarDiagnostics, grammarDiagnostics)
+                    val result = GrammarPipeline.run(grammar.value, grammar.sourceInterval.offset) {
+                        actualGrammarDiagnostics.add(it)
+                    }
+                    grammarResults.add(result)
                 }
 
-                val (_, refinedInput) = AntlrDiagnosticsExtractor.extract(testDescriptorExtractionResult.refinedInput)
+                val expectDiagnosticInfos = diagnostics.groupBy { it.sourceInterval.offset }
 
-                val antlrDiagnosticsExtractionResult = ExtractionResult(expectedGrammarDiagnostics, refinedInput)
+                val antlrDiagnosticsExtractionResult = ExtractionResult(expectDiagnosticInfos, refinedInput)
                 val testDescriptorWithActualDiagnostics =
-                    InfoEmbedder.embedDiagnostics(antlrDiagnosticsExtractionResult, grammarDiagnostics)
+                    InfoEmbedder.embedDiagnostics(antlrDiagnosticsExtractionResult, actualGrammarDiagnostics)
 
                 failFileComparisonIfNotEqual(
                     "Grammar diagnostics are not equal", content, testDescriptorWithActualDiagnostics, file)
@@ -64,26 +52,52 @@ object FullPipelineRunner {
         }
     }
 
+    private fun getAndCheckTestDescriptor(content: String, file: File): TestDescriptorInfo {
+        val allDiagnosticsExtractionResult = AllDiagnosticsExtractor.extract(content)
+        val refinedInput = allDiagnosticsExtractionResult.refinedInput
+
+        val actualDescriptorDiagnostics = mutableListOf<TestDescriptorDiagnostic>()
+        val testDescriptor = TestDescriptorExtractor.extract(refinedInput, file.nameWithoutExtension) {
+            actualDescriptorDiagnostics.add(it)
+        }
+
+        val notTestDescriptorDiagnostics = allDiagnosticsExtractionResult.diagnostics.flatMap { it.value }
+            .filterNot { it.descriptor is TestDescriptorDiagnosticInfoDescriptor }
+
+        val inputWithActualDescriptorDiagnostics =
+            InfoEmbedder.embed(allDiagnosticsExtractionResult,
+                (actualDescriptorDiagnostics + notTestDescriptorDiagnostics).map { it.toInfoWithDescriptor() }
+            )
+
+        failFileComparisonIfNotEqual(
+            "Test descriptor diagnostics are not equal", content, inputWithActualDescriptorDiagnostics, file
+        )
+
+        if (actualDescriptorDiagnostics.isNotEmpty()) {
+            val refinedInputWithoutDescriptorErrors = InfoEmbedder.embed(
+                allDiagnosticsExtractionResult,
+                notTestDescriptorDiagnostics.map { it.toInfoWithDescriptor() }
+            )
+            throw FileComparisonFailure(
+                "Test descriptor contains errors",
+                refinedInputWithoutDescriptorErrors,
+                inputWithActualDescriptorDiagnostics,
+                file.path
+            )
+        }
+
+        return TestDescriptorInfo(testDescriptor, refinedInput, notTestDescriptorDiagnostics)
+    }
+
+    private data class TestDescriptorInfo(
+        val testDescriptor: TestDescriptor,
+        val refinedInput: String,
+        val regularDiagnosticInfos: List<DiagnosticInfo>,
+    )
+
     private fun failFileComparisonIfNotEqual(message: String, expected: String, actual: String, file: File) {
         if (expected != actual) {
             throw FileComparisonFailure(message, expected, actual, file.path)
         }
-    }
-
-    private fun runGrammar(
-        grammar: CharSequence,
-        grammarOffset: Int,
-        expectedGrammarDiagnostics: MutableMap<Int, List<DiagnosticInfo>>,
-        grammarDiagnostics: MutableList<AntlrDiagnostic>,
-    ) : ExtractionResult {
-        val grammarDiagnosticsInfo = AntlrDiagnosticsExtractor.extract(grammar, grammarOffset)
-
-        expectedGrammarDiagnostics.putAll(grammarDiagnosticsInfo.diagnostics)
-
-        GrammarPipeline.process(grammarDiagnosticsInfo.refinedInput, grammarOffset) {
-            grammarDiagnostics.add(it)
-        }
-
-        return grammarDiagnosticsInfo
     }
 }

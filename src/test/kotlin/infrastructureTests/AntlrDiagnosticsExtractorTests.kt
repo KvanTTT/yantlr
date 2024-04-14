@@ -3,10 +3,7 @@ package infrastructureTests
 import AntlrDiagnostic
 import LineColumn
 import SourceInterval
-import infrastructure.AntlrDiagnosticsExtractor
-import infrastructure.DiagnosticInfo
-import infrastructure.ExtractionResult
-import infrastructure.InfoEmbedder
+import infrastructure.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import parser.*
@@ -37,6 +34,7 @@ grammar test
 
         assertEquals(
             DiagnosticInfo(
+                AntlrDiagnosticInfoDescriptor,
                 "UnrecognizedToken", null,
                 SourceInterval(LineColumn(2, 1).getOffset(lineOffsets), 1)
             ),
@@ -44,6 +42,7 @@ grammar test
         )
         checkDiagnostic(
             DiagnosticInfo(
+                AntlrDiagnosticInfoDescriptor,
                 "MissingToken", null,
                 SourceInterval(LineColumn(3, 1).getOffset(lineOffsets), 0)
             ),
@@ -51,6 +50,7 @@ grammar test
         )
         checkDiagnostic(
             DiagnosticInfo(
+                AntlrDiagnosticInfoDescriptor,
                 "ExtraToken", null,
                 SourceInterval(LineColumn(3, 1).getOffset(lineOffsets), 2)
             ),
