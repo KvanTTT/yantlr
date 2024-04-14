@@ -184,9 +184,8 @@ object InfoEmbedder {
             val valueString = normalizedValue.toString()
             if (valueString.any { stringEscapeToLiteralChars.containsKey(it) }) {
                 append('"')
-                valueString.forEach {
-                    if (stringEscapeToLiteralChars.containsKey(it)) append('\\')
-                    append(it)
+                valueString.forEach { char ->
+                    stringEscapeToLiteralChars[char]?.let { append('\\').append(it) } ?: append(char)
                 }
                 append('"')
             } else {
