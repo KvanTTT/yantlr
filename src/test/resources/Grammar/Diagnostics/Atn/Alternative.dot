@@ -1,0 +1,13 @@
+digraph ATN {
+  rankdir=LR;
+
+  Alternative -> s0 [label="ε"]
+  s0 -> s1 [label="ε"]
+  s1 -> s2 [label="x"]
+  s2 -> s3 [label="ε"]
+  s3 -> s4 [label="ε"]
+  Alternative -> s5 [label="ε"]
+  s5 -> s6 [label="ε"]
+  s6 -> s7 [label="y"]
+  s7 -> s3 [label="ε"]
+}

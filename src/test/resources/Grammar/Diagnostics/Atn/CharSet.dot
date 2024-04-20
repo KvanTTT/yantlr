@@ -1,0 +1,9 @@
+digraph ATN {
+  rankdir=LR;
+
+  CharSet -> s0 [label="ε"]
+  s0 -> s1 [label="ε"]
+  s1 -> s2 [label="d, e..g, -, \\r"]
+  s2 -> s3 [label="ε"]
+  s3 -> s4 [label="ε"]
+}

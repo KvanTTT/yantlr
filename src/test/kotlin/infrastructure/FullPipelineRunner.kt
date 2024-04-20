@@ -8,6 +8,8 @@ import infrastructure.testDescriptors.TestDescriptor
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import infrastructure.testDescriptors.TestDescriptorExtractor
 import java.io.File
+import java.nio.file.Paths
+import kotlin.test.junit5.JUnit5Asserter.fail
 
 object FullPipelineRunner {
     fun run(file: File) {
@@ -17,7 +19,7 @@ object FullPipelineRunner {
                 val extractionResult = AntlrDiagnosticsExtractor.extract(content)
                 val actualGrammarDiagnostics = mutableListOf<AntlrDiagnostic>()
 
-                GrammarPipeline.run(extractionResult.refinedInput, 0) {
+                runGrammarPipeline(extractionResult.refinedInput, 0, file.nameWithoutExtension, file.parentFile) {
                     actualGrammarDiagnostics.add(it)
                 }
 
@@ -33,10 +35,9 @@ object FullPipelineRunner {
                 val embeddedInfos = mutableListOf<InfoWithDescriptor<*>>()
 
                 for (grammar in testDescriptor.grammars) {
-                    val result = GrammarPipeline.run(grammar.value, grammar.sourceInterval.offset) {
+                    grammarResults.add(runGrammarPipeline(grammar.value, grammar.sourceInterval.offset, grammarName = null, file.parentFile) {
                         embeddedInfos.add(it.toInfoWithDescriptor())
-                    }
-                    grammarResults.add(result)
+                    })
                 }
 
                 if (testDescriptor.atn != null) {
@@ -53,6 +54,32 @@ object FullPipelineRunner {
                     "Grammar diagnostics or dumps are not equal", content, actual, file)
             }
             else -> error("Valid extensions are `g4` and `md`")
+        }
+    }
+
+    private fun runGrammarPipeline(
+        grammarText: CharSequence,
+        grammarOffset: Int,
+        grammarName: String?,
+        parentFile: File,
+        diagnosticReporter: ((AntlrDiagnostic) -> Unit),
+    ): GrammarPipelineResult {
+        return GrammarPipeline.run(grammarText, grammarOffset) {
+            diagnosticReporter.invoke(it)
+        }.also {
+            val dumpAtn = parentFile.name == "Atn"
+            if (dumpAtn) {
+                val actualAtnDump = AtnDumper().dump(it.atn)
+                val dumpFile = Paths.get(parentFile.path, "${grammarName ?: it.grammarName}.dot").toFile()
+                if (!dumpFile.exists()) {
+                    dumpFile.writeText(actualAtnDump)
+                    fail("Expected file doesn't exist. Generating: ${dumpFile.path}")
+                } else {
+                    val expectedAtnDump = dumpFile.readText()
+                    failFileComparisonIfNotEqual(
+                        "ATN dumps are not equal", expectedAtnDump, actualAtnDump, dumpFile)
+                }
+            }
         }
     }
 

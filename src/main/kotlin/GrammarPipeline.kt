@@ -17,8 +17,8 @@ object GrammarPipeline {
         val rules = RuleCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
         val atn = AtnBuilder(lexer, rules, diagnosticReporter = diagnosticReporter).build(tree)
 
-        return GrammarPipelineResult(atn)
+        return GrammarPipelineResult(tree.parserIdToken.value, atn)
     }
 }
 
-class GrammarPipelineResult(val atn: Atn)
+class GrammarPipelineResult(val grammarName: String?, val atn: Atn)
