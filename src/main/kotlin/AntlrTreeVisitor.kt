@@ -30,4 +30,6 @@ abstract class AntlrTreeVisitor<out R> {
     open fun visitElementCharSetCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange) = visitTreeNode(node)
 
     open fun visitElementCharSetCharHyphenCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange.Range) = visitTreeNode(node)
+
+    open fun visitElementSuffixNode(node: ElementSuffixNode) = visitTreeNode(node)
 }
