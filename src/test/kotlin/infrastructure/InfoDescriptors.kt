@@ -22,7 +22,7 @@ object AntlrDiagnosticInfoDescriptor : DiagnosticInfoDescriptor<AntlrDiagnostic>
 object TestDescriptorDiagnosticInfoDescriptor : DiagnosticInfoDescriptor<TestDescriptorDiagnostic>(
     startMarker = "<!--❌",
     endMarker = "-->",
-    ignoredPropertyNames = setOf("type"),
+    ignoredPropertyNames = emptySet(),
 )
 
 object DumpInfoDescriptor : EmbeddedInfoDescriptor<DumpInfo>()
