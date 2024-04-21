@@ -10,7 +10,6 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
 
     private val visitedStates: MutableSet<State> = mutableSetOf()
     private val stateNames: MutableMap<State, String> = mutableMapOf()
-    private var stateCounter = 0
 
     fun dump(atn: Atn): String {
         return buildString {
@@ -75,6 +74,6 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
     }
 
     private fun State.getName(): String {
-        return stateNames.getOrPut(this) { if (this is RuleState) rule.name else "s${stateCounter++}" }
+        return stateNames.getOrPut(this) { if (this is RuleState) rule.name else "s${number}" }
     }
 }

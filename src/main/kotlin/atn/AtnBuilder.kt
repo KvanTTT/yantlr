@@ -13,6 +13,7 @@ class AtnBuilder(
 ) : AntlrTreeVisitor<AtnBuilder.Handle?>() {
     data class Handle(val start: State, val end: State, val endTransitions: MutableList<Transition>)
 
+    private var stateCounter = 0
     private val result = LinkedHashMap<Rule, RuleState>()
 
     fun build(root: GrammarNode): Atn {
@@ -31,16 +32,17 @@ class AtnBuilder(
     override fun visitRuleNode(node: RuleNode): Handle {
         val ruleHandle = visitBlockNode(node.blockNode)
         val rule = rules.getValue(node.lexerOrParserIdToken.value!!)
-        val end = State(emptyList())
+        val end = createState(emptyList())
         ruleHandle.endTransitions.add(EpsilonTransition(end, emptyList()))
-        result[rule] = RuleState(rule, node, ruleHandle.start, end)
+        result[rule] = RuleState(rule, node, ruleHandle.start, end, stateCounter++)
         return ruleHandle
     }
 
     override fun visitBlockNode(node: BlockNode): Handle {
         val startTransitions = mutableListOf<Transition>()
         val endTransitions = mutableListOf<Transition>()
-        val end = State(endTransitions)
+        val start = createState(startTransitions)
+        val end by lazy(LazyThreadSafetyMode.NONE) { createState(endTransitions) }
 
         fun processAlternative(alternativeNode: AlternativeNode) {
             val altNodeHandle = visitAlternativeNode(alternativeNode)
@@ -51,12 +53,12 @@ class AtnBuilder(
         processAlternative(node.alternativeNode)
         node.orAlternativeNodes.forEach { processAlternative(it.alternativeNode) }
 
-        return Handle(State(startTransitions), end, endTransitions)
+        return Handle(start, end, endTransitions)
     }
 
     override fun visitAlternativeNode(node: AlternativeNode): Handle {
         var endTransitions = mutableListOf<Transition>()
-        val start = State(endTransitions)
+        val start = createState(endTransitions)
         var end = start
 
         node.elementNodes.forEach {
@@ -72,7 +74,7 @@ class AtnBuilder(
     override fun visitElementNode(node: ElementNode): Handle {
         var endTransitions = mutableListOf<Transition>()
         val startTransitions = endTransitions
-        val start = State(endTransitions)
+        val start = createState(endTransitions)
         var end = start
 
         // TODO: implement greedy processing
@@ -99,7 +101,7 @@ class AtnBuilder(
             is ElementNode.StringLiteral -> {
                 for (charToken in node.chars) {
                     val newTransitions = mutableListOf<Transition>()
-                    end = State(newTransitions)
+                    end = createState(newTransitions)
                     val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
                     endTransitions.add(SetTransition(intervalSet, end, listOf(charToken)))
                     endTransitions = newTransitions
@@ -120,7 +122,7 @@ class AtnBuilder(
                     treeNodes.add(child)
                 }
                 val newTransitions = mutableListOf<Transition>()
-                end = State(newTransitions)
+                end = createState(newTransitions)
                 endTransitions.add(SetTransition(IntervalSet(intervals), end, treeNodes))
                 endTransitions = newTransitions
                 node.elementSuffix.processElementSuffix()
@@ -149,4 +151,6 @@ class AtnBuilder(
         }
         return code
     }
+
+    private fun createState(transitions: List<Transition>): State = State(transitions, stateCounter++)
 }
