@@ -20,8 +20,16 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
             append(lineBreak)
 
             atn.ruleStates.values.forEach {
+                visitedStates.clear()
+
                 append(lineBreak)
-                dump(it)
+                if (it.outTransitions.isEmpty()) {
+                    append(INDENT)
+                    append(it.getName())
+                    append(lineBreak)
+                } else {
+                    dump(it)
+                }
             }
 
             append('}')
@@ -32,7 +40,7 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
         if (!visitedStates.add(state)) return
 
         val stateName = state.getName()
-        state.transitions.forEach {
+        state.outTransitions.forEach {
             append(INDENT)
             append(stateName)
             append(" -> ")
