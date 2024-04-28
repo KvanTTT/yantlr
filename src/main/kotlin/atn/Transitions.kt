@@ -3,10 +3,22 @@ package atn
 import parser.AntlrNode
 import semantics.Rule
 
-abstract class Transition(val target: State, val treeNodes: List<AntlrNode>)
+abstract class Transition(val source: State, val target: State, val treeNodes: List<AntlrNode>) {
+    override fun toString(): String {
+        return "$source -> $target"
+    }
+}
 
-class EpsilonTransition(target: State, treeNodes: List<AntlrNode>) : Transition(target, treeNodes)
+class EpsilonTransition(source: State, target: State, treeNodes: List<AntlrNode>) : Transition(source, target, treeNodes) {
+    override fun toString(): String {
+        return "ε ($source -> $target)"
+    }
+}
 
-class SetTransition(val set: IntervalSet, target: State, treeNodes: List<AntlrNode>) : Transition(target, treeNodes)
+class SetTransition(val set: IntervalSet, source: State, target: State, treeNodes: List<AntlrNode>) : Transition(source, target, treeNodes) {
+    override fun toString(): String {
+        return "$set ($source -> $target)"
+    }
+}
 
-class RuleTransition(val rule: Rule, target: State, treeNodes: List<AntlrNode>) : Transition(target, treeNodes)
+class RuleTransition(val rule: Rule, source: State, target: State, treeNodes: List<AntlrNode>) : Transition(source, target, treeNodes)

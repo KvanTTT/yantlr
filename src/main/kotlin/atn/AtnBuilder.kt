@@ -11,7 +11,7 @@ class AtnBuilder(
     private val rules: Map<String, Rule>,
     private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)? = null,
 ) : AntlrTreeVisitor<AtnBuilder.Handle?>() {
-    data class Handle(val start: State, val end: State, val endTransitions: MutableList<Transition>)
+    data class Handle(val start: State, val end: State)
 
     private var stateCounter = 0
     private val result = LinkedHashMap<Rule, RuleState>()
@@ -30,51 +30,51 @@ class AtnBuilder(
     }
 
     override fun visitRuleNode(node: RuleNode): Handle {
+        val ruleStateNumber = stateCounter++
         val ruleHandle = visitBlockNode(node.blockNode)
+
+        val end = createState()
+        bind(ruleHandle.end, end, node)
+
         val rule = rules.getValue(node.lexerOrParserIdToken.value!!)
-        val end = createState(emptyList())
-        ruleHandle.endTransitions.add(EpsilonTransition(end, emptyList()))
-        result[rule] = RuleState(rule, node, ruleHandle.start, end, stateCounter++)
+        val ruleState = RuleState(rule, node, mutableListOf(), ruleStateNumber)
+        bind(ruleState, ruleHandle.start, node)
+        result[rule] = ruleState
+
         return ruleHandle
     }
 
     override fun visitBlockNode(node: BlockNode): Handle {
-        val startTransitions = mutableListOf<Transition>()
-        val endTransitions = mutableListOf<Transition>()
-        val start = createState(startTransitions)
-        val end by lazy(LazyThreadSafetyMode.NONE) { createState(endTransitions) }
+        val start = createState()
+        val end by lazy(LazyThreadSafetyMode.NONE) { createState() }
 
         fun processAlternative(alternativeNode: AlternativeNode) {
             val altNodeHandle = visitAlternativeNode(alternativeNode)
-            startTransitions.add(EpsilonTransition(altNodeHandle.start, listOf(alternativeNode)))
-            altNodeHandle.endTransitions.add(EpsilonTransition(end, listOf(node)))
+            bind(start, altNodeHandle.start, alternativeNode)
+            bind(altNodeHandle.end, end, alternativeNode)
         }
 
         processAlternative(node.alternativeNode)
         node.orAlternativeNodes.forEach { processAlternative(it.alternativeNode) }
 
-        return Handle(start, end, endTransitions)
+        return Handle(start, end)
     }
 
     override fun visitAlternativeNode(node: AlternativeNode): Handle {
-        var endTransitions = mutableListOf<Transition>()
-        val start = createState(endTransitions)
+        val start = createState()
         var end = start
 
         node.elementNodes.forEach {
             val newHandle = visitElementNode(it)
-            endTransitions.add(EpsilonTransition(newHandle.start, listOf(it)))
+            bind(end, newHandle.start, it)
             end = newHandle.end
-            endTransitions = newHandle.endTransitions
         }
 
-        return Handle(start, end, endTransitions)
+        return Handle(start, end)
     }
 
     override fun visitElementNode(node: ElementNode): Handle {
-        var endTransitions = mutableListOf<Transition>()
-        val startTransitions = endTransitions
-        val start = createState(endTransitions)
+        val start = createState()
         var end = start
 
         // TODO: implement greedy processing
@@ -82,14 +82,14 @@ class AtnBuilder(
             if (this == null) return
             when (ebnf.type) {
                 AntlrTokenType.Question -> {
-                    startTransitions.add(EpsilonTransition(end, listOf(ebnf)))
+                    bind(start, end, ebnf)
                 }
                 AntlrTokenType.Star -> {
-                    startTransitions.add(EpsilonTransition(end, listOf(ebnf)))
-                    endTransitions.add(EpsilonTransition(start, listOf(ebnf)))
+                    bind(start, end, ebnf)
+                    bind(end, start, ebnf)
                 }
                 AntlrTokenType.Plus -> {
-                    endTransitions.add(EpsilonTransition(start, listOf(ebnf)))
+                    bind(end, start, ebnf)
                 }
                 else -> {
                     error("Unexpected token type: ${ebnf.type}")
@@ -100,12 +100,12 @@ class AtnBuilder(
         when (node) {
             is ElementNode.StringLiteral -> {
                 for (charToken in node.chars) {
-                    val newTransitions = mutableListOf<Transition>()
-                    end = createState(newTransitions)
+                    val state = createState()
                     val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
-                    endTransitions.add(SetTransition(intervalSet, end, listOf(charToken)))
-                    endTransitions = newTransitions
+                    SetTransition(intervalSet, end, state, listOf(charToken)).bind()
+                    end = state
                 }
+
                 node.elementSuffix.processElementSuffix()
             }
             is ElementNode.CharSet -> {
@@ -121,23 +121,27 @@ class AtnBuilder(
                     intervals.add(Interval(startChar, endChar))
                     treeNodes.add(child)
                 }
-                val newTransitions = mutableListOf<Transition>()
-                end = createState(newTransitions)
-                endTransitions.add(SetTransition(IntervalSet(intervals), end, treeNodes))
-                endTransitions = newTransitions
+
+                val state = createState()
+                SetTransition(IntervalSet(intervals), end, state, treeNodes).bind()
+                end = state
+
                 node.elementSuffix.processElementSuffix()
             }
             is ElementNode.Block -> {
                 val blockNodeHandle = visitBlockNode(node.blockNode)
-                endTransitions.add(EpsilonTransition(blockNodeHandle.start, listOf(node.blockNode)))
-                end = blockNodeHandle.end
-                endTransitions = blockNodeHandle.endTransitions
+                bind(start, blockNodeHandle.start, node)
+                end = createState()
+                bind(blockNodeHandle.end, end, node)
+
                 node.elementSuffix.processElementSuffix()
+            }
+            is ElementNode.Empty -> {
             }
             else -> TODO("Not yet implemented")
         }
 
-        return Handle(start, end, endTransitions)
+        return Handle(start, end)
     }
 
     private fun getCharCode(charToken: AntlrToken, stringLiteral: Boolean): Int {
@@ -152,5 +156,17 @@ class AtnBuilder(
         return code
     }
 
-    private fun createState(transitions: List<Transition>): State = State(transitions, stateCounter++)
+    private fun bind(previous: State, next: State, treeNode: AntlrNode): EpsilonTransition {
+        return EpsilonTransition(previous, next, listOf(treeNode)).also {
+            it.bind()
+        }
+    }
+
+    private fun Transition.bind(): Transition {
+        source.outTransitions.add(this)
+        target.inTransitions.add(this)
+        return this
+    }
+
+    private fun createState(): State = State(mutableListOf(), mutableListOf(), stateCounter++)
 }

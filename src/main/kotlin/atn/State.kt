@@ -3,7 +3,15 @@ package atn
 import parser.AntlrTreeNode
 import semantics.Rule
 
-open class State(val transitions: List<Transition>, val number: Int) {
+open class State(
+    val inTransitions: MutableList<Transition>,
+    val outTransitions: MutableList<Transition>,
+    val number: Int,
+) {
+    fun isStartState() = inTransitions.isEmpty()
+
+    fun isEndState() = outTransitions.isEmpty()
+
     override fun toString(): String {
         return "s$number"
     }
@@ -12,10 +20,9 @@ open class State(val transitions: List<Transition>, val number: Int) {
 class RuleState(
     val rule: Rule,
     val treeNode: AntlrTreeNode,
-    val startState: State,
-    val endState: State,
+    outTransitions: MutableList<Transition>,
     number: Int,
-) : State(startState.transitions, number) {
+) : State(mutableListOf(), outTransitions, number) {
     override fun toString(): String {
         return "${rule.name}(${super.toString()})"
     }
