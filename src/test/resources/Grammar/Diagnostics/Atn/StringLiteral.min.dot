@@ -1,0 +1,6 @@
+digraph ATN {
+  rankdir=LR;
+
+  StringLiteral -> s5 [label="a"]
+  s5 -> s8 [label="b"]
+}

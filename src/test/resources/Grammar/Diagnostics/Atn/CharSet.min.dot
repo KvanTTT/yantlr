@@ -1,0 +1,5 @@
+digraph ATN {
+  rankdir=LR;
+
+  CharSet -> s6 [label="d, e..g, -, \\r"]
+}

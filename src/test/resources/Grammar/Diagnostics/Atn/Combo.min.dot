@@ -1,0 +1,12 @@
+digraph ATN {
+  rankdir=LR;
+
+  Combo -> Combo [label="a"]
+  Combo -> Combo [label="d"]
+  Combo -> s22 [label="e"]
+  s22 -> s24 [label="f"]
+  Combo -> Combo [label="b"]
+  Combo -> s24 [label="c"]
+  Combo -> s24 [label="d"]
+  Combo -> s24 [label="e"]
+}

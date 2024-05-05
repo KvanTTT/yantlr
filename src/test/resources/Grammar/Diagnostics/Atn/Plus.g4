@@ -1,2 +1,2 @@
 lexer grammar Plus;
-Plus: 'a'+;
+Plus: 'ab'+;

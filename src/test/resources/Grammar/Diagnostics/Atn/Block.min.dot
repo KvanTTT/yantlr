@@ -1,0 +1,9 @@
+digraph ATN {
+  rankdir=LR;
+
+  Block -> s8 [label="{"]
+  s8 -> s15 [label="w"]
+  s15 -> s18 [label="}"]
+  Block -> s12 [label="{"]
+  s12 -> s15 [label="z"]
+}

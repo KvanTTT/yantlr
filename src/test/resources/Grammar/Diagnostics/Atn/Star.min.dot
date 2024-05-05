@@ -1,0 +1,6 @@
+digraph ATN {
+  rankdir=LR;
+
+  Star -> Star [label="a"]
+  Star -> s8 [label="b"]
+}

@@ -1,0 +1,7 @@
+digraph ATN {
+  rankdir=LR;
+
+  Plus -> s4 [label="a"]
+  s4 -> Plus [label="b"]
+  s4 -> s7 [label="b"]
+}

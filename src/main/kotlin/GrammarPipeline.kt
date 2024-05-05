@@ -1,5 +1,7 @@
 import atn.Atn
 import atn.AtnBuilder
+import atn.AtnCloner
+import atn.AtnMinimizer
 import parser.AntlrLexer
 import parser.AntlrLexerTokenStream
 import parser.AntlrParser
@@ -16,9 +18,10 @@ object GrammarPipeline {
 
         val rules = RuleCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
         val atn = AtnBuilder(lexer, rules, diagnosticReporter = diagnosticReporter).build(tree)
+        var minimizedAtn = AtnMinimizer().removeEpsilonTransitions(AtnCloner.clone(atn))
 
-        return GrammarPipelineResult(tree.parserIdToken.value, atn)
+        return GrammarPipelineResult(tree.parserIdToken.value, atn, minimizedAtn)
     }
 }
 
-class GrammarPipelineResult(val grammarName: String?, val atn: Atn)
+class GrammarPipelineResult(val grammarName: String?, val atn: Atn, val minimizedAtn: Atn)

@@ -3,6 +3,7 @@ package infrastructure
 import AntlrDiagnostic
 import GrammarPipeline
 import GrammarPipelineResult
+import atn.Atn
 import com.intellij.rt.execution.junit.FileComparisonFailure
 import infrastructure.testDescriptors.TestDescriptor
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
@@ -67,19 +68,25 @@ object FullPipelineRunner {
         return GrammarPipeline.run(grammarText, grammarOffset) {
             diagnosticReporter.invoke(it)
         }.also {
-            val dumpAtn = parentFile.name == "Atn"
-            if (dumpAtn) {
-                val actualAtnDump = AtnDumper().dump(it.atn)
-                val dumpFile = Paths.get(parentFile.path, "${grammarName ?: it.grammarName}.dot").toFile()
-                if (!dumpFile.exists()) {
-                    dumpFile.writeText(actualAtnDump)
-                    fail("Expected file doesn't exist. Generating: ${dumpFile.path}")
-                } else {
-                    val expectedAtnDump = dumpFile.readText()
-                    failFileComparisonIfNotEqual(
-                        "ATN dumps are not equal", expectedAtnDump, actualAtnDump, dumpFile)
-                }
+            if (parentFile.name == "Atn") {
+                val dumpName = grammarName ?: it.grammarName
+                dumpAtn(it.atn, parentFile, dumpName, minimized = false)
+                dumpAtn(it.minimizedAtn, parentFile, dumpName, minimized = true)
             }
+        }
+    }
+
+    private fun dumpAtn(atn: Atn, parentFile: File, name: String?, minimized: Boolean) {
+        val actualAtnDump = AtnDumper().dump(atn)
+        val dumpFile = Paths.get(parentFile.path, "${name}${if (minimized) ".min" else ""}.dot").toFile()
+        if (!dumpFile.exists()) {
+            dumpFile.writeText(actualAtnDump)
+            fail("Expected file doesn't exist. Generating: ${dumpFile.path}")
+        } else {
+            val expectedAtnDump = dumpFile.readText()
+            failFileComparisonIfNotEqual(
+                "ATN ${if (minimized) "minimized " else ""} dumps are not equal", expectedAtnDump, actualAtnDump, dumpFile
+            )
         }
     }
 

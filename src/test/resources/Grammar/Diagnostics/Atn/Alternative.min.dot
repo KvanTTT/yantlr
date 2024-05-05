@@ -1,0 +1,6 @@
+digraph ATN {
+  rankdir=LR;
+
+  Alternative -> s9 [label="a"]
+  Alternative -> s9 [label="b"]
+}

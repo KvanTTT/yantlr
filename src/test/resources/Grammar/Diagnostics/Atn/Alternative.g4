@@ -1,2 +1,2 @@
 lexer grammar Alternative;
-Alternative: 'x' | 'y';
+Alternative: 'a' | 'b';
