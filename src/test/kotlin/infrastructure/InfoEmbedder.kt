@@ -4,9 +4,11 @@ import Diagnostic
 import SourceInterval
 import infrastructure.testDescriptors.TextPropertyValue
 import infrastructure.testDescriptors.TextType
+import parser.AntlrNode
 import parser.getLineColumn
 import parser.getLineOffsetsAndMainLineBreak
 import parser.stringEscapeToLiteralChars
+import semantics.Rule
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
@@ -120,6 +122,8 @@ object InfoEmbedder {
             append(' ')
 
             val normalizedValue = when (val value = property.get(diagnostic)) {
+                is Rule -> value.ruleNode.idToken.value!!
+                is AntlrNode -> (value.getInterval()?.offset ?: 0).getLineColumn(lineOffsets)
                 is SourceInterval -> value.offset.getLineColumn(lineOffsets)
                 else -> value
             }

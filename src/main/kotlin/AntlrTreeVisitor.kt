@@ -9,6 +9,8 @@ abstract class AntlrTreeVisitor<out R> {
 
     open fun visitRuleNode(node: RuleNode) = visitTreeNode(node)
 
+    open fun visitModeNode(node: ModeNode) = visitTreeNode(node)
+
     open fun visitBlockNode(node: BlockNode) = visitTreeNode(node)
 
     open fun visitBlockOrAlternativeNodes(node: BlockNode.OrAlternative) = visitTreeNode(node)

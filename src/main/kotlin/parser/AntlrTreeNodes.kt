@@ -24,11 +24,13 @@ class GrammarNode(
     val parserIdToken: AntlrToken,
     val semicolonToken: AntlrToken,
     val ruleNodes: List<RuleNode>,
+    val modeNodes: List<ModeNode>,
     val endNode: EndNode?,
 ) : AntlrTreeNode() {
     override fun calculateLeftToken(): AntlrToken = lexerOrParserToken ?: grammarToken
 
-    override fun calculateRightToken(): AntlrToken = endNode?.eofToken ?: ruleNodes.lastOrNull()?.rightToken ?: semicolonToken
+    override fun calculateRightToken(): AntlrToken =
+        endNode?.eofToken ?: modeNodes.lastOrNull()?.rightToken ?: ruleNodes.lastOrNull()?.rightToken ?: semicolonToken
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
         lexerOrParserToken?.let { visitor.visitToken(it) }
@@ -36,26 +38,46 @@ class GrammarNode(
         visitor.visitToken(parserIdToken)
         visitor.visitToken(semicolonToken)
         ruleNodes.forEach { visitor.visitRuleNode(it) }
+        modeNodes.forEach { visitor.visitModeNode(it) }
         endNode?.let { visitor.visitTreeNode(it) }
         return null
     }
 }
 
 class RuleNode(
-    val lexerOrParserIdToken: AntlrToken,
+    val idToken: AntlrToken,
     val colonToken: AntlrToken,
     val blockNode: BlockNode,
     val semicolonToken: AntlrToken
 ) : AntlrTreeNode() {
-    override fun calculateLeftToken(): AntlrToken = lexerOrParserIdToken
+    override fun calculateLeftToken(): AntlrToken = idToken
 
     override fun calculateRightToken(): AntlrToken = semicolonToken
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
-        visitor.visitToken(lexerOrParserIdToken)
+        visitor.visitToken(idToken)
         visitor.visitToken(colonToken)
         visitor.visitBlockNode(blockNode)
         visitor.visitToken(semicolonToken)
+        return null
+    }
+}
+
+class ModeNode(
+    val modeToken: AntlrToken,
+    val idToken: AntlrToken,
+    val semicolonToken: AntlrToken,
+    val ruleNodes: List<RuleNode>,
+) : AntlrTreeNode() {
+    override fun calculateLeftToken(): AntlrToken = modeToken
+
+    override fun calculateRightToken(): AntlrToken = ruleNodes.lastOrNull()?.rightToken ?: semicolonToken
+
+    override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
+        visitor.visitToken(modeToken)
+        visitor.visitToken(idToken)
+        visitor.visitToken(semicolonToken)
+        ruleNodes.forEach { visitor.visitRuleNode(it) }
         return null
     }
 }

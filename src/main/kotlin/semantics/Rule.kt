@@ -2,4 +2,4 @@ package semantics
 
 import parser.RuleNode
 
-class Rule(val name: String, val isLexer: Boolean, val ruleNode: RuleNode)
+class Rule(val isLexer: Boolean, val references: List<Rule>, val ruleNode: RuleNode)

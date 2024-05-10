@@ -5,7 +5,8 @@ import atn.AtnMinimizer
 import parser.AntlrLexer
 import parser.AntlrLexerTokenStream
 import parser.AntlrParser
-import semantics.RuleCollector
+import semantics.DeclarationCollector
+import semantics.DeclarationsInfo
 
 object GrammarPipeline {
     fun run(
@@ -16,12 +17,17 @@ object GrammarPipeline {
         val lexer = AntlrLexer(grammarText, textOffset = grammarOffset, diagnosticReporter = diagnosticReporter)
         val tree = AntlrParser(AntlrLexerTokenStream(lexer), diagnosticReporter = diagnosticReporter).parseGrammar()
 
-        val rules = RuleCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
-        val atn = AtnBuilder(lexer, rules, diagnosticReporter = diagnosticReporter).build(tree)
+        val declarationsInfo = DeclarationCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
+        val atn = AtnBuilder(diagnosticReporter = diagnosticReporter).build(declarationsInfo)
         var minimizedAtn = AtnMinimizer().removeEpsilonTransitions(AtnCloner.clone(atn))
 
-        return GrammarPipelineResult(tree.parserIdToken.value, atn, minimizedAtn)
+        return GrammarPipelineResult(tree.parserIdToken.value, declarationsInfo, atn, minimizedAtn)
     }
 }
 
-class GrammarPipelineResult(val grammarName: String?, val atn: Atn, val minimizedAtn: Atn)
+class GrammarPipelineResult(
+    val grammarName: String?,
+    val declarationsInfo: DeclarationsInfo,
+    val atn: Atn,
+    val minimizedAtn: Atn,
+)

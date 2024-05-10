@@ -2,55 +2,61 @@ package atn
 
 class AtnMinimizer {
     fun removeEpsilonTransitions(atn: Atn): Atn {
-        val newRuleStates = buildMap {
-            for ((rule, ruleState) in atn.ruleStates) {
-                refineRoot(ruleState)
-                removeEpsilonTransitions(ruleState)
-                put(rule, ruleState)
-            }
-        }
+        val newModeStartStates = minimize(atn.modeStartStates)
+        val newLexerStartStates = minimize(atn.lexerStartStates)
+        val newParserStartStates = minimize(atn.parserStartStates)
 
-        return Atn(newRuleStates)
+        return Atn(newModeStartStates, newLexerStartStates, newParserStartStates)
     }
 
-    private fun refineRoot(ruleState: RuleState) {
+    fun <T : RootState> minimize(rootStates: List<T>): List<T> {
+        return buildList {
+            for (rootState in rootStates) {
+                refineRoot(rootState)
+                removeEpsilonTransitions(rootState)
+                add(rootState)
+            }
+        }
+    }
+
+    private fun refineRoot(rootState: RootState) {
         do {
-            val epsilonTransitions = ruleState.outTransitions.filterIsInstance<EpsilonTransition>()
+            val epsilonTransitions = rootState.outTransitions.filterIsInstance<EpsilonTransition>()
                 .takeIf { it.isNotEmpty() } ?: break
 
             for (epsilonTransition in epsilonTransitions) {
                 val target = epsilonTransition.target
                 val targetOutTransitions = target.outTransitions
                 // Check for cycling
-                if (target != ruleState) {
+                if (target != rootState) {
                     // Remove intermediate target state and rebind all its targets
                     for (targetOutTransition in targetOutTransitions) {
-                        targetOutTransition.rebind(epsilonTransition, targetOutTransition, ruleState, targetOutTransition.target)
+                        targetOutTransition.rebind(epsilonTransition, targetOutTransition, rootState, targetOutTransition.target)
                     }
                     // Rebind incoming transitions to the ruleState
                     for (targetInTransition in target.inTransitions) {
                         if (targetInTransition != epsilonTransition) {
-                            targetInTransition.rebind(targetInTransition.source, ruleState)
+                            targetInTransition.rebind(targetInTransition.source, rootState)
                         }
                     }
                     if (targetOutTransitions.isNotEmpty()) {
                         targetOutTransitions.clear()
                     } else {
                         // If target state is the end state, then just remove it
-                        ruleState.outTransitions.clear()
+                        rootState.outTransitions.clear()
                     }
                 } else {
-                    ruleState.outTransitions.remove(epsilonTransition)
+                    rootState.outTransitions.remove(epsilonTransition)
                 }
                 epsilonTransition.target.inTransitions.remove(epsilonTransition)
             }
         } while (true)
     }
 
-    private fun removeEpsilonTransitions(ruleState: RuleState) {
+    private fun removeEpsilonTransitions(rootState: RootState) {
         val statesStack = ArrayDeque<State>(0)
         val visitedStates = mutableSetOf<State>()
-        statesStack.add(ruleState)
+        statesStack.add(rootState)
 
         while (statesStack.isNotEmpty()) {
             val currentState = statesStack.removeFirst()
@@ -91,6 +97,7 @@ class AtnMinimizer {
             is EpsilonTransition -> EpsilonTransition(newSource, newTarget, treeNodes)
             is SetTransition -> SetTransition(set, newSource, newTarget, treeNodes)
             is RuleTransition -> RuleTransition(rule, newSource, newTarget, treeNodes)
+            is EndTransition -> EndTransition(rule, newSource, newTarget, treeNodes)
             else -> error("Unknown transition type: ${this@AtnMinimizer}")
         }.also { newTransition ->
             // Change out transitions of previous states and in transition of the new target

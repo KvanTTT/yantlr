@@ -1,9 +1,10 @@
 digraph ATN {
   rankdir=LR;
 
-  Block -> s8 [label="{"]
-  s8 -> s15 [label="w"]
-  s15 -> s18 [label="}"]
-  Block -> s12 [label="{"]
-  s12 -> s15 [label="z"]
+  "DEFAULT_MODE(s0)" -> s9 [label="{"]
+  s9 -> s16 [label=w]
+  s16 -> s18 [label="}"]
+  s18 -> s19 [label="end(Block)", style=dotted]
+  "DEFAULT_MODE(s0)" -> s13 [label="{"]
+  s13 -> s16 [label=z]
 }

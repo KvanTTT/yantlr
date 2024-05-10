@@ -2,10 +2,15 @@ package atn
 
 object AtnCloner {
     fun clone(atn: Atn): Atn {
-        val newRuleStates = atn.ruleStates.mapValues { (_, ruleState) ->
-            Helper().clone(ruleState) as RuleState
-        }
-        return Atn(newRuleStates)
+        val helper = Helper()
+        val modeStartStates = atn.modeStartStates.map { helper.clone(it) as ModeState }
+        val lexerStartStates = atn.lexerStartStates.map { helper.clone(it) as RuleState }
+        val parserStartStates = atn.parserStartStates.map { helper.clone(it) as RuleState }
+        return Atn(modeStartStates, lexerStartStates, parserStartStates)
+    }
+
+    fun clone(state: RuleState): RuleState {
+        return Helper().clone(state) as RuleState
     }
 
     private class Helper {
@@ -22,7 +27,8 @@ object AtnCloner {
             statesMap[state]?.let { return it }
 
             val result = when (state) {
-                is RuleState -> RuleState(state.rule, state.treeNode, mutableListOf(), state.number)
+                is RuleState -> RuleState(state.rule, mutableListOf(), state.number)
+                is ModeState -> ModeState(state.mode, mutableListOf(), state.number)
                 else -> State(mutableListOf(), mutableListOf(), state.number)
             }.also {
                 statesMap[state] = it
@@ -57,6 +63,7 @@ object AtnCloner {
                 is EpsilonTransition -> EpsilonTransition(newSource, newTarget, treeNodes)
                 is SetTransition -> SetTransition(set, newSource, newTarget, treeNodes)
                 is RuleTransition -> RuleTransition(rule, newSource, newTarget, treeNodes)
+                is EndTransition -> EndTransition(rule, newSource, newTarget, treeNodes)
                 else -> error("Unknown transition type: $this")
             }.also {
                 transitionsMap[this] = it

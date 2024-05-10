@@ -1,3 +1,6 @@
-lexer grammar test;
-x : 'a';
-/*❗RuleRedefinition x 2:1*/x/*❗*/ : 'b';
+lexer grammar RuleRedefinition;
+X : 'a';
+/*❗RuleRedefinition*/X/*❗*/ : 'b';
+
+mode Custom;
+/*❗RuleRedefinition*/X/*❗*/ : 'c';

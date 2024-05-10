@@ -1,12 +1,13 @@
 digraph ATN {
   rankdir=LR;
 
-  Combo -> Combo [label="a"]
-  Combo -> Combo [label="d"]
-  Combo -> s22 [label="e"]
-  s22 -> s24 [label="f"]
-  Combo -> Combo [label="b"]
-  Combo -> s24 [label="c"]
-  Combo -> s24 [label="d"]
-  Combo -> s24 [label="e"]
+  "DEFAULT_MODE(s0)" -> "DEFAULT_MODE(s0)" [label=a]
+  "DEFAULT_MODE(s0)" -> "DEFAULT_MODE(s0)" [label=d]
+  "DEFAULT_MODE(s0)" -> s23 [label=e]
+  s23 -> s16 [label=f]
+  s16 -> s25 [label="end(Combo)", style=dotted]
+  "DEFAULT_MODE(s0)" -> "DEFAULT_MODE(s0)" [label=b]
+  "DEFAULT_MODE(s0)" -> s16 [label=c]
+  "DEFAULT_MODE(s0)" -> s16 [label=d]
+  "DEFAULT_MODE(s0)" -> s16 [label=e]
 }

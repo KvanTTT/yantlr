@@ -1,0 +1,1 @@
+const val DEFAULT_MODE_NAME = "DEFAULT_MODE"

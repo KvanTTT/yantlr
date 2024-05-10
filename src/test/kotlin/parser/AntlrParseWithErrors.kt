@@ -34,6 +34,7 @@ object AntlrParseWithErrors {
                 AntlrToken(AntlrTokenType.Error, channel = AntlrTokenChannel.Error),
                 AntlrToken(AntlrTokenType.Semicolon, channel = AntlrTokenChannel.Error),
                 emptyList(),
+                emptyList(),
                 EndNode(
                     listOf(
                         AntlrToken(AntlrTokenType.Plus),

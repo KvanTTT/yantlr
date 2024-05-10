@@ -41,7 +41,7 @@ class AntlrParser(
         get
 
     // grammar
-    //   : (Lexer | Parser)? Grammar id ';' rule*
+    //   : (Lexer | Parser)? Grammar id ';' rule* modes*
     //   ;
     fun parseGrammar(matchToEof: Boolean = true): GrammarNode {
         val lexerOrParserToken = when (getToken().type) {
@@ -55,17 +55,45 @@ class AntlrParser(
 
         val semicolonToken = matchToken(AntlrTokenType.Semicolon)
 
-        val ruleNodes = buildList {
+        val ruleNodes = parseRules()
+
+        val modeNodes = buildList {
             var nextToken = getToken()
-            while (nextToken.type in ruleTokenTypes) {
-                add(parseRule())
+            while (nextToken.type == AntlrTokenType.Mode) {
+                add(parseMode())
                 nextToken = getToken()
             }
         }
 
         val endToken = emitEndNode(emptyList(), matchToEof)
 
-        return GrammarNode(lexerOrParserToken, grammarToken, idToken, semicolonToken, ruleNodes, endToken)
+        return GrammarNode(lexerOrParserToken, grammarToken, idToken, semicolonToken, ruleNodes, modeNodes, endToken)
+    }
+
+    // rules
+    //   : rule*
+    //   ;
+    private fun parseRules(): List<RuleNode> {
+        return buildList {
+            var nextToken = getToken()
+            while (nextToken.type in ruleTokenTypes) {
+                add(parseRule())
+                nextToken = getToken()
+            }
+        }
+    }
+
+    // mode
+    //   : 'mode' id ';' rule*
+    //   ;
+    private fun parseMode(): ModeNode {
+        val modeToken = matchToken(AntlrTokenType.Mode)
+        val idToken = parseId()
+        val semicolonToken = matchToken(AntlrTokenType.Semicolon)
+
+        val ruleNodes = parseRules()
+
+        return ModeNode(modeToken, idToken, semicolonToken, ruleNodes)
     }
 
     // rule

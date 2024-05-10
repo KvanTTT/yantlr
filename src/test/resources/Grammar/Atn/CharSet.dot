@@ -1,10 +1,11 @@
 digraph ATN {
   rankdir=LR;
 
-  CharSet -> s1 [label="ε"]
-  s1 -> s2 [label="ε"]
-  s2 -> s3 [label="ε"]
-  s3 -> s4 [label="d, e..g, -, \\r"]
-  s4 -> s5 [label="ε"]
-  s5 -> s6 [label="ε"]
+  "DEFAULT_MODE(s0)" -> "CharSet(s1)" [label=ε]
+  "CharSet(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label="d, e..g, -, \\r"]
+  s5 -> s6 [label=ε]
+  s6 -> s7 [label="end(CharSet)", style=dotted]
 }

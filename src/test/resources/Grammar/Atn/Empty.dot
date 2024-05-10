@@ -1,9 +1,10 @@
 digraph ATN {
   rankdir=LR;
 
-  Empty -> s1 [label="ε"]
-  s1 -> s2 [label="ε"]
-  s2 -> s3 [label="ε"]
-  s3 -> s4 [label="ε"]
-  s4 -> s5 [label="ε"]
+  "DEFAULT_MODE(s0)" -> "Empty(s1)" [label=ε]
+  "Empty(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label=ε]
+  s5 -> s6 [label="end(Empty)", style=dotted]
 }

@@ -106,6 +106,7 @@ x
             ),
         ),
 
+        emptyList(),
         EndNode(emptyList(), AntlrToken(AntlrTokenType.Eof)),
     )
 }

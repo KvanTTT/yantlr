@@ -1,3 +1,6 @@
+import parser.RuleNode
+import semantics.Rule
+
 abstract class AntlrDiagnostic(val severity: DiagnosticSeverity, sourceInterval: SourceInterval) : Diagnostic(sourceInterval)
 
 abstract class LexerDiagnostic(val value: String, severity: DiagnosticSeverity, sourceInterval: SourceInterval) : AntlrDiagnostic(severity, sourceInterval)
@@ -14,7 +17,7 @@ class ExtraToken(sourceInterval: SourceInterval) : ParserDiagnostic(DiagnosticSe
 
 abstract class SemanticsDiagnostics(severity: DiagnosticSeverity, sourceInterval: SourceInterval) : AntlrDiagnostic(severity, sourceInterval)
 
-class RuleRedefinition(val ruleName: String, val previousSourceInterval: SourceInterval, sourceInterval: SourceInterval) : SemanticsDiagnostics(DiagnosticSeverity.Error, sourceInterval)
+class RuleRedefinition(val previousRule: Rule, val ruleNode: RuleNode) : SemanticsDiagnostics(DiagnosticSeverity.Error, ruleNode.idToken.getInterval())
 
 enum class DiagnosticSeverity {
     Error,
