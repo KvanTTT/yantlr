@@ -2,9 +2,9 @@ digraph ATN {
   rankdir=LR;
 
   "DEFAULT_MODE(s0)" -> s5 [label="{"]
-  s5 -> s10 [label=w]
+  s5 -> s10 [label="w [0]"]
   s10 -> s17 [label="}"]
   s17 -> s19 [label="end(Block)", style=dotted]
-  s5 -> s14 [label=z]
+  s5 -> s14 [label="z [1]"]
   s14 -> s17 [label="}"]
 }
