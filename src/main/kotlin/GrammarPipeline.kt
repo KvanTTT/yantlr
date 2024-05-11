@@ -19,7 +19,7 @@ object GrammarPipeline {
 
         val declarationsInfo = DeclarationCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
         val atn = AtnBuilder(diagnosticReporter = diagnosticReporter).build(declarationsInfo)
-        var minimizedAtn = AtnMinimizer().removeEpsilonTransitions(AtnCloner.clone(atn))
+        val minimizedAtn = AtnMinimizer().removeEpsilonTransitions(AtnCloner.clone(atn))
 
         return GrammarPipelineResult(tree.parserIdToken.value, declarationsInfo, atn, minimizedAtn)
     }

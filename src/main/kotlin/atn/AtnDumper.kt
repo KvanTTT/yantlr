@@ -1,7 +1,13 @@
-package infrastructure
+package atn
 
-import atn.*
 import parser.stringEscapeToLiteralChars
+import kotlin.collections.contains
+import kotlin.collections.forEach
+import kotlin.collections.getOrPut
+import kotlin.collections.getValue
+import kotlin.collections.withIndex
+import kotlin.let
+import kotlin.text.any
 
 class AtnDumper(private val printTransLocation: Boolean = false, private val lineBreak: String = "\n") {
     companion object {
@@ -13,6 +19,20 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
     private val stateNames: MutableMap<State, String> = mutableMapOf()
 
     fun dump(atn: Atn): String {
+        return dump { builder ->
+            atn.modeStartStates.forEach { builder.startDump(it) }
+            atn.lexerStartStates.forEach { builder.startDump(it) }
+            atn.parserStartStates.forEach { builder.startDump(it) }
+        }
+    }
+
+    fun dump(state: State): String {
+        return dump { builder ->
+            builder.startDump(state)
+        }
+    }
+
+    private inline fun dump(appendFunc: (StringBuilder) -> Unit): String {
         return buildString {
             append("digraph ATN {")
             append(lineBreak)
@@ -20,9 +40,7 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
             append("rankdir=LR;")
             append(lineBreak)
 
-            atn.modeStartStates.forEach { startDump(it) }
-            atn.lexerStartStates.forEach { startDump(it) }
-            atn.parserStartStates.forEach { startDump(it) }
+            appendFunc(this)
 
             append('}')
         }

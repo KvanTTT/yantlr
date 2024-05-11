@@ -4,6 +4,7 @@ import AntlrDiagnostic
 import GrammarPipeline
 import GrammarPipelineResult
 import atn.Atn
+import atn.AtnDumper
 import com.intellij.rt.execution.junit.FileComparisonFailure
 import infrastructure.testDescriptors.TestDescriptor
 import infrastructure.testDescriptors.TestDescriptorDiagnostic

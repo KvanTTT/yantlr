@@ -12,45 +12,10 @@ class AtnMinimizer {
     fun <T : RootState> minimize(rootStates: List<T>): List<T> {
         return buildList {
             for (rootState in rootStates) {
-                refineRoot(rootState)
                 removeEpsilonTransitions(rootState)
                 add(rootState)
             }
         }
-    }
-
-    private fun refineRoot(rootState: RootState) {
-        do {
-            val epsilonTransitions = rootState.outTransitions.filterIsInstance<EpsilonTransition>()
-                .takeIf { it.isNotEmpty() } ?: break
-
-            for (epsilonTransition in epsilonTransitions) {
-                val target = epsilonTransition.target
-                val targetOutTransitions = target.outTransitions
-                // Check for cycling
-                if (target != rootState) {
-                    // Remove intermediate target state and rebind all its targets
-                    for (targetOutTransition in targetOutTransitions) {
-                        targetOutTransition.rebind(epsilonTransition, targetOutTransition, rootState, targetOutTransition.target)
-                    }
-                    // Rebind incoming transitions to the ruleState
-                    for (targetInTransition in target.inTransitions) {
-                        if (targetInTransition != epsilonTransition) {
-                            targetInTransition.rebind(targetInTransition.source, rootState)
-                        }
-                    }
-                    if (targetOutTransitions.isNotEmpty()) {
-                        targetOutTransitions.clear()
-                    } else {
-                        // If target state is the end state, then just remove it
-                        rootState.outTransitions.clear()
-                    }
-                } else {
-                    rootState.outTransitions.remove(epsilonTransition)
-                }
-                epsilonTransition.target.inTransitions.remove(epsilonTransition)
-            }
-        } while (true)
     }
 
     private fun removeEpsilonTransitions(rootState: RootState) {
@@ -60,40 +25,40 @@ class AtnMinimizer {
 
         while (statesStack.isNotEmpty()) {
             val currentState = statesStack.removeFirst()
-            if (!visitedStates.add(currentState)) continue
 
-            val outTransitions = currentState.outTransitions
-            for (transition in outTransitions) {
-                statesStack.add(transition.target)
+            val inTransitions = currentState.inTransitions
+
+            for (transition in currentState.outTransitions) {
+                if (visitedStates.add(transition.target)) {
+                    statesStack.add(transition.target)
+                }
             }
 
-            // The previous transitions are supposed to be non epsilons
+            var inEpsilonTransitions = inTransitions.filterIsInstance<EpsilonTransition>()
+            var allInTransitionsAreEpsilon = inEpsilonTransitions.size == inTransitions.size
 
-            val epsilonTransitions = outTransitions.filterIsInstance<EpsilonTransition>()
-            val allTransitionsAreEpsilon = epsilonTransitions.size == outTransitions.size
-
-            for (epsilonTransition in epsilonTransitions) {
-                for (inTransition in currentState.inTransitions) {
-                    // If all transitions are epsilon, then remove the `epsilonTransition.target` state
-                    val newSourceOldOutTransition = if (allTransitionsAreEpsilon) inTransition else null
-                    inTransition.rebind(
-                        newSourceOldOutTransition,
-                        epsilonTransition,
-                        inTransition.source,
-                        epsilonTransition.target
+            for (inEpsilonTransition in inEpsilonTransitions) {
+                for (outTransition in currentState.outTransitions) {
+                    outTransition.rebind(
+                        inEpsilonTransition,
+                        // If all in transitions are epsilon, then remove the current state
+                        if (allInTransitionsAreEpsilon) outTransition else null,
+                        inEpsilonTransition.source,
+                        outTransition.target
                     )
                 }
-                outTransitions.remove(epsilonTransition)
             }
         }
     }
 
-    private fun Transition.rebind(newSource: State, newTarget: State): Transition {
-        return this.rebind(this, this, newSource, newTarget)
-    }
+    private fun Transition.rebind(newSourceOldOutTransition: Transition, newTargetOldInTransition: Transition?, newSource: State, newTarget: State) {
+        if (this is EpsilonTransition && newSource == newTarget) {
+            newSource.outTransitions.remove(newSourceOldOutTransition)
+            newTarget.inTransitions.remove(newTargetOldInTransition)
+            return
+        }
 
-    private fun Transition.rebind(newSourceOldOutTransition: Transition?, newTargetOldInTransition: Transition?, newSource: State, newTarget: State): Transition {
-        return when (this) {
+        when (this) {
             is EpsilonTransition -> EpsilonTransition(newSource, newTarget, treeNodes)
             is SetTransition -> SetTransition(set, newSource, newTarget, treeNodes)
             is RuleTransition -> RuleTransition(rule, newSource, newTarget, treeNodes)

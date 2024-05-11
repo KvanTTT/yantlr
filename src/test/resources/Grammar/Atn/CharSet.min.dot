@@ -1,6 +1,6 @@
 digraph ATN {
   rankdir=LR;
 
-  "DEFAULT_MODE(s0)" -> s6 [label="d, e..g, -, \\r"]
-  s6 -> s7 [label="end(CharSet)", style=dotted]
+  "DEFAULT_MODE(s0)" -> s5 [label="d, e..g, -, \\r"]
+  s5 -> s7 [label="end(CharSet)", style=dotted]
 }
