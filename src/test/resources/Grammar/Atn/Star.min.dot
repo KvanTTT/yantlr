@@ -5,6 +5,5 @@ digraph ATN {
   s5 -> s5 [label=a]
   s5 -> s7 [label=b]
   s7 -> s9 [label="end(Star)", style=dotted]
-  "DEFAULT_MODE(s0)" -> s5 [label=a]
   "DEFAULT_MODE(s0)" -> s7 [label=b]
 }

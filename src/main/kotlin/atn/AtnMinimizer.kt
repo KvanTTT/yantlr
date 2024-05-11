@@ -26,14 +26,13 @@ class AtnMinimizer {
         while (statesStack.isNotEmpty()) {
             val currentState = statesStack.removeFirst()
 
-            val inTransitions = currentState.inTransitions
-
             for (transition in currentState.outTransitions) {
                 if (visitedStates.add(transition.target)) {
                     statesStack.add(transition.target)
                 }
             }
 
+            val inTransitions = currentState.inTransitions
             var inEpsilonTransitions = inTransitions.filterIsInstance<EpsilonTransition>()
             var allInTransitionsAreEpsilon = inEpsilonTransitions.size == inTransitions.size
 
@@ -65,24 +64,46 @@ class AtnMinimizer {
             is EndTransition -> EndTransition(rule, newSource, newTarget, treeNodes)
             else -> error("Unknown transition type: ${this@AtnMinimizer}")
         }.also { newTransition ->
-            // Change out transitions of previous states and in transition of the new target
-            val sourceOutTransitions = newSource.outTransitions
-            sourceOutTransitions.indexOf(newSourceOldOutTransition).let {
-                if (it == -1) {
-                    sourceOutTransitions.add(newTransition)
-                } else {
-                    sourceOutTransitions[it] = newTransition
-                }
-            }
+            // Change out transitions of previous state and in transition of the new target
+            newSource.outTransitions.processTransitions(newSourceOldOutTransition, newTransition)
+            newTarget.inTransitions.processTransitions(newTargetOldInTransition, newTransition)
+        }
+    }
 
-            val newTargetInTransitions = newTarget.inTransitions
-            newTargetInTransitions.indexOf(newTargetOldInTransition).let {
-                if (it == -1) {
-                    newTargetInTransitions.add(newTransition)
+    private fun MutableList<Transition>.processTransitions(oldTransition: Transition?, newTransition: Transition) {
+        indexOf(oldTransition).let { indexOfOld ->
+            val indexOfExisting = indexOfFirst { it.checkExisting(newTransition) }
+            if (indexOfOld == -1) {
+                if (indexOfExisting == -1) {
+                    add(newTransition)
+                }
+            } else {
+                if (indexOfExisting == -1) {
+                    this[indexOfOld] = newTransition
                 } else {
-                    newTargetInTransitions[it] = newTransition
+                    removeAt(indexOfOld)
                 }
             }
         }
+    }
+
+    private fun Transition.checkExisting(other: Transition): Boolean {
+        when (this) {
+            is EpsilonTransition -> {
+                if (other !is EpsilonTransition) return false
+            }
+            is SetTransition -> {
+                if (other !is SetTransition || set != other.set) return false
+            }
+            is RuleTransition -> {
+                if (other !is RuleTransition || rule != other.rule) return false
+            }
+            is EndTransition -> {
+                if (other !is EndTransition || rule != other.rule) return false
+            }
+            else -> error("Unknown transition type: ${this@AtnMinimizer}")
+        }
+
+        return source == other.source && target == other.target && treeNodes == other.treeNodes
     }
 }

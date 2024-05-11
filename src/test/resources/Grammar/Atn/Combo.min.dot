@@ -16,8 +16,6 @@ digraph ATN {
   s22 -> s24 [label=f]
   s24 -> s25 [label="end(Combo)", style=dotted]
   s22 -> s25 [label="end(Combo)", style=dotted]
-  "DEFAULT_MODE(s0)" -> s8 [label=a]
   "DEFAULT_MODE(s0)" -> s12 [label=b]
   "DEFAULT_MODE(s0)" -> s15 [label=c]
-  "DEFAULT_MODE(s0)" -> s12 [label=b]
 }
