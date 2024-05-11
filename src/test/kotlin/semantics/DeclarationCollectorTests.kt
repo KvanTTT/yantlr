@@ -57,7 +57,7 @@ object DeclarationCollectorTests {
     }
 
     private fun extractDeclarationInfo(grammar: String): DeclarationsInfo {
-        return GrammarPipeline.run(grammar).declarationsInfo
+        return GrammarPipeline.run(grammar, debugMode = true).declarationsInfo
     }
 
     private fun Map<String, Rule>.checkRules(vararg ruleNames: String) {

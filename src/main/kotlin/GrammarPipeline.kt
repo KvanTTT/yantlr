@@ -12,14 +12,24 @@ object GrammarPipeline {
     fun run(
         grammarText: CharSequence,
         grammarOffset: Int = 0,
-        diagnosticReporter: ((AntlrDiagnostic) -> Unit)? = null
+        debugMode: Boolean = false,
+        diagnosticReporter: ((AntlrDiagnostic) -> Unit)? = null,
     ): GrammarPipelineResult {
         val lexer = AntlrLexer(grammarText, textOffset = grammarOffset, diagnosticReporter = diagnosticReporter)
         val tree = AntlrParser(AntlrLexerTokenStream(lexer), diagnosticReporter = diagnosticReporter).parseGrammar()
 
         val declarationsInfo = DeclarationCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
         val atn = AtnBuilder(diagnosticReporter = diagnosticReporter).build(declarationsInfo)
-        val minimizedAtn = AtnMinimizer().removeEpsilonTransitions(AtnCloner.clone(atn))
+        val minimizedAtn: Atn
+        val originalAtn: Atn?
+        if (debugMode) {
+            originalAtn = atn
+            minimizedAtn = AtnCloner.clone(atn)
+        } else {
+            originalAtn = null
+            minimizedAtn = atn
+        }
+        AtnMinimizer.removeEpsilonTransitions(minimizedAtn)
 
         return GrammarPipelineResult(tree.parserIdToken.value, declarationsInfo, atn, minimizedAtn)
     }
@@ -28,6 +38,6 @@ object GrammarPipeline {
 class GrammarPipelineResult(
     val grammarName: String?,
     val declarationsInfo: DeclarationsInfo,
-    val atn: Atn,
+    val originalAtn: Atn?, // Null if debugMode is false
     val minimizedAtn: Atn,
 )

@@ -1,20 +1,15 @@
 package atn
 
-class AtnMinimizer {
-    fun removeEpsilonTransitions(atn: Atn): Atn {
-        val newModeStartStates = minimize(atn.modeStartStates)
-        val newLexerStartStates = minimize(atn.lexerStartStates)
-        val newParserStartStates = minimize(atn.parserStartStates)
-
-        return Atn(newModeStartStates, newLexerStartStates, newParserStartStates)
+object AtnMinimizer {
+    fun removeEpsilonTransitions(atn: Atn) {
+        minimize(atn.modeStartStates)
+        minimize(atn.lexerStartStates)
+        minimize(atn.parserStartStates)
     }
 
-    fun <T : RootState> minimize(rootStates: List<T>): List<T> {
-        return buildList {
-            for (rootState in rootStates) {
-                removeEpsilonTransitions(rootState)
-                add(rootState)
-            }
+    fun <T : RootState> minimize(rootStates: List<T>) {
+        for (rootState in rootStates) {
+            removeEpsilonTransitions(rootState)
         }
     }
 

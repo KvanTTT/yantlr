@@ -81,10 +81,14 @@ private val commonEscapeToLiteralChars = mapOf(
 )
 
 val antlrStringEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf('\'' to '\'')
-val antlrStringLiteralToEscapeChars = antlrStringEscapeToLiteralChars.entries.associate { (k, v) -> v to k }
+val antlrStringLiteralToEscapeChars = antlrStringEscapeToLiteralChars.reverseEscapingMap()
 
 val antlrCharSetEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf(']' to ']', '-' to '-')
-val antlrCharSetLiteralToEscapeChars = antlrCharSetEscapeToLiteralChars.entries.associate { (k, v) -> v to k }
+val antlrCharSetLiteralToEscapeChars = antlrCharSetEscapeToLiteralChars.reverseEscapingMap()
 
 val stringEscapeToLiteralChars = commonEscapeToLiteralChars + mapOf('"' to '\"')
-val stringLiteralToEscapeChars = stringEscapeToLiteralChars.entries.associate { (k, v) -> v to k }
+val stringLiteralToEscapeChars = stringEscapeToLiteralChars.reverseEscapingMap()
+
+fun Map<Char, Char>.reverseEscapingMap(): Map<Char, Char> {
+    return entries.associate { (k, v) -> v to k }
+}

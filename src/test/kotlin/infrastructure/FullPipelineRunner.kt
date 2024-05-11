@@ -44,7 +44,7 @@ object FullPipelineRunner {
 
                 if (testDescriptor.atn != null) {
                     // TODO: support dump of several grammars
-                    embeddedInfos.add(AtnDumpInfo(grammarResults.first().atn, testDescriptor.atn).toInfoWithDescriptor())
+                    embeddedInfos.add(AtnDumpInfo(grammarResults.first().originalAtn!!, testDescriptor.atn).toInfoWithDescriptor())
                 }
 
                 val expectDiagnosticInfos = diagnosticInfos.groupBy { it.sourceInterval.offset }
@@ -66,12 +66,12 @@ object FullPipelineRunner {
         parentFile: File,
         diagnosticReporter: ((AntlrDiagnostic) -> Unit),
     ): GrammarPipelineResult {
-        return GrammarPipeline.run(grammarText, grammarOffset) {
+        return GrammarPipeline.run(grammarText, grammarOffset, debugMode = true) {
             diagnosticReporter.invoke(it)
         }.also {
             if (parentFile.name == "Atn") {
                 val dumpName = grammarName ?: it.grammarName
-                dumpAtn(it.atn, parentFile, dumpName, minimized = false)
+                dumpAtn(it.originalAtn!!, parentFile, dumpName, minimized = false)
                 dumpAtn(it.minimizedAtn, parentFile, dumpName, minimized = true)
             }
         }
