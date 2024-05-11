@@ -2,15 +2,17 @@ package atn
 
 object AtnCloner {
     fun clone(atn: Atn): Atn {
-        val helper = Helper()
-        val modeStartStates = atn.modeStartStates.map { helper.clone(it) as ModeState }
-        val lexerStartStates = atn.lexerStartStates.map { helper.clone(it) as RuleState }
-        val parserStartStates = atn.parserStartStates.map { helper.clone(it) as RuleState }
+        fun <T : State> List<T>.clone() = map { clone(it) }
+
+        val modeStartStates = atn.modeStartStates.clone()
+        val lexerStartStates = atn.lexerStartStates.clone()
+        val parserStartStates = atn.parserStartStates.clone()
         return Atn(modeStartStates, lexerStartStates, parserStartStates)
     }
 
-    fun clone(state: RuleState): RuleState {
-        return Helper().clone(state) as RuleState
+    fun <T : State> clone(state: T): T {
+        @Suppress("UNCHECKED_CAST")
+        return Helper().clone(state) as T
     }
 
     private class Helper {
