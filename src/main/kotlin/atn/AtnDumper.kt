@@ -2,7 +2,6 @@ package atn
 
 import parser.stringEscapeToLiteralChars
 import kotlin.collections.contains
-import kotlin.collections.forEach
 import kotlin.collections.getOrPut
 import kotlin.collections.getValue
 import kotlin.collections.withIndex
@@ -12,6 +11,7 @@ import kotlin.text.any
 class AtnDumper(private val printTransLocation: Boolean = false, private val lineBreak: String = "\n") {
     companion object {
         private const val INDENT = "  "
+        private const val IGNORE_INDEX = -1
         private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', ' ')
     }
 
@@ -20,15 +20,15 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
 
     fun dump(atn: Atn): String {
         return dump { builder ->
-            atn.modeStartStates.forEach { builder.startDump(it) }
-            atn.lexerStartStates.forEach { builder.startDump(it) }
-            atn.parserStartStates.forEach { builder.startDump(it) }
+            builder.startAppendDump(atn.modeStartStates)
+            builder.startAppendDump(atn.lexerStartStates)
+            builder.startAppendDump(atn.parserStartStates)
         }
     }
 
     fun dump(state: State): String {
         return dump { builder ->
-            builder.startDump(state)
+            builder.startAppendDump(state, IGNORE_INDEX)
         }
     }
 
@@ -46,27 +46,31 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
         }
     }
 
-    private fun StringBuilder.startDump(state: State) {
+    private fun StringBuilder.startAppendDump(states: List<State>) {
+        states.forEachIndexed { index, state -> startAppendDump(state, if (states.size > 1) index else IGNORE_INDEX) }
+    }
+
+    private fun StringBuilder.startAppendDump(state: State, stateIndex: Int) {
         append(lineBreak)
         if (state.outTransitions.isEmpty()) {
             append(INDENT)
-            append(state.getName())
+            append(state.getName(stateIndex))
             append(lineBreak)
         } else {
-            dump(state)
+            appendDump(state, stateIndex)
         }
     }
 
-    private fun StringBuilder.dump(state: State) {
+    private fun StringBuilder.appendDump(state: State, stateIndex: Int) {
         if (!visitedStates.add(state)) return
 
-        val stateName = state.getName()
+        val stateName = state.getName(stateIndex)
         val multipleTransitions = state.outTransitions.size > 1
         state.outTransitions.forEachIndexed { index, transition ->
             append(INDENT)
             append(stateName)
             append(" -> ")
-            append(transition.target.getName())
+            append(transition.target.getName(stateIndex))
             append(" [label=")
             val transitionLabel =
                 when (transition) {
@@ -84,7 +88,7 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
             append("]")
             append(lineBreak)
 
-            dump(transition.target)
+            appendDump(transition.target, IGNORE_INDEX)
         }
     }
 
@@ -110,8 +114,10 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
         }
     }
 
-    private fun State.getName(): String {
-        return stateNames.getOrPut(this) { toString().escapeAndEnquoteIfNeeded() }
+    private fun State.getName(stateIndex: Int): String {
+        return stateNames.getOrPut(this) {
+            (toString() + (if (stateIndex == IGNORE_INDEX) "" else " [$stateIndex]")).escapeAndEnquoteIfNeeded()
+        }
     }
 
     private fun String.escapeAndEnquoteIfNeeded(): String {
