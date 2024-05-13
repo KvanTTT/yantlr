@@ -44,7 +44,11 @@ object FullPipelineRunner {
 
                 if (testDescriptor.atn != null) {
                     // TODO: support dump of several grammars
-                    embeddedInfos.add(AtnDumpInfo(grammarResults.first().originalAtn!!, testDescriptor.atn).toInfoWithDescriptor())
+                    val firstGrammarResult = grammarResults.first()
+                    embeddedInfos.add(
+                        AtnDumpInfo(firstGrammarResult.originalAtn!!, firstGrammarResult.lineOffsets, testDescriptor.atn)
+                            .toInfoWithDescriptor()
+                    )
                 }
 
                 val expectDiagnosticInfos = diagnosticInfos.groupBy { it.sourceInterval.offset }
@@ -71,14 +75,14 @@ object FullPipelineRunner {
         }.also {
             if (parentFile.name == "Atn") {
                 val dumpName = grammarName ?: it.grammarName
-                dumpAtn(it.originalAtn!!, parentFile, dumpName, minimized = false)
-                dumpAtn(it.minimizedAtn, parentFile, dumpName, minimized = true)
+                dumpAtn(it.originalAtn!!, it.lineOffsets, parentFile, dumpName, minimized = false)
+                dumpAtn(it.minimizedAtn, it.lineOffsets, parentFile, dumpName, minimized = true)
             }
         }
     }
 
-    private fun dumpAtn(atn: Atn, parentFile: File, name: String?, minimized: Boolean) {
-        val actualAtnDump = AtnDumper().dump(atn)
+    private fun dumpAtn(atn: Atn, lineOffsets: List<Int>, parentFile: File, name: String?, minimized: Boolean) {
+        val actualAtnDump = AtnDumper(lineOffsets).dump(atn)
         val dumpFile = Paths.get(parentFile.path, "${name}${if (minimized) ".min" else ""}.dot").toFile()
         if (!dumpFile.exists()) {
             dumpFile.writeText(actualAtnDump)

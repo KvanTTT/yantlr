@@ -31,12 +31,13 @@ object GrammarPipeline {
         }
         AtnMinimizer.removeEpsilonTransitions(minimizedAtn)
 
-        return GrammarPipelineResult(tree.parserIdToken.value, declarationsInfo, atn, minimizedAtn)
+        return GrammarPipelineResult(tree.parserIdToken.value, lexer.lineOffsets, declarationsInfo, atn, minimizedAtn)
     }
 }
 
 class GrammarPipelineResult(
     val grammarName: String?,
+    val lineOffsets: List<Int>,
     val declarationsInfo: DeclarationsInfo,
     val originalAtn: Atn?, // Null if debugMode is false
     val minimizedAtn: Atn,

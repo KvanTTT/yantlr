@@ -1,5 +1,6 @@
 package atn
 
+import parser.getLineColumn
 import parser.stringEscapeToLiteralChars
 import kotlin.collections.contains
 import kotlin.collections.getOrPut
@@ -8,11 +9,11 @@ import kotlin.collections.withIndex
 import kotlin.let
 import kotlin.text.any
 
-class AtnDumper(private val printTransLocation: Boolean = false, private val lineBreak: String = "\n") {
+class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: String = "\n") {
     companion object {
         private const val INDENT = "  "
         private const val IGNORE_INDEX = -1
-        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', ' ')
+        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', '.', ' ')
     }
 
     private val visitedStates: MutableSet<State> = mutableSetOf()
@@ -72,16 +73,7 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
             append(" -> ")
             append(transition.target.getName(stateIndex))
             append(" [label=")
-            val transitionLabel =
-                when (transition) {
-                    is EpsilonTransition -> "ε"
-                    is SetTransition -> transition.set.dumpSet()
-                    is RuleTransition -> "rule(${transition.rule.ruleNode.idToken.value!!})"
-                    is EndTransition -> "end(${transition.rule.ruleNode.idToken.value!!})"
-                    else -> TODO("Not implemented transition type: $transition")
-                } +
-                (if (multipleTransitions) " [$index]" else "")
-            append(transitionLabel.escapeAndEnquoteIfNeeded())
+            append(transition.getLabel(multipleTransitions, index).escapeAndEnquoteIfNeeded())
             if (transition is EndTransition) {
                 append(", style=dotted")
             }
@@ -90,6 +82,43 @@ class AtnDumper(private val printTransLocation: Boolean = false, private val lin
 
             appendDump(transition.target, IGNORE_INDEX)
         }
+    }
+
+    private fun Transition.getLabel(multipleTransitions: Boolean, index: Int): String {
+        val name = when (this) {
+            is EpsilonTransition -> "ε"
+            is SetTransition -> this.set.dumpSet()
+            is RuleTransition -> "rule(${this.rule.ruleNode.idToken.value!!})"
+            is EndTransition -> "end(${this.rule.ruleNode.idToken.value!!})"
+            else -> TODO("Not implemented transition type: $this")
+        }
+
+        val index = if (multipleTransitions) " [$index]" else ""
+
+        val treeNodes = if (treeNodes.size > 1) {
+            buildString {
+                append(" {")
+                for ((treeNodeIndex, treeNode) in treeNodes.withIndex()) {
+                    val interval = treeNode.getInterval()
+                    append((interval?.offset ?: 0).let {
+                        if (lineOffsets != null) it.getLineColumn(lineOffsets) else it
+                    })
+                    if (interval != null && interval.length > 1) {
+                        append('(')
+                        append(interval.length)
+                        append(')')
+                    }
+                    if (treeNodeIndex < treeNodes.size - 1) {
+                        append(", ")
+                    }
+                }
+                append('}')
+            }
+        } else {
+            ""
+        }
+
+        return name + index + treeNodes
     }
 
     /*

@@ -63,7 +63,8 @@ class AntlrLexer(
 
     data class Keyword(val tokenType: AntlrTokenType, val value: String, val tokenizeToLeftBrace: Boolean = false)
 
-    private val lineOffsets = mutableListOf<Int>()
+    private val mutableLineOffsets = mutableListOf<Int>()
+    val lineOffsets: List<Int> = mutableLineOffsets
 
     private val eofToken: AntlrToken by lazy(LazyThreadSafetyMode.NONE) {
         createToken(AntlrTokenType.Eof, text.length, 0, AntlrTokenChannel.Default)
@@ -81,15 +82,15 @@ class AntlrLexer(
         }
     }
 
-    fun getLineColumn(offset: Int): LineColumn = offset.getLineColumn(lineOffsets)
+    fun getLineColumn(offset: Int): LineColumn = offset.getLineColumn(mutableLineOffsets)
 
-    fun getOffset(lineColumn: LineColumn): Int = lineColumn.getOffset(lineOffsets)
+    fun getOffset(lineColumn: LineColumn): Int = lineColumn.getOffset(mutableLineOffsets)
 
     private var currentMode: AntlrMode = AntlrMode.Default
 
     fun nextToken(): AntlrToken {
         if (charIndex == 0) {
-            lineOffsets.add(0)
+            mutableLineOffsets.add(0)
         }
         if (charIndex >= text.length) {
             return eofToken
@@ -330,7 +331,7 @@ class AntlrLexer(
         if (c == '\r' && checkChar(charIndex, '\n')) {
             charIndex++
         }
-        lineOffsets.add(charIndex)
+        mutableLineOffsets.add(charIndex)
     }
 
     private fun createToken(type: AntlrTokenType, offset: Int = -1, length: Int = -1, channel: AntlrTokenChannel = AntlrTokenChannel.Default): AntlrToken {
