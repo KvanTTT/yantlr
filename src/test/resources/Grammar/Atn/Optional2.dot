@@ -8,7 +8,6 @@ digraph ATN {
   s4 -> s5 [label=a]
   s5 -> s6 [label=ε]
   s6 -> s7 [label="b [0]"]
-  s7 -> s8 [label=ε]
-  s8 -> s9 [label="end(Optional)", style=dotted]
+  s7 -> s8 [label="end(Optional)", style=dotted]
   s6 -> s7 [label="ε [1]"]
 }

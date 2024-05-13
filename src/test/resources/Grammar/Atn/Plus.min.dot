@@ -4,5 +4,5 @@ digraph ATN {
   "DEFAULT_MODE(s0)" -> s5 [label=a]
   s5 -> s6 [label=b]
   s6 -> s5 [label="a [0]"]
-  s6 -> s8 [label="end(Plus) [1]", style=dotted]
+  s6 -> s7 [label="end(Plus) [1]", style=dotted]
 }

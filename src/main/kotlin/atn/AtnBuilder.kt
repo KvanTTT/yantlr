@@ -43,15 +43,18 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
     private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): RuleState {
         val ruleNode = rule.ruleNode
         val ruleState = RuleState(rule, mutableListOf(), stateCounter++)
-        val ruleBodyHandle = visitor.visitBlockNode(rule.ruleNode.blockNode)
+        val rootBlockNodeHandle = visitor.build(rule.ruleNode.blockNode)
 
-        bind(ruleState, ruleBodyHandle.start, ruleNode)
-        EndTransition(rule, ruleBodyHandle.end, createState(), listOf(ruleNode)).bind()
+        bind(ruleState, rootBlockNodeHandle.start, ruleNode)
+        val endState = createState()
+        rootBlockNodeHandle.endInfos.forEach {
+            EndTransition(rule, it.first, endState, listOf(it.second)).bind()
+        }
 
         return ruleState
     }
 
-    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?>() {
+    private inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?>() {
         override fun visitTreeNode(node: AntlrTreeNode): Handle? {
             return node.acceptChildren(this)
         }
@@ -61,19 +64,29 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         }
 
         override fun visitBlockNode(node: BlockNode): Handle {
+            val blockNodeHandle = build(node)
+            val end = createState()
+            blockNodeHandle.endInfos.forEach { bind(it.first, end, it.second) }
+
+            return Handle(blockNodeHandle.start, end)
+        }
+
+        inner class BlockNodeHandle(val start: State, val endInfos: List<Pair<State, AlternativeNode>>)
+
+        fun build(node: BlockNode): BlockNodeHandle {
             val start = createState()
-            val end by lazy(LazyThreadSafetyMode.NONE) { createState() }
+            val endInfos = mutableListOf<Pair<State, AlternativeNode>>()
 
             fun processAlternative(alternativeNode: AlternativeNode) {
                 val altNodeHandle = visitAlternativeNode(alternativeNode)
                 bind(start, altNodeHandle.start, alternativeNode)
-                bind(altNodeHandle.end, end, alternativeNode)
+                endInfos.add(altNodeHandle.end to alternativeNode)
             }
 
             processAlternative(node.alternativeNode)
             node.orAlternativeNodes.forEach { processAlternative(it.alternativeNode) }
 
-            return Handle(start, end)
+            return BlockNodeHandle(start, endInfos)
         }
 
         override fun visitAlternativeNode(node: AlternativeNode): Handle {
