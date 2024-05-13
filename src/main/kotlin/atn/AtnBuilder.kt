@@ -23,7 +23,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
             for (rule in mode.rules.values) {
                 val ruleState = buildRule(rule, visitor)
 
-                if (rule.references.isNotEmpty()) { // TODO: handle fragment rules
+                if (rule.isFragment || rule.references.isNotEmpty()) {
                     lexerStartStates.add(AtnCloner.clone(ruleState))
                 }
 

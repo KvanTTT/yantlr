@@ -34,16 +34,16 @@ class DeclarationCollector(
         override fun visitToken(token: AntlrToken) {}
 
         override fun visitRuleNode(node: RuleNode) {
-            val isLexerRule = node.idToken.type == AntlrTokenType.LexerId
-            val checkRules = if (isLexerRule) lexerRules else parserRules
+            val isLexer = node.idToken.type == AntlrTokenType.LexerId
+            val checkRules = if (isLexer) lexerRules else parserRules
 
             val id = lexer.getTokenValue(node.idToken)
             val existingRule = checkRules[id]
             if (existingRule != null) {
                 diagnosticReporter?.invoke(RuleRedefinition(existingRule, node))
             } else {
-                val rule = Rule(isLexerRule, references = emptyList(), node)
-                if (isLexerRule) {
+                val rule = Rule(isLexer, isFragment = node.fragmentToken != null, references = emptyList(), node)
+                if (isLexer) {
                     currentModeLexerRules[id] = rule
                     lexerRules[id] = rule
                 } else {

@@ -12,6 +12,7 @@ class AntlrParser(
         private val ruleTokenTypes = setOf(
             AntlrTokenType.LexerId,
             AntlrTokenType.ParserId,
+            AntlrTokenType.Fragment,
         )
 
         private val elementTokenTypes = setOf(
@@ -97,9 +98,11 @@ class AntlrParser(
     }
 
     // rule
-    //   : id ':' block ';'
+    //   : 'fragment'? id ':' block ';'
     //   ;
     fun parseRule(): RuleNode {
+        val fragmentToken = if (getToken().type == AntlrTokenType.Fragment) matchToken() else null
+
         val lexerIdOrParserIdToken = parseId()
 
         val colonToken = matchToken(AntlrTokenType.Colon)
@@ -109,6 +112,7 @@ class AntlrParser(
         val semicolonToken = matchToken(AntlrTokenType.Semicolon)
 
         return RuleNode(
+            fragmentToken,
             lexerIdOrParserIdToken,
             colonToken,
             blockNode,

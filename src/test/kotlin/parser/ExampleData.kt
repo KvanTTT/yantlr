@@ -62,6 +62,7 @@ x
 
         listOf(
             RuleNode(
+                fragmentToken = null,
                 AntlrToken(AntlrTokenType.ParserId, value = "x"),
                 AntlrToken(AntlrTokenType.Colon),
 

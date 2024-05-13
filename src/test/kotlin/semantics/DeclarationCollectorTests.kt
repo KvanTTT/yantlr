@@ -1,5 +1,6 @@
 package semantics
 
+import junit.framework.Assert.assertTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -54,6 +55,27 @@ object DeclarationCollectorTests {
         declarationInfo.parserRules.checkRules("x", "y")
         declarationInfo.lexerModes.values.single().rules.checkRules("A", "B")
         declarationInfo.lexerRules.checkRules("A", "B")
+    }
+
+    @Test
+    fun ruleModifiers() {
+        val grammar = """
+            grammar test;
+            Regular: 'Regular';
+            fragment Fragment: 'Fragment';
+            parserRule: Regular Fragment;
+        """.trimIndent()
+
+        val declarationInfo = extractDeclarationInfo(grammar)
+
+        val regularRule = declarationInfo.lexerRules.getValue("Regular")
+        assertTrue(regularRule.isLexer && !regularRule.isFragment)
+
+        val fragmentRule = declarationInfo.lexerRules.getValue("Fragment")
+        assertTrue(fragmentRule.isLexer && fragmentRule.isFragment)
+
+        val parserRule = declarationInfo.parserRules.getValue("parserRule")
+        assertTrue(!parserRule.isLexer && !parserRule.isFragment)
     }
 
     private fun extractDeclarationInfo(grammar: String): DeclarationsInfo {

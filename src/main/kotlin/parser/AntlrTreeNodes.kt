@@ -45,16 +45,18 @@ class GrammarNode(
 }
 
 class RuleNode(
+    val fragmentToken: AntlrToken?,
     val idToken: AntlrToken,
     val colonToken: AntlrToken,
     val blockNode: BlockNode,
-    val semicolonToken: AntlrToken
+    val semicolonToken: AntlrToken,
 ) : AntlrTreeNode() {
     override fun calculateLeftToken(): AntlrToken = idToken
 
     override fun calculateRightToken(): AntlrToken = semicolonToken
 
     override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
+        fragmentToken?.let { visitor.visitToken(it) }
         visitor.visitToken(idToken)
         visitor.visitToken(colonToken)
         visitor.visitBlockNode(blockNode)
