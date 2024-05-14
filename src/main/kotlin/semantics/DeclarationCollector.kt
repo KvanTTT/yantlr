@@ -11,20 +11,69 @@ class DeclarationCollector(
     val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)? = null
 ) {
     fun collect(grammarNode: GrammarNode): DeclarationsInfo {
-        return DeclarationCollectorVisitor().collect(grammarNode)
+        val (lexerModesInfo, parserRuleNodes, recursiveRules) = DeclarationCollectorVisitor().collect(grammarNode)
+
+        val lexerModes = LinkedHashMap<String, Mode>()
+        val lexerRules = LinkedHashMap<String, Rule>()
+        val parserRules = LinkedHashMap<String, Rule>()
+
+        fun createRule(ruleNode: RuleNode): Pair<String, Rule>? {
+            val isLexer = ruleNode.idToken.type == AntlrTokenType.LexerId
+            val checkRules = if (isLexer) lexerRules else parserRules
+
+            val id = lexer.getTokenValue(ruleNode.idToken)
+            val existingRule = checkRules[id]
+            return if (existingRule != null) {
+                diagnosticReporter?.invoke(RuleRedefinition(existingRule, ruleNode))
+                null
+            } else {
+                id to Rule(
+                    isLexer,
+                    isFragment = ruleNode.fragmentToken != null,
+                    isRecursive = recursiveRules.contains(ruleNode),
+                    ruleNode
+                )
+            }
+        }
+
+        for ((modeName, mode) in lexerModesInfo) {
+            val currentModeRules = LinkedHashMap<String, Rule>()
+            for (ruleNode in mode.ruleNodes) {
+                val (ruleName, rule) = createRule(ruleNode) ?: continue
+                currentModeRules[ruleName] = rule
+                lexerRules[ruleName] = rule
+            }
+            lexerModes[modeName] = Mode(mode.treeNode, currentModeRules)
+        }
+
+        for (ruleNode in parserRuleNodes) {
+            val (ruleName, rule) = createRule(ruleNode) ?: continue
+            parserRules[ruleName] = rule
+        }
+
+        return DeclarationsInfo(lexerModes, lexerRules, parserRules)
     }
 
-    private inner class DeclarationCollectorVisitor : AntlrTreeVisitor<Unit>() {
-        private var currentModeLexerRules: LinkedHashMap<String, Rule> = linkedMapOf()
-        private var lexerModes: LinkedHashMap<String, Mode> = linkedMapOf(
-            DEFAULT_MODE_NAME to Mode(modeTreeNode = null, currentModeLexerRules)
-        )
-        private val lexerRules: LinkedHashMap<String, Rule> = linkedMapOf()
-        private val parserRules: LinkedHashMap<String, Rule> = linkedMapOf<String, Rule>()
+    private data class InternalDeclarationsInfo(
+        val lexerModes: LinkedHashMap<String, ModeInfo>,
+        val parserRuleNodes: List<RuleNode>,
+        val recursiveRules: Set<RuleNode>,
+    )
 
-        fun collect(grammarNode: GrammarNode): DeclarationsInfo {
+    private class ModeInfo(val treeNode: ModeNode?, val ruleNodes: MutableList<RuleNode>)
+
+    private inner class DeclarationCollectorVisitor : AntlrTreeVisitor<Unit>() {
+        private lateinit var currentRule: RuleNode
+        private var currentModeLexerRules: MutableList<RuleNode> = mutableListOf()
+        private var lexerModes: LinkedHashMap<String, ModeInfo> = linkedMapOf(
+            DEFAULT_MODE_NAME to ModeInfo(null, currentModeLexerRules)
+        )
+        private val parserRules: MutableList<RuleNode> = mutableListOf()
+        private val recursiveRules: MutableSet<RuleNode> = mutableSetOf()
+
+        fun collect(grammarNode: GrammarNode): InternalDeclarationsInfo {
             grammarNode.acceptChildren(this)
-            return DeclarationsInfo(lexerModes, lexerRules, parserRules)
+            return InternalDeclarationsInfo(lexerModes, parserRules, recursiveRules)
         }
 
         override fun visitTreeNode(node: AntlrTreeNode) {
@@ -34,35 +83,34 @@ class DeclarationCollector(
         override fun visitToken(token: AntlrToken) {}
 
         override fun visitRuleNode(node: RuleNode) {
+            currentRule = node
             val isLexer = node.idToken.type == AntlrTokenType.LexerId
-            val checkRules = if (isLexer) lexerRules else parserRules
+            val rulesList = if (isLexer) { currentModeLexerRules } else { parserRules }
+            rulesList.add(node)
 
-            val id = lexer.getTokenValue(node.idToken)
-            val existingRule = checkRules[id]
-            if (existingRule != null) {
-                diagnosticReporter?.invoke(RuleRedefinition(existingRule, node))
-            } else {
-                val rule = Rule(isLexer, isFragment = node.fragmentToken != null, references = emptyList(), node)
-                if (isLexer) {
-                    currentModeLexerRules[id] = rule
-                    lexerRules[id] = rule
-                } else {
-                    parserRules[id] = rule
-                }
-            }
+            visitBlockNode(node.blockNode)
         }
 
         override fun visitModeNode(node: ModeNode) {
             val id: String = lexer.getTokenValue(node.idToken)
             val existingMode = lexerModes[id]
             if (existingMode != null) {
-                currentModeLexerRules = existingMode.rules as LinkedHashMap<String, Rule>
+                currentModeLexerRules = existingMode.ruleNodes
             } else {
-                currentModeLexerRules = linkedMapOf()
-                lexerModes[id] = Mode(node, currentModeLexerRules)
+                currentModeLexerRules = mutableListOf()
+                lexerModes[id] = ModeInfo(node, currentModeLexerRules)
             }
 
             node.ruleNodes.forEach { visitRuleNode(it) }
+        }
+
+        override fun visitElementNode(node: ElementNode) {
+            when (node) {
+                is ElementNode.LexerId,
+                is ElementNode.ParserId -> recursiveRules.add(currentRule)
+                is ElementNode.Block -> { visitBlockNode(node.blockNode) }
+                else -> {}
+            }
         }
     }
 }

@@ -37,7 +37,7 @@ object DeclarationCollectorTests {
             }
         }
 
-        declarationInfo.lexerRules.checkRules("A", "B", "C", "D", "E")
+        declarationInfo.lexerRules.checkRules("A", "B", "E", "C", "D")
     }
 
     @Test
@@ -58,24 +58,28 @@ object DeclarationCollectorTests {
     }
 
     @Test
-    fun ruleModifiers() {
+    fun ruleProperties() {
         val grammar = """
             grammar test;
             Regular: 'Regular';
+            Recursive: '{' Recursive '}';
+            Recursive2: Regular;
             fragment Fragment: 'Fragment';
             parserRule: Regular Fragment;
         """.trimIndent()
 
         val declarationInfo = extractDeclarationInfo(grammar)
 
-        val regularRule = declarationInfo.lexerRules.getValue("Regular")
-        assertTrue(regularRule.isLexer && !regularRule.isFragment)
+        fun checkRule(ruleName: String, check: (Rule) -> Boolean) {
+            val rulesList = if (ruleName.first().isUpperCase()) declarationInfo.lexerRules else declarationInfo.parserRules
+            assertTrue(check(rulesList.getValue(ruleName)))
+        }
 
-        val fragmentRule = declarationInfo.lexerRules.getValue("Fragment")
-        assertTrue(fragmentRule.isLexer && fragmentRule.isFragment)
-
-        val parserRule = declarationInfo.parserRules.getValue("parserRule")
-        assertTrue(!parserRule.isLexer && !parserRule.isFragment)
+        checkRule("Regular") { it.isLexer && !it.isFragment && !it.isRecursive }
+        checkRule("Recursive") { it.isRecursive }
+        checkRule("Recursive2") { it.isRecursive }
+        checkRule("Fragment") { it.isLexer && it.isFragment }
+        checkRule("parserRule") { !it.isLexer }
     }
 
     private fun extractDeclarationInfo(grammar: String): DeclarationsInfo {
