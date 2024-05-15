@@ -6,6 +6,6 @@ digraph ATN {
   s8 -> s10 [label="D [1]"]
   s10 -> s8 [label="A [0]"]
   s10 -> s10 [label="D [1]"]
-  s10 -> s13 [label="end(PlusAndStar) [2]", style=dotted]
+  s10 -> s14 [label="end(PlusAndStar) [2]", style=dotted]
   "DEFAULT_MODE(s0)" -> s10 [label="D [1]"]
 }

@@ -3,12 +3,12 @@ digraph ATN {
 
   "DEFAULT_MODE(s0)" -> s8 [label="a [0]"]
   s8 -> s8 [label="a [0]"]
-  s8 -> s11 [label="b [1]"]
-  s11 -> s8 [label="a [0]"]
-  s11 -> s11 [label="b [1]"]
-  s11 -> s15 [label="c [2]"]
-  s15 -> s16 [label="end(StarOnAlternative)", style=dotted]
+  s8 -> s12 [label="b [1]"]
+  s12 -> s8 [label="a [0]"]
+  s12 -> s12 [label="b [1]"]
+  s12 -> s15 [label="c [2]"]
+  s15 -> s17 [label="end(StarOnAlternative)", style=dotted]
   s8 -> s15 [label="c [2]"]
-  "DEFAULT_MODE(s0)" -> s11 [label="b [1]"]
+  "DEFAULT_MODE(s0)" -> s12 [label="b [1]"]
   "DEFAULT_MODE(s0)" -> s15 [label="c [2]"]
 }
