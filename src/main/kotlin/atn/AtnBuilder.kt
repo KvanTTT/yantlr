@@ -217,8 +217,8 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
     }
 
     private fun Transition.bind(): Transition {
+        target.inTransitions.add(0, this)
         source.outTransitions.add(this)
-        target.inTransitions.add(this)
         return this
     }
 
