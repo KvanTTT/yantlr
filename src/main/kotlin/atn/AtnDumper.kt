@@ -66,14 +66,23 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
         if (!visitedStates.add(state)) return
 
         val stateName = state.getName(stateIndex)
-        val multipleTransitions = state.outTransitions.size > 1
+        val multipleOutTransitions = state.outTransitions.size > 1
         state.outTransitions.forEachIndexed { index, transition ->
             append(INDENT)
             append(stateName)
             append(" -> ")
             append(transition.target.getName(stateIndex))
             append(" [label=")
-            append(transition.getLabel(multipleTransitions, index).escapeAndEnquoteIfNeeded())
+            append(transition.getLabel().escapeAndEnquoteIfNeeded())
+            if (multipleOutTransitions) {
+                append(", taillabel=")
+                append(index)
+            }
+            val targetInTransitions = transition.target.inTransitions
+            if (targetInTransitions.size > 1) {
+                append(", headlabel=")
+                append(targetInTransitions.indexOf(transition))
+            }
             if (transition is EndTransition) {
                 append(", style=dotted")
             }
@@ -84,16 +93,14 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
         }
     }
 
-    private fun Transition.getLabel(multipleTransitions: Boolean, index: Int): String {
+    private fun Transition.getLabel(): String {
         val name = when (this) {
             is EpsilonTransition -> "ε"
-            is SetTransition -> this.set.dumpSet()
-            is RuleTransition -> "rule(${this.rule.ruleNode.idToken.value!!})"
-            is EndTransition -> "end(${this.rule.ruleNode.idToken.value!!})"
+            is SetTransition -> set.dumpSet()
+            is RuleTransition -> "rule(${rule.ruleNode.idToken.value!!})"
+            is EndTransition -> "end(${rule.ruleNode.idToken.value!!})"
             else -> TODO("Not implemented transition type: $this")
         }
-
-        val index = if (multipleTransitions) " [$index]" else ""
 
         val treeNodes = if (treeNodes.size > 1) {
             buildString {
@@ -118,7 +125,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             ""
         }
 
-        return name + index + treeNodes
+        return name + treeNodes
     }
 
     /*

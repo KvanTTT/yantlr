@@ -5,10 +5,10 @@ digraph ATN {
   "Optional(s1)" -> s2 [label=ε]
   s2 -> s3 [label=ε]
   s3 -> s4 [label=ε]
-  s4 -> s5 [label="a [0]"]
+  s4 -> s5 [label=a, taillabel=0, headlabel=0]
   s5 -> s6 [label=ε]
   s6 -> s7 [label=b]
   s7 -> s8 [label=ε]
   s8 -> s9 [label="end(Optional)", style=dotted]
-  s4 -> s5 [label="ε [1]"]
+  s4 -> s5 [label=ε, taillabel=1, headlabel=1]
 }

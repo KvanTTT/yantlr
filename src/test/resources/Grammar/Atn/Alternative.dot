@@ -3,13 +3,13 @@ digraph ATN {
 
   "DEFAULT_MODE(s0)" -> "Alternative(s1)" [label=ε]
   "Alternative(s1)" -> s2 [label=ε]
-  s2 -> s3 [label="ε [0]"]
+  s2 -> s3 [label=ε, taillabel=0]
   s3 -> s4 [label=ε]
   s4 -> s5 [label=a]
-  s5 -> s6 [label=ε]
+  s5 -> s6 [label=ε, headlabel=0]
   s6 -> s10 [label="end(Alternative)", style=dotted]
-  s2 -> s7 [label="ε [1]"]
+  s2 -> s7 [label=ε, taillabel=1]
   s7 -> s8 [label=ε]
   s8 -> s9 [label=b]
-  s9 -> s6 [label=ε]
+  s9 -> s6 [label=ε, headlabel=1]
 }
