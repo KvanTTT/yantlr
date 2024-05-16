@@ -27,7 +27,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                     lexerStartStates.add(AtnCloner.clone(ruleState))
                 }
 
-                bind(modeStartState, ruleState, rule.ruleNode)
+                bindWithNextComputed(modeStartState, ruleState, rule.ruleNode)
             }
 
             modeStartStates.add(modeStartState)
@@ -45,8 +45,8 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         val ruleState = RuleState(rule, mutableListOf(), stateCounter++)
         val ruleBodyHandle = visitor.visitBlockNode(rule.ruleNode.blockNode)
 
-        bind(ruleState, ruleBodyHandle.start, ruleNode)
-        EndTransition(rule, ruleBodyHandle.end, createState(), listOf(ruleNode)).bind()
+        bindWithNextComputed(ruleState, ruleBodyHandle.start, ruleNode)
+        EndTransition(rule, ruleBodyHandle.end, createState(), listOf(ruleNode)).bindWithPreviousComputed()
 
         return ruleState
     }
@@ -66,8 +66,8 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
             fun processAlternative(alternativeNode: AlternativeNode) {
                 val altNodeHandle = visitAlternativeNode(alternativeNode)
-                bind(start, altNodeHandle.start, alternativeNode)
-                bind(altNodeHandle.end, end, alternativeNode)
+                bindWithNextComputed(start, altNodeHandle.start, alternativeNode)
+                bindWithPreviousComputed(altNodeHandle.end, end, alternativeNode)
             }
 
             processAlternative(node.alternativeNode)
@@ -82,7 +82,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
             node.elementNodes.forEach {
                 val newHandle = visitElementNode(it)
-                bind(end, newHandle.start, it)
+                bindWithNextComputed(end, newHandle.start, it)
                 end = newHandle.end
             }
 
@@ -98,16 +98,16 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 if (this == null) return
                 when (ebnf.type) {
                     AntlrTokenType.Question -> {
-                        bind(start, end, ebnf)
+                        bindWithPreviousComputed(start, end, ebnf)
                     }
 
                     AntlrTokenType.Star -> {
-                        bind(start, end, ebnf)
-                        bind(end, start, ebnf)
+                        bindWithPreviousComputed(start, end, ebnf)
+                        bindWithPreviousComputed(end, start, ebnf)
                     }
 
                     AntlrTokenType.Plus -> {
-                        bind(end, start, ebnf)
+                        bindWithPreviousComputed(end, start, ebnf)
                     }
 
                     else -> {
@@ -121,7 +121,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                     for (charToken in node.chars) {
                         val state = createState()
                         val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
-                        SetTransition(intervalSet, end, state, listOf(charToken)).bind()
+                        SetTransition(intervalSet, end, state, listOf(charToken)).bindWithPreviousComputed()
                         end = state
                     }
 
@@ -143,7 +143,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                     }
 
                     val state = createState()
-                    SetTransition(IntervalSet(intervals), end, state, treeNodes).bind()
+                    SetTransition(IntervalSet(intervals), end, state, treeNodes).bindWithPreviousComputed()
                     end = state
 
                     node.elementSuffix.processElementSuffix()
@@ -151,9 +151,9 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
                 is ElementNode.Block -> {
                     val blockNodeHandle = visitBlockNode(node.blockNode)
-                    bind(start, blockNodeHandle.start, node)
+                    bindWithNextComputed(start, blockNodeHandle.start, node)
                     end = createState()
-                    bind(blockNodeHandle.end, end, node)
+                    bindWithPreviousComputed(blockNodeHandle.end, end, node)
 
                     node.elementSuffix.processElementSuffix()
                 }
@@ -161,7 +161,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 is ElementNode.LexerId -> {
                     end = createState()
                     val rule = declarationsInfo.lexerRules[node.lexerId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransition(rule, start, end, listOf(node)).bind()
+                    RuleTransition(rule, start, end, listOf(node)).bindWithPreviousComputed()
 
                     node.elementSuffix.processElementSuffix()
                 }
@@ -169,7 +169,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 is ElementNode.ParserId -> {
                     end = createState()
                     val rule = declarationsInfo.parserRules[node.parserId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransition(rule, start, end, listOf(node)).bind()
+                    RuleTransition(rule, start, end, listOf(node)).bindWithPreviousComputed()
 
                     node.elementSuffix.processElementSuffix()
                 }
@@ -197,14 +197,30 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         }
     }
 
-    private fun bind(previous: State, next: State, treeNode: AntlrNode): EpsilonTransition {
+    private fun bindWithNextComputed(previous: State, next: State, treeNode: AntlrNode): EpsilonTransition =
+        bind(previous, next, treeNode, inTransitionToBegin = true)
+
+    private fun bindWithPreviousComputed(previous: State, next: State, treeNode: AntlrNode): EpsilonTransition =
+        bind(previous, next, treeNode, inTransitionToBegin = false)
+
+    private fun bind(previous: State, next: State, treeNode: AntlrNode, inTransitionToBegin: Boolean): EpsilonTransition {
         return EpsilonTransition(previous, next, listOf(treeNode)).also {
-            it.bind()
+            it.bind(inTransitionToBegin)
         }
     }
 
-    private fun Transition.bind(): Transition {
-        target.inTransitions.add(0, this)
+    private fun Transition.bindWithNextComputed(): Transition = bind(inTransitionToBegin = true)
+
+    private fun Transition.bindWithPreviousComputed(): Transition = bind(inTransitionToBegin = false)
+
+    private fun Transition.bind(inTransitionToBegin: Boolean): Transition {
+        target.inTransitions.let {
+            if (inTransitionToBegin) {
+                it.add(0, this)
+            } else {
+                it.add(this)
+            }
+        }
         source.outTransitions.add(this)
         return this
     }
