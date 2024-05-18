@@ -15,7 +15,7 @@ digraph ATN {
   s19 -> s19 [label=d, taillabel=0, headlabel=1]
   s19 -> s25 [label="end(Combo)", taillabel=1, headlabel=1, style=dotted]
   "DEFAULT_MODE(s0)" -> s22 [label=e, taillabel=4]
-  s22 -> s24 [label=f, taillabel=0, headlabel=0]
+  s22 -> s24 [label=f, taillabel=0]
   s24 -> s25 [label="end(Combo)", headlabel=2, style=dotted]
   s22 -> s25 [label="end(Combo)", taillabel=1, headlabel=3, style=dotted]
 }

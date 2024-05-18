@@ -4,15 +4,11 @@ private typealias TransitionReplacementMap = MutableMap<State, MutableMap<Transi
 
 object AtnMinimizer {
     fun removeEpsilonTransitions(atn: Atn) {
+        fun <T : RootState> minimize(rootStates: List<T>) = rootStates.forEach { rootState -> removeEpsilonTransitions(rootState) }
+
         minimize(atn.modeStartStates)
         minimize(atn.lexerStartStates)
         minimize(atn.parserStartStates)
-    }
-
-    fun <T : RootState> minimize(rootStates: List<T>) {
-        for (rootState in rootStates) {
-            removeEpsilonTransitions(rootState)
-        }
     }
 
     private fun removeEpsilonTransitions(rootState: RootState) {
@@ -30,7 +26,7 @@ object AtnMinimizer {
             }
 
             val inTransitions = currentState.inTransitions
-            var inEpsilonTransitions = inTransitions.filterIsInstance<EpsilonTransition>()
+            val inEpsilonTransitions = inTransitions.filterIsInstance<EpsilonTransition>()
 
             if (inEpsilonTransitions.isNotEmpty()) {
                 // If all incoming transitions are epsilon, then the current state is effectively unreachable.
@@ -40,25 +36,15 @@ object AtnMinimizer {
                 val newSourceOutTransitionsMap: TransitionReplacementMap = mutableMapOf()
                 val newTargetInTransitionsMap: TransitionReplacementMap = mutableMapOf()
 
-                val outTransitions = currentState.outTransitions - inEpsilonTransitions // Filter out enclosed epsilon transitions
                 for (inEpsilonTransition in inEpsilonTransitions) {
+                    // Always remove all incoming epsilon transitions
+                    newTargetInTransitionsMap.addForRemoving(inEpsilonTransition.target, inEpsilonTransition)
+
                     if (inEpsilonTransition.source == inEpsilonTransition.target) {
                         // Remove self-loop epsilon transition
-                        newSourceOutTransitionsMap.addReplacement(
-                            inEpsilonTransition.source,
-                            inEpsilonTransition,
-                            emptyList(),
-                            preserveOldTransition = false
-                        )
-                        newTargetInTransitionsMap.addReplacement(
-                            inEpsilonTransition.target,
-                            inEpsilonTransition,
-                            emptyList(),
-                            preserveOldTransition = false
-                        )
+                        newSourceOutTransitionsMap.addForRemoving(inEpsilonTransition.source, inEpsilonTransition)
                     } else {
-                        val newOutTransitions =
-                            outTransitions.associateWith { it.clone(inEpsilonTransition.source, it.target) }
+                        val newOutTransitions = currentState.cloneNonExistingOutTransitions(inEpsilonTransition.source)
 
                         newSourceOutTransitionsMap.addReplacement(
                             inEpsilonTransition.source,
@@ -67,11 +53,11 @@ object AtnMinimizer {
                             preserveOldTransition = false
                         )
 
-                        for (outTransition in outTransitions) {
+                        for ((oldTransition, newTransition) in newOutTransitions) {
                             newTargetInTransitionsMap.addReplacement(
-                                outTransition.target,
-                                outTransition,
-                                listOf(newOutTransitions.getValue(outTransition)),
+                                oldTransition.target,
+                                oldTransition,
+                                listOf(newTransition),
                                 preserveOldTransition = preserveCurrentState
                             )
                         }
@@ -84,15 +70,35 @@ object AtnMinimizer {
         }
     }
 
+    private fun State.cloneNonExistingOutTransitions(newSource: State): Map<Transition, Transition> {
+        val result = LinkedHashMap<Transition, Transition>()
+        for (oldOutTransition in outTransitions) {
+            // Filter out enclosed epsilon transitions
+            if (oldOutTransition is EpsilonTransition && oldOutTransition.source === oldOutTransition.target) continue
+
+            // Don't add a new transition if it already exists
+            if (newSource.outTransitions.none {
+                    it.checkExistingByInfo(oldOutTransition) || it.target === oldOutTransition.target
+                }
+            ) {
+                result[oldOutTransition] = oldOutTransition.clone(newSource, oldOutTransition.target)
+            }
+        }
+        return result
+    }
+
+    private fun TransitionReplacementMap.addForRemoving(state: State, oldTransition: Transition) {
+        addReplacement(state, oldTransition, emptyList(), preserveOldTransition = false)
+    }
+
     private fun TransitionReplacementMap.addReplacement(
         state: State,
         oldTransition: Transition,
         addingTransitions: Collection<Transition>,
         preserveOldTransition: Boolean
     ) {
-        val newTransitions = getOrPut(state) { mutableMapOf() }.getOrPut(oldTransition) { mutableListOf() }
-        if (preserveOldTransition) {
-            newTransitions.add(oldTransition)
+        val newTransitions = getOrPut(state) { mutableMapOf() }.getOrPut(oldTransition) {
+            mutableListOf<Transition>().also { if (preserveOldTransition) it.add(oldTransition) }
         }
         newTransitions.addAll(addingTransitions)
     }
@@ -104,8 +110,8 @@ object AtnMinimizer {
                 for (oldTransition in oldTransitions) {
                     val replacement = transitionReplacement[oldTransition]
                     if (replacement != null) {
-                        replacement.forEach { newTransition -> if (!checkExisting(newTransition)) add(newTransition)  }
-                    } else if (!checkExisting(oldTransition)) {
+                        replacement.forEach { newTransition -> add(newTransition) }
+                    } else {
                         add(oldTransition)
                     }
                 }
@@ -115,11 +121,7 @@ object AtnMinimizer {
         }
     }
 
-    private fun List<Transition>.checkExisting(other: Transition): Boolean {
-        return any { it.checkExisting(other) }
-    }
-
-    private fun Transition.checkExisting(other: Transition): Boolean {
+    private fun Transition.checkExistingByInfo(other: Transition): Boolean {
         when (this) {
             is EpsilonTransition -> {
                 if (other !is EpsilonTransition) return false
@@ -136,6 +138,6 @@ object AtnMinimizer {
             else -> error("Unknown transition type: ${this@AtnMinimizer}")
         }
 
-        return source === other.source && target === other.target && treeNodes === other.treeNodes
+        return treeNodes === other.treeNodes
     }
 }
