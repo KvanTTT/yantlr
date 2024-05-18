@@ -15,6 +15,7 @@ object AtnMinimizer {
         val statesStack = ArrayDeque<State>(0)
         val visitedStates = mutableSetOf<State>()
         statesStack.add(rootState)
+        visitedStates.add(rootState)
 
         while (statesStack.isNotEmpty()) {
             val currentState = statesStack.removeFirst()
@@ -40,27 +41,25 @@ object AtnMinimizer {
                     // Always remove all incoming epsilon transitions
                     newTargetInTransitionsMap.addForRemoving(inEpsilonTransition.target, inEpsilonTransition)
 
-                    if (inEpsilonTransition.source == inEpsilonTransition.target) {
-                        // Remove self-loop epsilon transition
-                        newSourceOutTransitionsMap.addForRemoving(inEpsilonTransition.source, inEpsilonTransition)
-                    } else {
-                        val newOutTransitions = currentState.cloneNonExistingOutTransitions(inEpsilonTransition.source)
+                    // Enclosed epsilon transitions should not be created during epsilons removing
+                    require(inEpsilonTransition.source != inEpsilonTransition.target)
 
-                        newSourceOutTransitionsMap.addReplacement(
-                            inEpsilonTransition.source,
-                            inEpsilonTransition,
-                            newOutTransitions.values,
-                            preserveOldTransition = false
+                    val newOutTransitions = currentState.cloneNonExistingAndValidOutTransitions(inEpsilonTransition.source)
+
+                    newSourceOutTransitionsMap.addReplacement(
+                        inEpsilonTransition.source,
+                        inEpsilonTransition,
+                        newOutTransitions.values,
+                        preserveOldTransition = false
+                    )
+
+                    for ((oldTransition, newTransition) in newOutTransitions) {
+                        newTargetInTransitionsMap.addReplacement(
+                            oldTransition.target,
+                            oldTransition,
+                            listOf(newTransition),
+                            preserveOldTransition = preserveCurrentState
                         )
-
-                        for ((oldTransition, newTransition) in newOutTransitions) {
-                            newTargetInTransitionsMap.addReplacement(
-                                oldTransition.target,
-                                oldTransition,
-                                listOf(newTransition),
-                                preserveOldTransition = preserveCurrentState
-                            )
-                        }
                     }
                 }
 
@@ -70,17 +69,18 @@ object AtnMinimizer {
         }
     }
 
-    private fun State.cloneNonExistingOutTransitions(newSource: State): Map<Transition, Transition> {
+    private fun State.cloneNonExistingAndValidOutTransitions(newSource: State): Map<Transition, Transition> {
         val result = LinkedHashMap<Transition, Transition>()
         for (oldOutTransition in outTransitions) {
-            // Filter out enclosed epsilon transitions
-            if (oldOutTransition is EpsilonTransition && oldOutTransition.source === oldOutTransition.target) continue
+            // Enclosed epsilon transitions should not be created during epsilons removing
+            require(oldOutTransition !is EpsilonTransition || oldOutTransition.source !== oldOutTransition.target)
 
-            // Don't add a new transition if it already exists
-            if (newSource.outTransitions.none {
-                    it.checkExistingByInfo(oldOutTransition) || it.target === oldOutTransition.target
-                }
-            ) {
+            fun isEnclosedEpsilonTransition() = oldOutTransition is EpsilonTransition && newSource == oldOutTransition.target
+            fun isNewTransitionAlreadyPresented() = newSource.outTransitions.any {
+                it.checkExistingByInfo(oldOutTransition) || it.target === oldOutTransition.target
+            }
+
+            if (!isEnclosedEpsilonTransition() && !isNewTransitionAlreadyPresented()) {
                 result[oldOutTransition] = oldOutTransition.clone(newSource, oldOutTransition.target)
             }
         }
