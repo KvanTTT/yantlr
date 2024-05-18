@@ -3,6 +3,6 @@ digraph ATN {
 
   "DEFAULT_MODE(s0)" -> s5 [label=a, taillabel=0]
   s5 -> s10 [label="end(Alternative)", headlabel=0, style=dotted]
-  "DEFAULT_MODE(s0)" -> s9 [label=b, taillabel=1]
-  s9 -> s10 [label="end(Alternative)", headlabel=1, style=dotted]
+  "DEFAULT_MODE(s0)" -> s8 [label=b, taillabel=1]
+  s8 -> s10 [label="end(Alternative)", headlabel=1, style=dotted]
 }

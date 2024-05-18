@@ -2,13 +2,13 @@ digraph ATN {
   rankdir=LR;
 
   "DEFAULT_MODE(s0) [0]" -> "s5 [0]" [label=A, taillabel=0]
-  "s5 [0]" -> s7 [label="end(A)", style=dotted]
-  "DEFAULT_MODE(s0) [0]" -> "s12 [0]" [label=A, taillabel=1]
-  "s12 [0]" -> s13 [label=B]
-  s13 -> s15 [label="end(AB)", style=dotted]
+  "s5 [0]" -> s14 [label="end(A)", headlabel=0, style=dotted]
+  "DEFAULT_MODE(s0) [0]" -> "s11 [0]" [label=A, taillabel=1]
+  "s11 [0]" -> s12 [label=B]
+  s12 -> s14 [label="end(AB)", headlabel=1, style=dotted]
 
-  "Custom(s16) [1]" -> "s21 [1]" [label=A, taillabel=0]
-  "s21 [1]" -> s23 [label="end(A1)", style=dotted]
-  "Custom(s16) [1]" -> "s28 [1]" [label=C, taillabel=1]
-  "s28 [1]" -> s30 [label="end(C)", style=dotted]
+  "Custom(s15) [1]" -> "s20 [1]" [label=A, taillabel=0]
+  "s20 [1]" -> s28 [label="end(A1)", headlabel=0, style=dotted]
+  "Custom(s15) [1]" -> "s26 [1]" [label=C, taillabel=1]
+  "s26 [1]" -> s28 [label="end(C)", headlabel=1, style=dotted]
 }

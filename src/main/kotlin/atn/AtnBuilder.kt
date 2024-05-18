@@ -17,38 +17,49 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         val lexerStartStates = mutableListOf<RuleState>()
         val parserStartStates = mutableListOf<RuleState>()
 
+        fun Rule.createAndBindEndTransition(start: State, end: State) {
+            EndTransition(this, start, end, listOf(ruleNode)).bindWithPreviousComputed()
+        }
+
         for (mode in declarationsInfo.lexerModes.values) {
             val modeStartState = ModeState(mode, mutableListOf(), stateCounter++)
+            val ruleEndStates = mutableListOf<Pair<Rule, State>>()
 
             for (rule in mode.rules.values) {
-                val ruleState = buildRule(rule, visitor)
+                val (ruleState, end) = buildRule(rule, visitor)
+                ruleEndStates.add(rule to end)
 
                 if (rule.isFragment || rule.isRecursive) {
-                    lexerStartStates.add(AtnCloner.clone(ruleState))
+                    val (ruleAtn, map) = AtnCloner.cloneWithMap(ruleState as RuleState)
+                    rule.createAndBindEndTransition(map.states.getValue(end), createState())
+                    lexerStartStates.add(ruleAtn)
                 }
 
                 bindWithNextComputed(modeStartState, ruleState, rule.ruleNode)
             }
+            val modeEnd = createState()
+            ruleEndStates.forEach { (rule, ruleEnd) -> rule.createAndBindEndTransition(ruleEnd, modeEnd) }
 
             modeStartStates.add(modeStartState)
         }
 
         for (parserRule in declarationsInfo.parserRules.values) {
-            parserStartStates.add(buildRule(parserRule, visitor))
+            val (ruleState, end) = buildRule(parserRule, visitor)
+            parserRule.createAndBindEndTransition(end, createState())
+            parserStartStates.add(ruleState as RuleState)
         }
 
         return Atn(modeStartStates, lexerStartStates, parserStartStates)
     }
 
-    private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): RuleState {
+    private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): Handle {
         val ruleNode = rule.ruleNode
         val ruleState = RuleState(rule, mutableListOf(), stateCounter++)
         val ruleBodyHandle = visitor.visitBlockNode(rule.ruleNode.blockNode)
 
         bindWithNextComputed(ruleState, ruleBodyHandle.start, ruleNode)
-        EndTransition(rule, ruleBodyHandle.end, createState(), listOf(ruleNode)).bindWithPreviousComputed()
 
-        return ruleState
+        return Handle(ruleState, ruleBodyHandle.end)
     }
 
     inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?>() {
@@ -62,16 +73,19 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
         override fun visitBlockNode(node: BlockNode): Handle {
             val start = createState()
-            val end by lazy(LazyThreadSafetyMode.NONE) { createState() }
+            val endNodes = mutableListOf<Pair<State, AntlrNode>>()
 
             fun processAlternative(alternativeNode: AlternativeNode) {
                 val altNodeHandle = visitAlternativeNode(alternativeNode)
                 bindWithNextComputed(start, altNodeHandle.start, alternativeNode)
-                bindWithPreviousComputed(altNodeHandle.end, end, alternativeNode)
+                endNodes.add(altNodeHandle.end to alternativeNode)
             }
 
             processAlternative(node.alternativeNode)
             node.orAlternativeNodes.forEach { processAlternative(it.alternativeNode) }
+
+            val end = createState()
+            endNodes.forEach { (endNode, treeNode) -> bindWithPreviousComputed(endNode, end, treeNode) }
 
             return Handle(start, end)
         }

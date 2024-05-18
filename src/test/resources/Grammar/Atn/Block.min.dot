@@ -5,6 +5,6 @@ digraph ATN {
   s5 -> s10 [label=w, taillabel=0]
   s10 -> s17 [label="}", headlabel=0]
   s17 -> s19 [label="end(Block)", style=dotted]
-  s5 -> s14 [label=z, taillabel=1]
-  s14 -> s17 [label="}", headlabel=1]
+  s5 -> s13 [label=z, taillabel=1]
+  s13 -> s17 [label="}", headlabel=1]
 }

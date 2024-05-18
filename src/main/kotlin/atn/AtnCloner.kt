@@ -15,9 +15,20 @@ object AtnCloner {
         return Helper().clone(state) as T
     }
 
+    fun <T: State> cloneWithMap(state: T): Pair<T, StateTransitionMap> {
+        val helper = Helper()
+        val clonedState = helper.clone(state)
+        @Suppress("UNCHECKED_CAST")
+        return (clonedState as T) to helper.getStateTransitionMap()
+    }
+
     private class Helper {
         val statesMap: MutableMap<State, State> = mutableMapOf()
         val transitionsMap: MutableMap<Transition, Transition> = mutableMapOf()
+
+        fun getStateTransitionMap(): StateTransitionMap {
+            return StateTransitionMap(statesMap, transitionsMap)
+        }
 
         fun clone(state: State): State {
             createNewStates(state)
@@ -65,3 +76,5 @@ object AtnCloner {
         }
     }
 }
+
+data class StateTransitionMap(val states: Map<State, State>, val transitions: Map<Transition, Transition>)
