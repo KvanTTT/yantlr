@@ -12,19 +12,10 @@ object AtnMinimizer {
     }
 
     private fun removeEpsilonTransitions(rootState: RootState) {
-        val statesStack = ArrayDeque<State>(0)
         val visitedStates = mutableSetOf<State>()
-        statesStack.add(rootState)
-        visitedStates.add(rootState)
 
-        while (statesStack.isNotEmpty()) {
-            val currentState = statesStack.removeFirst()
-
-            for (transition in currentState.outTransitions) {
-                if (visitedStates.add(transition.target)) {
-                    statesStack.add(transition.target)
-                }
-            }
+        fun removeEpsilonTransitionsInternal(currentState: State) {
+            if (!visitedStates.add(currentState)) return
 
             val inTransitions = currentState.inTransitions
             val inEpsilonTransitions = inTransitions.filterIsInstance<EpsilonTransition>()
@@ -44,7 +35,8 @@ object AtnMinimizer {
                     // Enclosed epsilon transitions should not be created during epsilons removing
                     require(inEpsilonTransition.source != inEpsilonTransition.target)
 
-                    val newOutTransitions = currentState.cloneNonExistingAndValidOutTransitions(inEpsilonTransition.source)
+                    val newOutTransitions =
+                        currentState.cloneNonExistingAndValidOutTransitions(inEpsilonTransition.source)
 
                     newSourceOutTransitionsMap.addReplacement(
                         inEpsilonTransition.source,
@@ -66,7 +58,13 @@ object AtnMinimizer {
                 newSourceOutTransitionsMap.rebuildTransitions(isOutTransitions = true)
                 newTargetInTransitionsMap.rebuildTransitions(isOutTransitions = false)
             }
+
+            for (outTarget in currentState.outTransitions.map { it.target }) {
+                removeEpsilonTransitionsInternal(outTarget)
+            }
         }
+
+        removeEpsilonTransitionsInternal(rootState)
     }
 
     private fun State.cloneNonExistingAndValidOutTransitions(newSource: State): Map<Transition, Transition> {
