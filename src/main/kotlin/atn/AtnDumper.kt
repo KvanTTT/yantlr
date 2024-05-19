@@ -72,7 +72,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             append(INDENT)
             append(stateName)
             append(" -> ")
-            append(transition.target.getName(stateIndex))
+            append(transition.target.getName())
             append(" [label=")
             append(transition.getLabel().escapeAndEnquoteIfNeeded())
             if (multipleOutTransitions) {
@@ -153,7 +153,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
         }
     }
 
-    private fun State.getName(stateIndex: Int): String {
+    private fun State.getName(stateIndex: Int = IGNORE_INDEX): String {
         return stateNames.getOrPut(this) {
             (toString() + (if (stateIndex == IGNORE_INDEX) "" else " [$stateIndex]")).escapeAndEnquoteIfNeeded()
         }
