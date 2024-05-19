@@ -15,7 +15,7 @@ digraph ATN {
   s13 -> s14 [label=ε, taillabel=1]
   s14 -> s15 [label=c]
   s15 -> s24 [label=ε, headlabel=0]
-  s24 -> s25 [label="end(Combo)", style=dotted]
+  s24 -> s25 [label="end(Combo) {2:24, 2:31, 2:42}", style=dotted]
   s5 -> s9 [label=ε, taillabel=1]
   s9 -> s10 [label=ε]
   s10 -> s11 [label=b]

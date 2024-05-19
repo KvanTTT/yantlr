@@ -1,5 +1,6 @@
 package atn
 
+import SourceInterval
 import parser.getLineColumn
 import parser.stringEscapeToLiteralChars
 import kotlin.collections.contains
@@ -106,11 +107,13 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             buildString {
                 append(" {")
                 for ((treeNodeIndex, treeNode) in treeNodes.withIndex()) {
-                    val interval = treeNode.getInterval()
-                    append((interval?.offset ?: 0).let {
+                    val interval = treeNode.getInterval().let {
+                        if (this@getLabel is EndTransition) SourceInterval(it.end(), 0) else it
+                    }
+                    append(interval.offset.let {
                         if (lineOffsets != null) it.getLineColumn(lineOffsets) else it
                     })
-                    if (interval != null && interval.length > 1) {
+                    if (interval.length > 1) {
                         append('(')
                         append(interval.length)
                         append(')')

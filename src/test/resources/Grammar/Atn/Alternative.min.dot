@@ -2,7 +2,7 @@ digraph ATN {
   rankdir=LR;
 
   "DEFAULT_MODE(s0)" -> s5 [label=a, taillabel=0]
-  s5 -> s10 [label="end(Alternative)", headlabel=0, style=dotted]
+  s5 -> s10 [label="end(Alternative) {2:17, 2:23}", headlabel=0, style=dotted]
   "DEFAULT_MODE(s0)" -> s8 [label=b, taillabel=1]
-  s8 -> s10 [label="end(Alternative)", headlabel=1, style=dotted]
+  s8 -> s10 [label="end(Alternative) {2:17, 2:23}", headlabel=1, style=dotted]
 }
