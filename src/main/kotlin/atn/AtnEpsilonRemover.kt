@@ -2,16 +2,16 @@ package atn
 
 private typealias TransitionReplacementMap = MutableMap<State, MutableMap<Transition, MutableList<Transition>>>
 
-object AtnMinimizer {
-    fun removeEpsilonTransitions(atn: Atn) {
-        fun <T : RootState> minimize(rootStates: List<T>) = rootStates.forEach { rootState -> removeEpsilonTransitions(rootState) }
+object AtnEpsilonRemover {
+    fun run(atn: Atn) {
+        fun <T : RootState> run(rootStates: List<T>) = rootStates.forEach { rootState -> run(rootState) }
 
-        minimize(atn.modeStartStates)
-        minimize(atn.lexerStartStates)
-        minimize(atn.parserStartStates)
+        run(atn.modeStartStates)
+        run(atn.lexerStartStates)
+        run(atn.parserStartStates)
     }
 
-    private fun removeEpsilonTransitions(rootState: RootState) {
+    private fun run(rootState: RootState) {
         val visitedStates = mutableSetOf<State>()
 
         fun removeEpsilonTransitionsInternal(currentState: State) {
@@ -144,7 +144,7 @@ object AtnMinimizer {
             is EndTransition -> {
                 if (other !is EndTransition || rule !== other.rule) return false
             }
-            else -> error("Unknown transition type: ${this@AtnMinimizer}")
+            else -> error("Unknown transition type: ${this@AtnEpsilonRemover}")
         }
 
         return treeNodes === other.treeNodes

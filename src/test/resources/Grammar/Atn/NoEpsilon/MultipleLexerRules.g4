@@ -1,7 +1,7 @@
 lexer grammar MultipleLexerRules;
 
 A: 'A';
-AB: 'AB';
+AB: 'B';
 
 mode Custom;
 

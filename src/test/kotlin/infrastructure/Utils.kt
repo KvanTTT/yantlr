@@ -30,8 +30,7 @@ enum class TestFileType {
     Md,
 }
 
-fun createTests(fileType: TestFileType): Iterator<DynamicNode> {
-    val subdir = if (fileType == TestFileType.Antlr) "Grammar" else "FullPipeline"
+fun createTests(fileType: TestFileType, subdir: String): Iterator<DynamicNode> {
     return Paths.get(resourcesFile.toString(), subdir).toFile().getChildrenTests(fileType).iterator()
 }
 

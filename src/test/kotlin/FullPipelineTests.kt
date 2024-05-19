@@ -8,5 +8,5 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 object FullPipelineTests {
     @TestFactory
     @Execution(ExecutionMode.CONCURRENT)
-    fun run(): Iterator<DynamicNode> = createTests(TestFileType.Md)
+    fun run(): Iterator<DynamicNode> = createTests(TestFileType.Md, "FullPipeline")
 }

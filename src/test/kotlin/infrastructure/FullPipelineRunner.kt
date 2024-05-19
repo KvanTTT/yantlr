@@ -73,7 +73,7 @@ object FullPipelineRunner {
         return GrammarPipeline.run(grammarText, grammarOffset, debugMode = true) {
             diagnosticReporter.invoke(it)
         }.also {
-            if (parentFile.name == "Atn") {
+            if (parentFile.path.substringAfter(resourcesFile.path).contains("Atn")) {
                 val dumpName = grammarName ?: it.grammarName
                 dumpAtn(it.originalAtn!!, it.lineOffsets, parentFile, dumpName, minimized = false)
                 dumpAtn(it.minimizedAtn, it.lineOffsets, parentFile, dumpName, minimized = true)

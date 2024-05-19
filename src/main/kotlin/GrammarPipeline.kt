@@ -1,7 +1,4 @@
-import atn.Atn
-import atn.AtnBuilder
-import atn.AtnCloner
-import atn.AtnMinimizer
+import atn.*
 import parser.AntlrLexer
 import parser.AntlrLexerTokenStream
 import parser.AntlrParser
@@ -29,7 +26,9 @@ object GrammarPipeline {
             originalAtn = null
             minimizedAtn = atn
         }
-        AtnMinimizer.removeEpsilonTransitions(minimizedAtn)
+        AtnEpsilonRemover.run(minimizedAtn)
+
+        AtnVerifier(checkNoEpsilons = true).verify(minimizedAtn)
 
         return GrammarPipelineResult(tree.parserIdToken.value, lexer.lineOffsets, declarationsInfo, atn, minimizedAtn)
     }
