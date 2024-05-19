@@ -107,7 +107,7 @@ class AntlrParser(
 
         val colonToken = matchToken(AntlrTokenType.Colon)
 
-        val blockNode = parseBlock()
+        val blockNode = parseBlock(colonToken.end())
 
         val semicolonToken = matchToken(AntlrTokenType.Semicolon)
 
@@ -123,8 +123,8 @@ class AntlrParser(
     // block
     //   : alternative ('|' alternative)*
     //   ;
-    fun parseBlock(): BlockNode {
-        val alternativeNode = parseAlternative()
+    private fun parseBlock(lastTokenEnd: Int): BlockNode {
+        val alternativeNode = parseAlternative(lastTokenEnd)
 
         val barAlternativeChildren = buildList {
             var nextToken = getToken()
@@ -186,7 +186,7 @@ class AntlrParser(
             }
             AntlrTokenType.LeftParen -> ElementNode.Block(
                 matchToken(),
-                parseBlock(),
+                parseBlock(nextToken.end()),
                 matchToken(AntlrTokenType.RightParen),
                 tryParseElementSuffix(),
                 emitEndNode(extraTokens, matchToEof),

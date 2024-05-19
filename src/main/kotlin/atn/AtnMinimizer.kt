@@ -36,7 +36,7 @@ object AtnMinimizer {
                     require(inEpsilonTransition.source != inEpsilonTransition.target)
 
                     val newOutTransitions =
-                        currentState.cloneNonExistingAndValidOutTransitions(inEpsilonTransition.source)
+                        currentState.cloneNonExistingAndValidOutTransitions(inEpsilonTransition)
 
                     newSourceOutTransitionsMap.addReplacement(
                         inEpsilonTransition.source,
@@ -67,7 +67,8 @@ object AtnMinimizer {
         removeEpsilonTransitionsInternal(rootState)
     }
 
-    private fun State.cloneNonExistingAndValidOutTransitions(newSource: State): Map<Transition, Transition> {
+    private fun State.cloneNonExistingAndValidOutTransitions(inTransition: Transition): Map<Transition, Transition> {
+        val newSource = inTransition.source
         val result = LinkedHashMap<Transition, Transition>()
         for (oldOutTransition in outTransitions) {
             // Enclosed epsilon transitions should not be created during epsilons removing
@@ -79,7 +80,18 @@ object AtnMinimizer {
             }
 
             if (!isEnclosedEpsilonTransition() && !isNewTransitionAlreadyPresented()) {
-                result[oldOutTransition] = oldOutTransition.clone(newSource, oldOutTransition.target)
+                val newTreeNodes = if (oldOutTransition is EndTransition) {
+                    if (newSource is RootState) {
+                        // root states don't have incoming transitions -> trying to extract tree nodes from the in-transition
+                        inTransition.treeNodes
+                    } else {
+                        // Extract nodes from the previous source's in-transitions and skip removing epsilons
+                        newSource.inTransitions.filter { it !is EpsilonTransition }.flatMap { it.treeNodes }.distinct()
+                    }
+                } else {
+                    oldOutTransition.treeNodes
+                }
+                result[oldOutTransition] = oldOutTransition.clone(newSource, oldOutTransition.target, newTreeNodes)
             }
         }
         return result

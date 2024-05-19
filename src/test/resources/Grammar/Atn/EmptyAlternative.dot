@@ -1,0 +1,18 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "EmptyAlternative(s1)" [label=ε]
+  "EmptyAlternative(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε, taillabel=0]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label=A]
+  s5 -> s11 [label=ε, headlabel=0]
+  s11 -> s12 [label="end(EmptyAlternative) {3:10, 4:6, 5:10}", style=dotted]
+  s2 -> s6 [label=ε, taillabel=1]
+  s6 -> s7 [label=ε]
+  s7 -> s11 [label=ε, headlabel=1]
+  s2 -> s8 [label=ε, taillabel=2]
+  s8 -> s9 [label=ε]
+  s9 -> s10 [label=C]
+  s10 -> s11 [label=ε, headlabel=2]
+}

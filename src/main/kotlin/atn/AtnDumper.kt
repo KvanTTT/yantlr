@@ -103,7 +103,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             else -> TODO("Not implemented transition type: $this")
         }
 
-        val treeNodes = if (treeNodes.size > 1) {
+        val treeNodes = if (treeNodes.size > 1 || this@getLabel is EndTransition) {
             buildString {
                 append(" {")
                 for ((treeNodeIndex, treeNode) in treeNodes.withIndex()) {
@@ -113,7 +113,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
                     append(interval.offset.let {
                         if (lineOffsets != null) it.getLineColumn(lineOffsets) else it
                     })
-                    if (interval.length > 1) {
+                    if (interval.length > 0) {
                         append('(')
                         append(interval.length)
                         append(')')
