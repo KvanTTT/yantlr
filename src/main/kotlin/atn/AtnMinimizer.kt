@@ -32,24 +32,20 @@ object AtnMinimizer {
                     // Always remove all incoming epsilon transitions
                     newTargetInTransitionsMap.addForRemoving(inEpsilonTransition.target, inEpsilonTransition)
 
-                    // Enclosed epsilon transitions should not be created during epsilons removing
-                    require(inEpsilonTransition.source != inEpsilonTransition.target)
-
-                    val newOutTransitions =
-                        currentState.cloneNonExistingAndValidOutTransitions(inEpsilonTransition)
+                    val transitionsReplacement = currentState.getReplacement(inEpsilonTransition)
 
                     newSourceOutTransitionsMap.addReplacement(
                         inEpsilonTransition.source,
                         inEpsilonTransition,
-                        newOutTransitions.values,
+                        transitionsReplacement.values.filterNotNull(),
                         preserveOldTransition = false
                     )
 
-                    for ((oldTransition, newTransition) in newOutTransitions) {
+                    for ((oldTransition, newTransition) in transitionsReplacement) {
                         newTargetInTransitionsMap.addReplacement(
                             oldTransition.target,
                             oldTransition,
-                            listOf(newTransition),
+                            listOfNotNull(newTransition),
                             preserveOldTransition = preserveCurrentState
                         )
                     }
@@ -67,34 +63,37 @@ object AtnMinimizer {
         removeEpsilonTransitionsInternal(rootState)
     }
 
-    private fun State.cloneNonExistingAndValidOutTransitions(inTransition: Transition): Map<Transition, Transition> {
+    private fun State.getReplacement(inTransition: Transition): Map<Transition, Transition?> {
         val newSource = inTransition.source
-        val result = LinkedHashMap<Transition, Transition>()
+        val replacement = LinkedHashMap<Transition, Transition?>()
         for (oldOutTransition in outTransitions) {
-            // Enclosed epsilon transitions should not be created during epsilons removing
-            require(oldOutTransition !is EpsilonTransition || oldOutTransition.source !== oldOutTransition.target)
-
-            fun isEnclosedEpsilonTransition() = oldOutTransition is EpsilonTransition && newSource == oldOutTransition.target
-            fun isNewTransitionAlreadyPresented() = newSource.outTransitions.any {
-                it.checkExistingByInfo(oldOutTransition) || it.target === oldOutTransition.target
+            val isEnclosedEpsilonTransition =
+                oldOutTransition is EpsilonTransition && newSource === oldOutTransition.target
+            val isNewTransitionAlreadyPresented by lazy(LazyThreadSafetyMode.NONE) {
+                newSource.outTransitions.any {
+                    it.checkExistingByInfo(oldOutTransition) || it.target === oldOutTransition.target
+                }
             }
 
-            if (!isEnclosedEpsilonTransition() && !isNewTransitionAlreadyPresented()) {
+            replacement[oldOutTransition] = if (isEnclosedEpsilonTransition || isNewTransitionAlreadyPresented) {
+                null // Old transitions should be stored anyway for removing later
+            } else {
                 val newTreeNodes = if (oldOutTransition is EndTransition) {
                     if (newSource is RootState) {
-                        // root states don't have incoming transitions -> trying to extract tree nodes from the in-transition
+                        // Root states don't have incoming transitions -> trying to extract tree nodes from the in-transition
                         inTransition.treeNodes
                     } else {
                         // Extract nodes from the previous source's in-transitions and skip removing epsilons
-                        newSource.inTransitions.filter { it !is EpsilonTransition }.flatMap { it.treeNodes }.distinct()
+                        newSource.inTransitions.filter { it !is EpsilonTransition }.flatMap { it.treeNodes }
+                            .distinct()
                     }
                 } else {
                     oldOutTransition.treeNodes
                 }
-                result[oldOutTransition] = oldOutTransition.clone(newSource, oldOutTransition.target, newTreeNodes)
+                oldOutTransition.clone(newSource, oldOutTransition.target, newTreeNodes)
             }
         }
-        return result
+        return replacement
     }
 
     private fun TransitionReplacementMap.addForRemoving(state: State, oldTransition: Transition) {
