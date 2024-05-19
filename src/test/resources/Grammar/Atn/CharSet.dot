@@ -7,5 +7,5 @@ digraph ATN {
   s3 -> s4 [label=ε]
   s4 -> s5 [label="d, e..g, -, \\r {2:11(1), 2:12(3), 2:15(2), 2:17(2)}"]
   s5 -> s6 [label=ε]
-  s6 -> s7 [label="end(CharSet) {2:20}", style=dotted]
+  s6 -> s7 [label="end(CharSet) {2:20}" style=dotted]
 }

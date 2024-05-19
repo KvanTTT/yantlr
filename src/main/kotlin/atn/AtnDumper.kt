@@ -76,16 +76,16 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             append(" [label=")
             append(transition.getLabel().escapeAndEnquoteIfNeeded())
             if (multipleOutTransitions) {
-                append(", taillabel=")
+                append(" taillabel=")
                 append(index)
             }
             val targetInTransitions = transition.target.inTransitions
             if (targetInTransitions.size > 1) {
-                append(", headlabel=")
+                append(" headlabel=")
                 append(targetInTransitions.indexOf(transition))
             }
             if (transition is EndTransition) {
-                append(", style=dotted")
+                append(" style=dotted")
             }
             append("]")
             append(lineBreak)
