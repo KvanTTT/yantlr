@@ -97,7 +97,7 @@ x
                         BlockNode.OrAlternative(
                             AntlrToken(AntlrTokenType.Bar),
                             AlternativeNode(
-                                listOf(ElementNode.Empty()),
+                                listOf(ElementNode.Empty(AntlrToken(AntlrTokenType.Empty))),
                             ),
                         ),
                     ),

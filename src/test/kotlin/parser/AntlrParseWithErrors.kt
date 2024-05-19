@@ -6,7 +6,10 @@ object AntlrParseWithErrors {
     @Test
     fun elementWithErrors() {
         infrastructure.check(
-            ElementNode.Empty(endNode = null),
+            ElementNode.Empty(
+                AntlrToken(AntlrTokenType.Empty, 0, 0),
+                endNode = null
+            ),
             "+"
         ) { it.parseElement(matchToEof = false) }
     }
@@ -15,6 +18,7 @@ object AntlrParseWithErrors {
     fun elementWithErrorsToEof() {
         infrastructure.check(
             ElementNode.Empty(
+                AntlrToken(AntlrTokenType.Empty, 0, 0),
                 EndNode(
                     listOf(
                         AntlrToken(AntlrTokenType.Plus, channel = AntlrTokenChannel.Default)

@@ -68,6 +68,7 @@ enum class AntlrTokenType {
     Char,
     EscapedChar,
     UnicodeEscapedChar,
+    Empty, // Special token type needed for preserving location of empty alternatives
 }
 
 val fixedTokenValues: Map<AntlrTokenType, String> = mapOf(
@@ -102,4 +103,5 @@ val fixedTokenValues: Map<AntlrTokenType, String> = mapOf(
     AntlrTokenType.RightBracket to "]",
     AntlrTokenType.Hyphen to "-",
     AntlrTokenType.Quote to "'",
+    AntlrTokenType.Empty to "",
 )

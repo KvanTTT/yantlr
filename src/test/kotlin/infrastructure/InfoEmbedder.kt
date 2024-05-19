@@ -123,7 +123,7 @@ object InfoEmbedder {
 
             val normalizedValue = when (val value = property.get(diagnostic)) {
                 is Rule -> value.ruleNode.idToken.value!!
-                is AntlrNode -> (value.getInterval()?.offset ?: 0).getLineColumn(lineOffsets)
+                is AntlrNode -> value.getInterval().offset.getLineColumn(lineOffsets)
                 is SourceInterval -> value.offset.getLineColumn(lineOffsets)
                 else -> value
             }

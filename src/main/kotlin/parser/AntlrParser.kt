@@ -129,8 +129,8 @@ class AntlrParser(
         val barAlternativeChildren = buildList {
             var nextToken = getToken()
             while (nextToken.type == AntlrTokenType.Bar) {
-                matchToken()
-                add(BlockNode.OrAlternative(nextToken, parseAlternative()))
+                val barToken = matchToken()
+                add(BlockNode.OrAlternative(nextToken, parseAlternative(barToken.end())))
                 nextToken = getToken()
             }
         }
@@ -141,9 +141,9 @@ class AntlrParser(
     // alternative
     //   : element+
     //   ;
-    fun parseAlternative(): AlternativeNode {
+    fun parseAlternative(lastTokenEnd: Int = 0): AlternativeNode {
         val elementNodes = buildList {
-            add(parseElement(false))
+            add(parseElement(false, lastTokenEnd))
             while (getToken().type in elementTokenTypes) {
                 add(parseElement(false))
             }
@@ -153,18 +153,19 @@ class AntlrParser(
     }
 
     // element
-    //   : LexerId elementSuffix?
-    //   | ParserId elementSuffix?
-    //   | '(' block? ')' elementSuffix?
-    //   | '\'' char* '\'' elementSuffix?
-    //   | '[' (char range=('-' char)?)* ']' elementSuffix?
+    //   : ( LexerId
+    //     | ParserId
+    //     | '(' block? ')'
+    //     | '\'' char* '\''
+    //     | '[' (char range=('-' char)?)* ']')
+    //     ) elementSuffix?
     //   |
     //   ;
     //
     // char
     //   : Char | EscapedChar | UnicodeEscapedChar
     //   ;
-    fun parseElement(matchToEof: Boolean = false): ElementNode {
+    fun parseElement(matchToEof: Boolean = false, lastTokenEnd: Int = 0): ElementNode {
         val nextToken = getToken()
 
         fun tryParseElementSuffix(): ElementSuffixNode? {
@@ -267,7 +268,7 @@ class AntlrParser(
                 )
             }
             else -> {
-                ElementNode.Empty(emitEndNode(extraTokens, matchToEof))
+                ElementNode.Empty(AntlrToken(AntlrTokenType.Empty, lastTokenEnd, 0), emitEndNode(extraTokens, matchToEof))
             }
         }
     }
@@ -307,7 +308,7 @@ class AntlrParser(
         }
 
         if (!matchToEof) {
-            return extraTokens.takeIf { it.isNotEmpty() }?.let { EndNode(it, null) }
+            return extraTokens.takeIf { it.isNotEmpty() }?.let { EndNode(it, AntlrToken(AntlrTokenType.Empty, it.last().end(), 0)) }
         }
 
         val errorTokens = extraTokens + buildList {
