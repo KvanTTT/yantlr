@@ -3,8 +3,8 @@ digraph ATN {
 
   "DEFAULT_MODE(s0)" -> s5 [label="{"]
   s5 -> s10 [label=w taillabel=0]
-  s10 -> s17 [label="}" headlabel=1]
+  s10 -> s17 [label="}"]
   s17 -> s19 [label="end(Block) {2:26}" style=dotted]
   s5 -> s13 [label=z taillabel=1]
-  s13 -> s17 [label="}" headlabel=0]
+  s13 -> s17 [label="}"]
 }

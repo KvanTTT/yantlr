@@ -79,11 +79,6 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
                 append(" taillabel=")
                 append(index)
             }
-            val targetInTransitions = transition.target.inTransitions
-            if (targetInTransitions.size > 1) {
-                append(" headlabel=")
-                append(targetInTransitions.indexOf(transition))
-            }
             if (transition is EndTransition) {
                 append(" style=dotted")
             }
