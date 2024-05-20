@@ -18,6 +18,8 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
         fun verifyInternal(currentState: State) {
             if (!visitedStates.add(currentState)) return
 
+            val existingEndTransitions = mutableListOf<EndTransition>()
+
             var currentAntlrNodeOffset = 0
             for (outTransition in currentState.outTransitions) {
                 // Checks for antlr nodes ordering
@@ -34,6 +36,15 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
                 }
 
                 inferredInTransitionsMap.getOrPut(target) { mutableListOf() }.add(outTransition)
+
+                if (outTransition is EndTransition) {
+                    val endTransitionWithTheSameRule =
+                        existingEndTransitions.firstOrNull { it.rule === outTransition.rule }
+                    if (endTransitionWithTheSameRule != null) {
+                        throw IllegalStateException("Multiple end transitions with the same (${outTransition.rule}) rule found: $outTransition and $endTransitionWithTheSameRule")
+                    }
+                    existingEndTransitions.add(outTransition)
+                }
 
                 verifyInternal(target)
             }
@@ -58,13 +69,13 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
     }
 
     private fun checkAntlrNodes(transition: Transition, previousMaxOffset: Int): Int {
-        if (transition is EndTransition) return previousMaxOffset // End transitions are special
-
         val antlrNodes = transition.treeNodes
 
         if (antlrNodes.isEmpty()) {
             throw IllegalStateException("Out-transition $transition is not bound to any antlr node")
         }
+
+        if (transition is EndTransition) return previousMaxOffset // End transitions are special
 
         if (antlrNodes.toSet().size != antlrNodes.size) {
             throw IllegalStateException("Out-transition $transition has duplicate antlr nodes")
