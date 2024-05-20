@@ -1,70 +1,76 @@
 package atn
 
-private typealias TransitionReplacementMap = MutableMap<State, MutableMap<Transition, MutableList<Transition>>>
-
 object AtnEpsilonRemover {
     fun run(atn: Atn) {
-        fun <T : RootState> run(rootStates: List<T>) = rootStates.forEach { rootState -> run(rootState) }
+        fun <T : RootState> run(rootStates: List<T>) = rootStates.forEach { rootState ->
+            do {
+                if (!run(rootState)) break
+            } while (true)
+        }
 
         run(atn.modeStartStates)
         run(atn.lexerStartStates)
         run(atn.parserStartStates)
     }
 
-    private fun run(rootState: RootState) {
+    private fun run(rootState: RootState): Boolean {
         val visitedStates = mutableSetOf<State>()
+        var containsEpsilonTransition = false
 
-        fun removeEpsilonTransitionsInternal(currentState: State) {
+        fun runInternal(currentState: State) {
             if (!visitedStates.add(currentState)) return
 
-            val inTransitions = currentState.inTransitions
-            val inEpsilonTransitions = inTransitions.filterIsInstance<EpsilonTransition>()
+            val epsilonTransitions = currentState.outTransitions.filterIsInstance<EpsilonTransition>()
 
-            if (inEpsilonTransitions.isNotEmpty()) {
-                // If all incoming transitions are epsilon, then the current state is effectively unreachable.
-                // Thus, it can be removed
-                val preserveCurrentState = inEpsilonTransitions.size != inTransitions.size
+            if (epsilonTransitions.isNotEmpty()) {
+                val transitionsReplacement = TransitionReplacementMap()
 
-                val newSourceOutTransitionsMap: TransitionReplacementMap = mutableMapOf()
-                val newTargetInTransitionsMap: TransitionReplacementMap = mutableMapOf()
+                for (epsilonTransition in epsilonTransitions) {
+                    val epsilonTarget = epsilonTransition.target
 
-                for (inEpsilonTransition in inEpsilonTransitions) {
-                    // Always remove all incoming epsilon transitions
-                    newTargetInTransitionsMap.addForRemoving(inEpsilonTransition.target, inEpsilonTransition)
+                    transitionsReplacement.addInForRemoving(epsilonTarget, epsilonTransition)
 
-                    val transitionsReplacement = currentState.getReplacement(inEpsilonTransition)
+                    val replacementMap = epsilonTarget.getReplacement(epsilonTransition)
 
-                    newSourceOutTransitionsMap.addReplacement(
-                        inEpsilonTransition.source,
-                        inEpsilonTransition,
-                        transitionsReplacement.values.filterNotNull(),
-                        preserveOldTransition = false
+                    transitionsReplacement.addOutReplacement(
+                        currentState,
+                        epsilonTransition,
+                        replacementMap.values.filterNotNull(),
+                        preserveOldTransition = false,
                     )
 
-                    for ((oldTransition, newTransition) in transitionsReplacement) {
-                        newTargetInTransitionsMap.addReplacement(
+                    val preserveEpsilonTargetState =
+                        epsilonTarget.inTransitions.any { !epsilonTransitions.contains(it) }
+
+                    for ((oldTransition, newTransition) in replacementMap) {
+                        transitionsReplacement.addInReplacement(
                             oldTransition.target,
                             oldTransition,
                             listOfNotNull(newTransition),
-                            preserveOldTransition = preserveCurrentState
+                            preserveOldTransition = preserveEpsilonTargetState,
                         )
+                        if (!preserveEpsilonTargetState) {
+                            transitionsReplacement.addOutForRemoving(epsilonTarget, oldTransition)
+                        }
                     }
                 }
 
-                newSourceOutTransitionsMap.rebuildTransitions(isOutTransitions = true)
-                newTargetInTransitionsMap.rebuildTransitions(isOutTransitions = false)
+                transitionsReplacement.rebuildTransitions()
+
+                if (!containsEpsilonTransition && currentState.outTransitions.any { it is EpsilonTransition }) {
+                    containsEpsilonTransition = true
+                }
             }
 
-            for (outTarget in currentState.outTransitions.map { it.target }) {
-                removeEpsilonTransitionsInternal(outTarget)
-            }
+            currentState.outTransitions.forEach { runInternal(it.target) }
         }
 
-        removeEpsilonTransitionsInternal(rootState)
+        runInternal(rootState)
+        return containsEpsilonTransition
     }
 
-    private fun State.getReplacement(inTransition: Transition): Map<Transition, Transition?> {
-        val newSource = inTransition.source
+    private fun State.getReplacement(oldEpsilon: Transition): Map<Transition, Transition?> {
+        val newSource = oldEpsilon.source
         val replacement = LinkedHashMap<Transition, Transition?>()
         for (oldOutTransition in outTransitions) {
             val isEnclosedEpsilonTransition =
@@ -81,7 +87,7 @@ object AtnEpsilonRemover {
                 val newTreeNodes = if (oldOutTransition is EndTransition) {
                     if (newSource is RootState) {
                         // Root states don't have incoming transitions -> trying to extract tree nodes from the in-transition
-                        inTransition.treeNodes
+                        oldEpsilon.treeNodes
                     } else {
                         // Extract nodes from the previous source's in-transitions and skip removing epsilons
                         newSource.inTransitions.filter { it !is EpsilonTransition }.flatMap { it.treeNodes }
@@ -94,40 +100,6 @@ object AtnEpsilonRemover {
             }
         }
         return replacement
-    }
-
-    private fun TransitionReplacementMap.addForRemoving(state: State, oldTransition: Transition) {
-        addReplacement(state, oldTransition, emptyList(), preserveOldTransition = false)
-    }
-
-    private fun TransitionReplacementMap.addReplacement(
-        state: State,
-        oldTransition: Transition,
-        addingTransitions: Collection<Transition>,
-        preserveOldTransition: Boolean
-    ) {
-        val newTransitions = getOrPut(state) { mutableMapOf() }.getOrPut(oldTransition) {
-            mutableListOf<Transition>().also { if (preserveOldTransition) it.add(oldTransition) }
-        }
-        newTransitions.addAll(addingTransitions)
-    }
-
-    private fun TransitionReplacementMap.rebuildTransitions(isOutTransitions: Boolean) {
-        for ((state, transitionReplacement) in this) {
-            val oldTransitions = if (isOutTransitions) state.outTransitions else state.inTransitions
-            val newTransitions = buildList {
-                for (oldTransition in oldTransitions) {
-                    val replacement = transitionReplacement[oldTransition]
-                    if (replacement != null) {
-                        replacement.forEach { newTransition -> add(newTransition) }
-                    } else {
-                        add(oldTransition)
-                    }
-                }
-            }
-            oldTransitions.clear()
-            oldTransitions.addAll(newTransitions)
-        }
     }
 
     private fun Transition.checkExistingByInfo(other: Transition): Boolean {

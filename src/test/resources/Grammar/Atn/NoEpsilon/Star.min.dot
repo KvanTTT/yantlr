@@ -3,7 +3,7 @@ digraph ATN {
 
   "DEFAULT_MODE(s0)" -> s5 [label=a taillabel=0 headlabel=0]
   s5 -> s5 [label=a taillabel=0 headlabel=1]
-  s5 -> s7 [label=b taillabel=1 headlabel=0]
+  s5 -> s7 [label=b taillabel=1 headlabel=1]
   s7 -> s9 [label="end(Star) {2:14}" style=dotted]
-  "DEFAULT_MODE(s0)" -> s7 [label=b taillabel=1 headlabel=1]
+  "DEFAULT_MODE(s0)" -> s7 [label=b taillabel=1 headlabel=0]
 }
