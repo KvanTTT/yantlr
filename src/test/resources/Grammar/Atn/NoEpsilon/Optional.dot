@@ -9,6 +9,6 @@ digraph ATN {
   s5 -> s6 [label=ε]
   s6 -> s7 [label=b]
   s7 -> s8 [label=ε]
-  s8 -> s9 [label="end(Optional) {2:19}" style=dotted]
+  s8 -> s9 [label="end(Optional)" style=dotted]
   s4 -> s5 [label=ε taillabel=1]
 }

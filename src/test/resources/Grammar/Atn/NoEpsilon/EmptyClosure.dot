@@ -12,6 +12,6 @@ digraph ATN {
   s8 -> s9 [label=ε]
   s9 -> s4 [label=ε taillabel=0]
   s9 -> s10 [label=ε taillabel=1]
-  s10 -> s11 [label="end(EmptyClosure) {3:10}" style=dotted]
+  s10 -> s11 [label="end(EmptyClosure)" style=dotted]
   s4 -> s9 [label=ε taillabel=1]
 }

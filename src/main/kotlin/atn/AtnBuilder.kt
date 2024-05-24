@@ -17,12 +17,12 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         val lexerStartStates = mutableListOf<RuleState>()
         val parserStartStates = mutableListOf<RuleState>()
 
-        fun Rule.createAndBindEndTransition(start: State, end: State) {
+        fun Rule.createAndBindEndTransition(start: State, end: State, treeNodes: List<AntlrTreeNode> = listOf(ruleNode)) {
             EndTransition(
                 this,
                 start,
                 end,
-                start.inTransitions.flatMap { it.treeNodes }.sortedBy { it.getInterval().offset }
+                treeNodes
             ).bind()
         }
 
@@ -43,7 +43,8 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 bind(modeStartState, ruleState, rule.ruleNode)
             }
             val modeEnd = createState()
-            ruleEndStates.forEach { (rule, ruleEnd) -> rule.createAndBindEndTransition(ruleEnd, modeEnd) }
+            val modeTreeNodes = listOf<AntlrTreeNode>(mode.modeTreeNode)
+            ruleEndStates.forEach { (rule, ruleEnd) -> rule.createAndBindEndTransition(ruleEnd, modeEnd, modeTreeNodes) }
 
             modeStartStates.add(modeStartState)
         }

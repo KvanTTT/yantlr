@@ -84,19 +84,7 @@ object AtnEpsilonRemover {
             replacement[oldOutTransition] = if (isEnclosedEpsilonTransition || isNewTransitionAlreadyPresented) {
                 null // Old transitions should be stored anyway for removing later
             } else {
-                val newTreeNodes = if (oldOutTransition is EndTransition) {
-                    if (newSource is RootState) {
-                        // Root states don't have incoming transitions -> trying to extract tree nodes from the in-transition
-                        oldEpsilon.treeNodes
-                    } else {
-                        // Extract nodes from the previous source's in-transitions and skip removing epsilons
-                        newSource.inTransitions.filter { it !is EpsilonTransition }.flatMap { it.treeNodes }
-                            .distinct()
-                    }
-                } else {
-                    oldOutTransition.treeNodes
-                }
-                oldOutTransition.clone(newSource, oldOutTransition.target, newTreeNodes)
+                oldOutTransition.clone(newSource, oldOutTransition.target)
             }
         }
         return replacement

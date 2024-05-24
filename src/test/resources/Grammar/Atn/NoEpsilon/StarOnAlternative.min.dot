@@ -7,7 +7,7 @@ digraph ATN {
   s11 -> s8 [label=a taillabel=0]
   s11 -> s11 [label=b taillabel=1]
   s11 -> s15 [label=c taillabel=2]
-  s15 -> s17 [label="end(StarOnAlternative) {2:35}" style=dotted]
+  s15 -> s17 [label="end(StarOnAlternative)" style=dotted]
   s8 -> s15 [label=c taillabel=2]
   "DEFAULT_MODE(s0)" -> s11 [label=b taillabel=1]
   "DEFAULT_MODE(s0)" -> s15 [label=c taillabel=2]
