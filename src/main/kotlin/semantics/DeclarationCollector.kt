@@ -60,14 +60,12 @@ class DeclarationCollector(
         val recursiveRules: Set<RuleNode>,
     )
 
-    private class ModeInfo(val treeNode: ModeNode?, val ruleNodes: MutableList<RuleNode>)
+    private class ModeInfo(val treeNode: ModeNode, val ruleNodes: MutableList<RuleNode>)
 
     private inner class DeclarationCollectorVisitor : AntlrTreeVisitor<Unit>() {
         private lateinit var currentRule: RuleNode
         private var currentModeLexerRules: MutableList<RuleNode> = mutableListOf()
-        private var lexerModes: LinkedHashMap<String, ModeInfo> = linkedMapOf(
-            DEFAULT_MODE_NAME to ModeInfo(null, currentModeLexerRules)
-        )
+        private var lexerModes: LinkedHashMap<String, ModeInfo> = linkedMapOf()
         private val parserRules: MutableList<RuleNode> = mutableListOf()
         private val recursiveRules: MutableSet<RuleNode> = mutableSetOf()
 
@@ -92,7 +90,11 @@ class DeclarationCollector(
         }
 
         override fun visitModeNode(node: ModeNode) {
-            val id: String = lexer.getTokenValue(node.idToken)
+            val id = if (node.modeDeclaration != null) {
+                lexer.getTokenValue(node.modeDeclaration.idToken)
+            } else {
+                DEFAULT_MODE_NAME
+            }
             val existingMode = lexerModes[id]
             if (existingMode != null) {
                 currentModeLexerRules = existingMode.ruleNodes

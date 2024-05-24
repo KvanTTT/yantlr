@@ -36,6 +36,6 @@ class ModeState(
     number: Int,
 ) : RootState(mutableListOf(), outTransitions, number) {
     override fun toString(): String {
-        return "${mode.modeTreeNode?.let { it.idToken.value!! } ?: DEFAULT_MODE_NAME}(${super.toString()})"
+        return "${mode.modeTreeNode.modeDeclaration?.let { it.idToken.value!! } ?: DEFAULT_MODE_NAME}(${super.toString()})"
     }
 }
