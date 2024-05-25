@@ -1,11 +1,20 @@
 package atn
 
-object AtnEpsilonRemover {
+import EmptyToken
+import SemanticsDiagnostics
+
+class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)? = null) {
     fun run(atn: Atn) {
         fun <T : RootState> run(rootStates: List<T>) = rootStates.forEach { rootState ->
             do {
                 if (!run(rootState)) break
             } while (true)
+
+            for (outTransition in rootState.outTransitions) {
+                if (outTransition is EndTransition && outTransition.rule.let { it.isLexer && !it.isFragment }) {
+                    diagnosticReporter?.invoke(EmptyToken(outTransition.rule))
+                }
+            }
         }
 
         run(atn.modeStartStates)

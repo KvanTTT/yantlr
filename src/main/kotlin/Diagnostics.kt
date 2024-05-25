@@ -19,6 +19,8 @@ abstract class SemanticsDiagnostics(severity: DiagnosticSeverity, sourceInterval
 
 class RuleRedefinition(val previousRule: Rule, val ruleNode: RuleNode) : SemanticsDiagnostics(DiagnosticSeverity.Error, ruleNode.idToken.getInterval())
 
+class EmptyToken(val rule: Rule) : SemanticsDiagnostics(DiagnosticSeverity.Warning, rule.ruleNode.idToken.getInterval())
+
 enum class DiagnosticSeverity {
     Error,
     Warning,

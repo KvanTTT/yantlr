@@ -1,4 +1,4 @@
 lexer grammar EmptyClosure;
-EmptyClosure
+/*❗EmptyToken*/EmptyClosure/*❗*/
     : ()*
     ;

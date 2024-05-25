@@ -1,5 +1,5 @@
 lexer grammar EmptyAlternative;
-EmptyAlternative
+/*❗EmptyToken*/EmptyAlternative/*❗*/
     : 'A'
     |
     | 'C'

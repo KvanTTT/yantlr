@@ -1,2 +1,2 @@
 lexer grammar Empty;
-Empty: ;
+/*❗EmptyToken*/Empty/*❗*/: ;
