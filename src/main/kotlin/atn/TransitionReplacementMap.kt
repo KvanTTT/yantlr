@@ -4,6 +4,23 @@ internal class TransitionReplacementMap {
     private val inTransitionsMap: MutableMap<State, MutableMap<Transition, MutableList<Transition>>> = mutableMapOf()
     private val outTransitionsMap: MutableMap<State, MutableMap<Transition, MutableList<Transition>>> = mutableMapOf()
 
+    fun checkOutTransitions(state: State, condition: (Transition) -> Boolean): Boolean {
+        val map = outTransitionsMap[state] ?: return state.outTransitions.any { condition(it) }
+
+        for (outTransition in state.outTransitions) {
+            val replacement = map[outTransition]
+            if (replacement != null) {
+                if (replacement.any { condition(it) }) {
+                    return true
+                }
+            } else if (condition(outTransition)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     fun addInForRemoving(state: State, oldTransition: Transition) =
         addReplacement(state, oldTransition, emptyList(), isOutTransition = false, preserveOldTransition = false)
 

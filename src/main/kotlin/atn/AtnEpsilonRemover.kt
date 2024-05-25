@@ -20,6 +20,8 @@ object AtnEpsilonRemover {
         fun runInternal(currentState: State) {
             if (!visitedStates.add(currentState)) return
 
+            currentState.outTransitions.forEach { runInternal(it.target) }
+
             val epsilonTransitions = currentState.outTransitions.filterIsInstance<EpsilonTransition>()
 
             if (epsilonTransitions.isNotEmpty()) {
@@ -30,7 +32,7 @@ object AtnEpsilonRemover {
 
                     transitionsReplacement.addInForRemoving(epsilonTarget, epsilonTransition)
 
-                    val replacementMap = epsilonTarget.getReplacement(epsilonTransition)
+                    val replacementMap = epsilonTarget.getReplacement(epsilonTransition, transitionsReplacement)
 
                     transitionsReplacement.addOutReplacement(
                         currentState,
@@ -69,15 +71,15 @@ object AtnEpsilonRemover {
         return containsEpsilonTransition
     }
 
-    private fun State.getReplacement(oldEpsilon: Transition): Map<Transition, Transition?> {
+    private fun State.getReplacement(oldEpsilon: Transition, transitionsReplacement: TransitionReplacementMap): Map<Transition, Transition?> {
         val newSource = oldEpsilon.source
         val replacement = LinkedHashMap<Transition, Transition?>()
         for (oldOutTransition in outTransitions) {
             val isEnclosedEpsilonTransition =
                 oldOutTransition is EpsilonTransition && newSource === oldOutTransition.target
             val isNewTransitionAlreadyPresented by lazy(LazyThreadSafetyMode.NONE) {
-                newSource.outTransitions.any {
-                    it.checkExistingByInfo(oldOutTransition) || it.target === oldOutTransition.target
+                transitionsReplacement.checkOutTransitions(newSource) {
+                    it.checkExistingByInfo(oldOutTransition) && it.target === oldOutTransition.target
                 }
             }
 
