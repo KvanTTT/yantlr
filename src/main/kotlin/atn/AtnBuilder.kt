@@ -51,7 +51,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
             parserStartStates.add(ruleState as RuleState)
         }
 
-        return Atn(modeStartStates, lexerStartStates, parserStartStates)
+        return Atn(modeStartStates, lexerStartStates, parserStartStates, stateCounter)
     }
 
     private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): Handle {

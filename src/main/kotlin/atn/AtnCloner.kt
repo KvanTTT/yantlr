@@ -8,7 +8,7 @@ object AtnCloner {
         val modeStartStates = atn.modeStartStates.clone()
         val lexerStartStates = atn.lexerStartStates.clone()
         val parserStartStates = atn.parserStartStates.clone()
-        return Atn(modeStartStates, lexerStartStates, parserStartStates)
+        return Atn(modeStartStates, lexerStartStates, parserStartStates, atn.stateCounter)
     }
 
     fun <T: State> clone(state: T, stateCounter: Int): CloneInfo {
