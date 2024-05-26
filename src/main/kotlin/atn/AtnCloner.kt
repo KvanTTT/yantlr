@@ -2,7 +2,8 @@ package atn
 
 object AtnCloner {
     fun clone(atn: Atn): Atn {
-        fun <T : State> List<T>.clone() = map { clone(it) }
+        @Suppress("UNCHECKED_CAST")
+        fun <T : State> List<T>.clone() = map { Helper(stateCounter = null).clone(it) as T }
 
         val modeStartStates = atn.modeStartStates.clone()
         val lexerStartStates = atn.lexerStartStates.clone()
@@ -10,24 +11,18 @@ object AtnCloner {
         return Atn(modeStartStates, lexerStartStates, parserStartStates)
     }
 
-    fun <T : State> clone(state: T): T {
-        @Suppress("UNCHECKED_CAST")
-        return Helper().clone(state) as T
+    fun <T: State> clone(state: T, stateCounter: Int): CloneInfo {
+        val helper = Helper(stateCounter)
+        helper.clone(state)
+        return helper.getCloneInfo()
     }
 
-    fun <T: State> cloneWithMap(state: T): Pair<T, StateTransitionMap> {
-        val helper = Helper()
-        val clonedState = helper.clone(state)
-        @Suppress("UNCHECKED_CAST")
-        return (clonedState as T) to helper.getStateTransitionMap()
-    }
-
-    private class Helper {
+    private class Helper(var stateCounter: Int?) {
         val statesMap: MutableMap<State, State> = mutableMapOf()
         val transitionsMap: MutableMap<Transition, Transition> = mutableMapOf()
 
-        fun getStateTransitionMap(): StateTransitionMap {
-            return StateTransitionMap(statesMap, transitionsMap)
+        fun getCloneInfo(): CloneInfo {
+            return CloneInfo(stateCounter!!, statesMap)
         }
 
         fun clone(state: State): State {
@@ -39,13 +34,15 @@ object AtnCloner {
         private fun createNewStates(state: State): State {
             statesMap[state]?.let { return it }
 
+            val number = if (stateCounter == null) state.number else stateCounter!!
             val result = when (state) {
-                is RuleState -> RuleState(state.rule, mutableListOf(), state.number)
-                is ModeState -> ModeState(state.mode, mutableListOf(), state.number)
-                else -> State(mutableListOf(), mutableListOf(), state.number)
+                is RuleState -> RuleState(state.rule, mutableListOf(), number)
+                is ModeState -> ModeState(state.mode, mutableListOf(), number)
+                else -> State(mutableListOf(), mutableListOf(), number)
             }.also {
                 statesMap[state] = it
             }
+            if (stateCounter != null) stateCounter = number + 1
 
             for (transition in state.outTransitions) {
                 createNewStates(transition.target)
@@ -77,4 +74,6 @@ object AtnCloner {
     }
 }
 
-data class StateTransitionMap(val states: Map<State, State>, val transitions: Map<Transition, Transition>)
+class CloneInfo(val stateCounter: Int, private val states: Map<State, State>) {
+    fun getMappedState(state: State): State = states.getValue(state)
+}

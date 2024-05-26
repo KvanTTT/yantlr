@@ -18,12 +18,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         val parserStartStates = mutableListOf<RuleState>()
 
         fun Rule.createAndBindEndTransition(start: State, end: State, treeNodes: List<AntlrTreeNode> = listOf(ruleNode)) {
-            EndTransition(
-                this,
-                start,
-                end,
-                treeNodes
-            ).bind()
+            EndTransition(this, start, end, treeNodes).bind()
         }
 
         for (mode in declarationsInfo.lexerModes.values) {
@@ -35,9 +30,10 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 ruleEndStates.add(rule to end)
 
                 if (rule.isFragment || rule.isRecursive) {
-                    val (ruleAtn, map) = AtnCloner.cloneWithMap(ruleState as RuleState)
-                    rule.createAndBindEndTransition(map.states.getValue(end), createState())
-                    lexerStartStates.add(ruleAtn)
+                    val cloneInfo = AtnCloner.clone(ruleState as RuleState, stateCounter)
+                    stateCounter = cloneInfo.stateCounter
+                    rule.createAndBindEndTransition(cloneInfo.getMappedState(end), createState())
+                    lexerStartStates.add(cloneInfo.getMappedState(ruleState) as RuleState)
                 }
 
                 bind(modeStartState, ruleState, rule.ruleNode)
