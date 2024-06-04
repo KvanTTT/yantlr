@@ -192,9 +192,9 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 }
 
                 is ElementNode.Empty -> {
+                    end = createState()
+                    bind(start, end, node)
                 }
-
-                else -> TODO("Not yet implemented for $node")
             }
 
             return Handle(start, end)

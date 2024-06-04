@@ -1,5 +1,5 @@
 digraph ATN {
   rankdir=LR;
 
-  "DEFAULT_MODE(s0)" -> s11 [label="end(EmptyClosure)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s12 [label="end(EmptyClosure)" style=dotted]
 }
