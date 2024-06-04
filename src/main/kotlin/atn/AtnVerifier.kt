@@ -20,10 +20,8 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
 
             val existingEndTransitions = mutableListOf<EndTransition>()
 
-            var currentAntlrNodeOffset = 0
             for (outTransition in currentState.outTransitions) {
-                // Checks for antlr nodes ordering
-                currentAntlrNodeOffset = checkAntlrNodes(outTransition, currentAntlrNodeOffset)
+                checkAntlrNodes(outTransition)
 
                 val target = outTransition.target
 
@@ -68,41 +66,15 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
         }
     }
 
-    private fun checkAntlrNodes(transition: Transition, previousMaxOffset: Int): Int {
+    private fun checkAntlrNodes(transition: Transition) {
         val antlrNodes = transition.treeNodes
 
         if (antlrNodes.isEmpty()) {
             throw IllegalStateException("Out-transition $transition is not bound to any antlr node")
         }
 
-        if (transition is EndTransition) return previousMaxOffset // End transitions are special
-
         if (antlrNodes.toSet().size != antlrNodes.size) {
             throw IllegalStateException("Out-transition $transition has duplicate antlr nodes")
         }
-
-        var currentAntlrNodeOffset = 0
-        var maxOffset = 0
-
-        for ((index, antlrNode) in antlrNodes.withIndex()) {
-            val offset = antlrNode.getInterval().offset
-
-            if (index == 0) {
-                if (offset < previousMaxOffset) {
-                    throw IllegalStateException("First antlr node in out-transition $transition has an offset different from the previous min offset: $antlrNode")
-                }
-            }
-
-            if (index == antlrNodes.size - 1) {
-                maxOffset = offset
-            }
-
-            if (offset < currentAntlrNodeOffset) {
-                throw IllegalStateException("Found unsorted by offset antlr nodes in out-transition $transition")
-            }
-            currentAntlrNodeOffset = offset
-        }
-
-        return maxOffset
     }
 }
