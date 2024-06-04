@@ -14,7 +14,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
     companion object {
         private const val INDENT = "  "
         private const val IGNORE_INDEX = -1
-        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', '.', ' ')
+        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', '.', ' ', '-', '\\')
     }
 
     private val visitedStates: MutableSet<State> = mutableSetOf()
@@ -155,16 +155,15 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
     }
 
     private fun String.escapeAndEnquoteIfNeeded(): String {
-        val enquote = any { it in enquoteChars }
         return if (any { it in stringEscapeToLiteralChars }) {
             buildString {
-                if (enquote) append('"')
+                append('"')
                 for (char in this@escapeAndEnquoteIfNeeded) {
                     append(stringEscapeToLiteralChars[char]?.let { "\\\\" + it } ?: char.toString())
                 }
-                if (enquote) append('"')
+                append('"')
             }
-        } else if (enquote) {
+        } else if (any { it in enquoteChars }) {
             "\"$this\""
         } else {
             this

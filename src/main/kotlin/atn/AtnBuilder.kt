@@ -145,8 +145,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 }
 
                 is ElementNode.CharSet -> {
-                    val intervals = mutableListOf<Interval>()
-                    val treeNodes = mutableListOf<AntlrTreeNode>()
+                    val endStates = mutableListOf<State>()
                     for (child in node.children) {
                         val startChar = getCharCode(child.char, stringLiteral = false)
                         val endChar = if (child.range != null) {
@@ -154,13 +153,15 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                         } else {
                             startChar
                         }
-                        intervals.add(Interval(startChar, endChar))
-                        treeNodes.add(child)
+                        // Split set by intervals to make it possible to optimize them later
+                        createState().also {
+                            SetTransition(IntervalSet(startChar, endChar), start, it, listOf(child)).bind()
+                            endStates.add(it)
+                        }
                     }
 
-                    val state = createState()
-                    SetTransition(IntervalSet(intervals), end, state, treeNodes).bind()
-                    end = state
+                    end = createState()
+                    endStates.forEach { bind(it, end, node) }
 
                     node.elementSuffix.processElementSuffix()
                 }
