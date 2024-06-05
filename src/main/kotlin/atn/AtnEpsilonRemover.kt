@@ -72,8 +72,6 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)
                     containsEpsilonTransition = true
                 }
             }
-
-            currentState.outTransitions.forEach { runInternal(it.target) }
         }
 
         runInternal(rootState)
