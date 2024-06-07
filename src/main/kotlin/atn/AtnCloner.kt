@@ -36,9 +36,9 @@ object AtnCloner {
 
             val number = if (stateCounter == null) state.number else stateCounter!!
             val result = when (state) {
-                is RuleState -> RuleState(state.rule, mutableListOf(), number)
-                is ModeState -> ModeState(state.mode, mutableListOf(), number)
-                else -> State(mutableListOf(), mutableListOf(), number)
+                is RuleState -> RuleState(state.rule, LinkedHashSet(), number)
+                is ModeState -> ModeState(state.mode, LinkedHashSet(), number)
+                else -> State(LinkedHashSet(), LinkedHashSet(), number)
             }.also {
                 statesMap[state] = it
             }
@@ -58,7 +58,7 @@ object AtnCloner {
             }
         }
 
-        private fun MutableList<Transition>.cloneTransitionsFrom(transitions: List<Transition>) {
+        private fun MutableCollection<Transition>.cloneTransitionsFrom(transitions: Collection<Transition>) {
             for (transition in transitions) {
                 add(transition.clone())
             }

@@ -5,8 +5,8 @@ import semantics.Mode
 import semantics.Rule
 
 open class State(
-    val inTransitions: MutableList<Transition>,
-    val outTransitions: MutableList<Transition>,
+    val inTransitions: LinkedHashSet<Transition>,
+    val outTransitions: LinkedHashSet<Transition>,
     val number: Int,
 ) {
     override fun toString(): String {
@@ -15,16 +15,16 @@ open class State(
 }
 
 abstract class RootState(
-    inTransitions: MutableList<Transition>,
-    outTransitions: MutableList<Transition>,
+    inTransitions: LinkedHashSet<Transition>,
+    outTransitions: LinkedHashSet<Transition>,
     number: Int,
 ) : State(inTransitions, outTransitions, number)
 
 class RuleState(
     val rule: Rule,
-    outTransitions: MutableList<Transition>,
+    outTransitions: LinkedHashSet<Transition>,
     number: Int,
-) : RootState(mutableListOf(), outTransitions, number) {
+) : RootState(LinkedHashSet(), outTransitions, number) {
     override fun toString(): String {
         return "${rule.ruleNode.idToken.value!!}(${super.toString()})"
     }
@@ -32,9 +32,9 @@ class RuleState(
 
 class ModeState(
     val mode: Mode,
-    outTransitions: MutableList<Transition>,
+    outTransitions: LinkedHashSet<Transition>,
     number: Int,
-) : RootState(mutableListOf(), outTransitions, number) {
+) : RootState(LinkedHashSet(), outTransitions, number) {
     override fun toString(): String {
         return "${mode.modeTreeNode.modeDeclaration?.let { it.idToken.value!! } ?: DEFAULT_MODE_NAME}(${super.toString()})"
     }

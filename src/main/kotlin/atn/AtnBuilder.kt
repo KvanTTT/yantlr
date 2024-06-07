@@ -22,7 +22,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         }
 
         for (mode in declarationsInfo.lexerModes.values) {
-            val modeStartState = ModeState(mode, mutableListOf(), stateCounter++)
+            val modeStartState = ModeState(mode, LinkedHashSet(), stateCounter++)
             val ruleEndStates = mutableListOf<Pair<Rule, State>>()
 
             for (rule in mode.rules.values) {
@@ -55,7 +55,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
     private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): Handle {
         val ruleNode = rule.ruleNode
-        val ruleState = RuleState(rule, mutableListOf(), stateCounter++)
+        val ruleState = RuleState(rule, LinkedHashSet(), stateCounter++)
         val ruleBodyHandle = visitor.visitBlockNode(rule.ruleNode.blockNode)
 
         bind(ruleState, ruleBodyHandle.start, ruleNode)
@@ -225,5 +225,5 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         return this
     }
 
-    private fun createState(): State = State(mutableListOf(), mutableListOf(), stateCounter++)
+    private fun createState(): State = State(LinkedHashSet(), LinkedHashSet(), stateCounter++)
 }
