@@ -1,12 +1,13 @@
 package atn
 
-fun Transition.clone(newSource: State, newTarget: State): Transition {
+fun Transition.clone(newSource: State, newTarget: State, deep: Boolean = true): Transition {
+    val newTreeNodes = if (deep) LinkedHashSet(treeNodes) else treeNodes
     return when (this) {
-        is EpsilonTransition -> EpsilonTransition(newSource, newTarget, treeNodes)
-        is SetTransition -> SetTransition(set, newSource, newTarget, treeNodes)
-        is RuleTransition -> RuleTransition(rule, newSource, newTarget, treeNodes)
-        is EndTransition -> EndTransition(rule, newSource, newTarget, treeNodes)
-        is ErrorTransition -> ErrorTransition(LinkedHashSet(diagnostics), newSource, newTarget, treeNodes)
+        is EpsilonTransition -> EpsilonTransition(newSource, newTarget, newTreeNodes)
+        is SetTransition -> SetTransition(set, newSource, newTarget, newTreeNodes)
+        is RuleTransition -> RuleTransition(rule, newSource, newTarget, newTreeNodes)
+        is EndTransition -> EndTransition(rule, newSource, newTarget, newTreeNodes)
+        is ErrorTransition -> ErrorTransition(if (deep) LinkedHashSet(diagnostics) else diagnostics, newSource, newTarget, newTreeNodes)
     }
 }
 

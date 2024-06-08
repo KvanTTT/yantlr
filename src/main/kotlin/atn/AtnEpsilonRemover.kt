@@ -93,7 +93,8 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)?
             replacement[oldOutTransition] = if (isEnclosedEpsilonTransition || isNewTransitionAlreadyPresented) {
                 null // Old transitions should be stored anyway for removing later
             } else {
-                oldOutTransition.clone(newSource, oldOutTransition.target)
+                // No need to perform deep clone because `AtnEpsilonRemover` doesn't change transition info
+                oldOutTransition.clone(newSource, oldOutTransition.target, deep = false)
             }
         }
         return replacement
