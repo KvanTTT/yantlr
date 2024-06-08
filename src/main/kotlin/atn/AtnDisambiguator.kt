@@ -1,13 +1,14 @@
 package atn
 
-import SemanticsDiagnostics
+import Diagnostic
+import SemanticsDiagnostic
 import semantics.Rule
 import java.util.*
 import kotlin.collections.LinkedHashMap
 import kotlin.collections.LinkedHashSet
 import kotlin.reflect.KClass
 
-class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)? = null) {
+class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null) {
     fun run(atn: Atn) {
         val helper = Helper(atn.stateCounter)
         fun <T : RootState> run(rootStates: List<T>) = rootStates.forEach {
@@ -31,7 +32,8 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)?
 
                 containsAmbiguity = containsAmbiguity or performDisambiguation(currentState)
 
-                currentState.outTransitions.forEach { runInternal(it.target) }
+                // Run recursively for all out transitions and create map to avoid concurrent modification
+                currentState.outTransitions.map { it.target }.forEach { runInternal(it) }
             }
 
             runInternal(rootState)
@@ -64,16 +66,17 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)?
                         oldToNewStatesMap.getOrPut(it.target) { LinkedHashSet() }.add(newState)
                     }
 
-                    val newTransition = when (info) {
-                        is DisjointSetTransitionsInfo -> {
-                            SetTransition(info.intervalSet, currentState, newState, treeNodes)
+                    val newTransition = when (info.transitionClass) {
+                        SetTransition::class -> {
+                            SetTransition(info.data as IntervalSet, currentState, newState, treeNodes)
                         }
-
-                        is DisjointEndTransitionInfo -> {
-                            // TODO: report TOKEN_UNREACHABLE for lexer rules
-                            EndTransition(info.rule, currentState, newState, treeNodes,)
+                        EndTransition::class -> {
+                            EndTransition(info.data as Rule, currentState, newState, treeNodes)
                         }
-
+                        ErrorTransition::class -> {
+                            @Suppress("UNCHECKED_CAST")
+                            ErrorTransition(info.data as LinkedHashSet<Diagnostic>, currentState, newState, treeNodes)
+                        }
                         else -> {
                             error("Unsupported transition type: $info")
                         }
@@ -156,10 +159,19 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)?
             val oldOutTransitions: LinkedHashSet<Transition> = outTransitions.flatMapTo(LinkedHashSet()) { it.target.outTransitions }
         }
 
-        sealed class DisjointTransitionInfo<T: Transition>(val transitions: List<T>) {
+        class DisjointTransitionInfo<T: Transition, K: Any?>(val transitionClass: KClass<out Transition>, val data: K, val transitions: List<T>) {
             init { require(transitions.isNotEmpty()) }
 
-            open val shouldRemap: Boolean = transitions.size > 1
+            val shouldRemap: Boolean = run {
+                if (transitions.size > 1) return@run true
+
+                if (data is IntervalSet) {
+                    return@run (transitions.single() as SetTransition).set != data
+                }
+
+                false
+            }
+
             val keepStateNumber: Boolean = transitions.size == 1
 
             override fun toString(): String {
@@ -167,30 +179,9 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)?
             }
         }
 
-        private class DisjointOtherTransitionInfo(
-            val transitionClass: KClass<out Transition>,
-            transitions: List<Transition>,
-        ) : DisjointTransitionInfo<Transition>(transitions)
-
-        private class DisjointSetTransitionsInfo(
-            val intervalSet: IntervalSet,
-            transitions: List<SetTransition>,
-        ) : DisjointTransitionInfo<SetTransition>(transitions) {
-            override val shouldRemap: Boolean = super.shouldRemap || transitions.single().set != intervalSet
-
-            override fun toString(): String = "$intervalSet ${super.toString()}"
-        }
-
-        private class DisjointEndTransitionInfo(
-            val rule: Rule,
-            transitions: List<EndTransition>,
-        ) : DisjointTransitionInfo<EndTransition>(transitions) {
-            override fun toString(): String = "${rule.ruleNode.idToken.value} ${super.toString()}"
-        }
-
         private data class IntervalInfo(val setTransition: SetTransition, val start: Boolean)
 
-        private fun buildDisjointTransitions(transitions: LinkedHashSet<Transition>): List<DisjointTransitionInfo<*>> {
+        private fun buildDisjointTransitions(transitions: LinkedHashSet<Transition>): List<DisjointTransitionInfo<*, *>> {
             val transitionOrder = mutableMapOf<Transition, Int>()
             val intervalInfoMap = sortedMapOf<Int, MutableList<IntervalInfo>>()
 
@@ -209,6 +200,7 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)?
                     is EpsilonTransition -> {
                         error("Epsilon transitions should be removed before AtnDisambiguator running")
                     }
+                    else -> {}
                 }
             }
 
@@ -257,19 +249,19 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)?
 
         private fun LinkedHashMap<List<SetTransition>, MutableList<Interval>>.buildDisjointTransitionInfos(
             transitionOrder: MutableMap<Transition, Int>,
-        ) : List<DisjointTransitionInfo<*>> {
+        ) : List<DisjointTransitionInfo<*, *>> {
             val processedOtherTransitions = mutableSetOf<Transition>()
             return buildList {
                 for ((setTransitions, intervals) in this@buildDisjointTransitionInfos) {
                     val minOrder = setTransitions.minOf { transitionOrder.getValue(it) }
                     addRegularTransitionsAtCurrentOrder(minOrder, transitionOrder, processedOtherTransitions)
-                    add(DisjointSetTransitionsInfo(IntervalSet(intervals), setTransitions))
+                    add(DisjointTransitionInfo(SetTransition::class, IntervalSet(intervals), setTransitions))
                 }
                 addRegularTransitionsAtCurrentOrder(transitionOrder.size, transitionOrder, processedOtherTransitions)
             }
         }
 
-        private fun MutableList<DisjointTransitionInfo<*>>.addRegularTransitionsAtCurrentOrder(
+        private fun MutableList<DisjointTransitionInfo<*, *>>.addRegularTransitionsAtCurrentOrder(
             minOrder: Int,
             transitionOrder: MutableMap<Transition, Int>,
             processedOtherTransitions: MutableSet<Transition>
@@ -306,15 +298,12 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)?
                 }
 
                 for ((transitionClass, groupedTransitions) in groupedOtherTransitions) {
-                    add(
-                        if (transitionClass == EndTransition::class) {
-                            @Suppress("UNCHECKED_CAST")
-                            val endTransitions = groupedTransitions as List<EndTransition>
-                            DisjointEndTransitionInfo(endTransitions.first().rule, endTransitions)
-                        } else {
-                            DisjointOtherTransitionInfo(transitionClass, groupedTransitions)
-                        }
-                    )
+                    val data: Any? = when (transitionClass) {
+                        EndTransition::class -> (groupedTransitions.first() as EndTransition).rule
+                        ErrorTransition::class -> groupedTransitions.flatMapTo(LinkedHashSet()) { (it as ErrorTransition).diagnostics }
+                        else -> null
+                    }
+                    add(DisjointTransitionInfo(transitionClass, data, groupedTransitions))
                 }
             }
         }

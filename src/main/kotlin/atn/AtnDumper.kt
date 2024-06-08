@@ -81,6 +81,8 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             }
             if (transition is EndTransition) {
                 append(" style=dotted")
+            } else if (transition is ErrorTransition) {
+                append(" style=dotted color=red")
             }
             append("]")
             append(lineBreak)
@@ -95,7 +97,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             is SetTransition -> set.dumpSet()
             is RuleTransition -> "rule(${rule.ruleNode.idToken.value!!})"
             is EndTransition -> "end(${rule.ruleNode.idToken.value!!})"
-            else -> TODO("Not implemented transition type: $this")
+            is ErrorTransition -> "error(${diagnostics.joinToString(", ") { it::class.simpleName as String }})"
         }
 
         val treeNodes = if (treeNodes.size > 1) {

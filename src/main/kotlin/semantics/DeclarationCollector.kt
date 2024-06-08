@@ -3,12 +3,12 @@ package semantics
 import AntlrTreeVisitor
 import DEFAULT_MODE_NAME
 import RuleRedefinition
-import SemanticsDiagnostics
+import SemanticsDiagnostic
 import parser.*
 
 class DeclarationCollector(
     val lexer: AntlrLexer,
-    val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)? = null
+    val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null
 ) {
     fun collect(grammarNode: GrammarNode): DeclarationsInfo {
         val (lexerModesInfo, parserRuleNodes, recursiveRules) = DeclarationCollectorVisitor().collect(grammarNode)

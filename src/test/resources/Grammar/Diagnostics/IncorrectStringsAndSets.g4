@@ -1,9 +1,9 @@
 lexer grammar IncorrectStringsAndSets;
 
-/*❗EmptyToken*/EmptyString/*❗*/: /*❗EmptyStringOrSet*/''/*❗*/;
-/*❗EmptyToken*/EmptySet/*❗*/: /*❗EmptyStringOrSet*/[]/*❗*/;
+EmptyString: /*❗EmptyStringOrSet*/''/*❗*/;
+EmptySet: /*❗EmptyStringOrSet*/[]/*❗*/;
 
-/*❗EmptyToken*/ReversedIntervalInRange/*❗*/: [/*❗ReversedInterval*/d-a/*❗*/0-9];
-/*❗EmptyToken*/ReversedIntervalInSet/*❗*/: /*❗ReversedInterval*/'z'..'x'/*❗*/;
+ReversedIntervalInRange: [/*❗ReversedInterval*/d-a/*❗*/0-9];
+ReversedIntervalInSet: /*❗ReversedInterval*/'z'..'x'/*❗*/;
 
-/*❗EmptyToken*/MultiCharacterLiteralInRange/*❗*/: /*❗MultiCharacterLiteralInRange*/'ab'/*❗*/../*❗MultiCharacterLiteralInRange*/'cd'/*❗*/;
+MultiCharacterLiteralInRange: /*❗MultiCharacterLiteralInRange*/'ab'/*❗*/../*❗MultiCharacterLiteralInRange*/'cd'/*❗*/;

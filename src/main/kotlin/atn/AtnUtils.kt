@@ -6,7 +6,7 @@ fun Transition.clone(newSource: State, newTarget: State): Transition {
         is SetTransition -> SetTransition(set, newSource, newTarget, treeNodes)
         is RuleTransition -> RuleTransition(rule, newSource, newTarget, treeNodes)
         is EndTransition -> EndTransition(rule, newSource, newTarget, treeNodes)
-        else -> error("Unknown transition type: $this")
+        is ErrorTransition -> ErrorTransition(LinkedHashSet(diagnostics), newSource, newTarget, treeNodes)
     }
 }
 
@@ -40,7 +40,9 @@ fun Transition.checkByInfo(other: Transition, disambiguation: Boolean = false): 
         is EndTransition -> {
             if (other !is EndTransition || rule !== other.rule) return false
         }
-        else -> error("Unknown transition type: $this")
+        is ErrorTransition -> {
+            if (other !is ErrorTransition) return false
+        }
     }
 
     return if (disambiguation) true else treeNodes === other.treeNodes

@@ -1,0 +1,26 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "ErrorToken(s1)" [label=ε]
+  "ErrorToken(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε taillabel=0]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label=0]
+  s5 -> s6 [label=ε]
+  s6 -> s7 [label="error(ReversedInterval)" style=dotted color=red]
+  s7 -> s8 [label=ε]
+  s8 -> s19 [label=ε]
+  s19 -> s20 [label="end(ErrorToken)" style=dotted]
+  s2 -> s9 [label=ε taillabel=1]
+  s9 -> s10 [label=ε]
+  s10 -> s11 [label=1]
+  s11 -> s12 [label=ε]
+  s12 -> s13 [label="error(EmptyStringOrSet)" style=dotted color=red]
+  s13 -> s19 [label=ε]
+  s2 -> s14 [label=ε taillabel=2]
+  s14 -> s15 [label=ε]
+  s15 -> s16 [label=2]
+  s16 -> s17 [label=ε]
+  s17 -> s18 [label="error(MultiCharacterLiteralInRange, MultiCharacterLiteralInRange)" style=dotted color=red]
+  s18 -> s19 [label=ε]
+}

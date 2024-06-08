@@ -1,9 +1,9 @@
 package atn
 
 import EmptyToken
-import SemanticsDiagnostics
+import SemanticsDiagnostic
 
-class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)? = null) {
+class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null) {
     fun run(atn: Atn) {
         fun <T : RootState> run(rootStates: List<T>) = rootStates.forEach { rootState ->
             do {
