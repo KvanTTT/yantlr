@@ -1,6 +1,7 @@
 package atn
 
 import AntlrTreeVisitor
+import ReversedInterval
 import SemanticsDiagnostics
 import parser.*
 import semantics.DeclarationsInfo
@@ -153,14 +154,22 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                             startChar
                         }
                         // Split set by intervals to make it possible to optimize them later
-                        createState().also {
-                            SetTransition(IntervalSet(startChar, endChar), start, it, child.toSet()).bind()
-                            endStates.add(it)
+                        if (endChar >= startChar) {
+                            createState().also {
+                                SetTransition(IntervalSet(startChar, endChar), start, it, child.toSet()).bind()
+                                endStates.add(it)
+                            }
+                        } else {
+                            diagnosticReporter?.invoke(ReversedInterval(child))
                         }
                     }
 
                     end = createState()
-                    endStates.forEach { bind(it, end, node) }
+                    if (endStates.isNotEmpty()) {
+                        endStates.forEach { bind(it, end, node) }
+                    } else {
+                        bind(start, end, node)
+                    }
 
                     node.elementSuffix.processElementSuffix()
                 }
