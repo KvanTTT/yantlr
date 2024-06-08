@@ -18,11 +18,11 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
         val parserStartStates = mutableListOf<RuleState>()
 
         fun Rule.createAndBindEndTransition(start: State, end: State) {
-            EndTransition(this, start, end, listOf(ruleNode)).bind()
+            EndTransition(this, start, end, ruleNode.toSet()).bind()
         }
 
         for (mode in declarationsInfo.lexerModes.values) {
-            val modeStartState = ModeState(mode, LinkedHashSet(), stateCounter++)
+            val modeStartState = ModeState(mode, stateCounter++)
             val ruleEndStates = mutableListOf<Pair<Rule, State>>()
 
             for (rule in mode.rules.values) {
@@ -55,7 +55,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
     private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): Handle {
         val ruleNode = rule.ruleNode
-        val ruleState = RuleState(rule, LinkedHashSet(), stateCounter++)
+        val ruleState = RuleState(rule, stateCounter++)
         val ruleBodyHandle = visitor.visitBlockNode(rule.ruleNode.blockNode)
 
         bind(ruleState, ruleBodyHandle.start, ruleNode)
@@ -136,7 +136,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                     for (charToken in node.chars) {
                         val state = createState()
                         val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
-                        SetTransition(intervalSet, end, state, listOf(charToken)).bind()
+                        SetTransition(intervalSet, end, state, charToken.toSet()).bind()
                         end = state
                     }
 
@@ -154,7 +154,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                         }
                         // Split set by intervals to make it possible to optimize them later
                         createState().also {
-                            SetTransition(IntervalSet(startChar, endChar), start, it, listOf(child)).bind()
+                            SetTransition(IntervalSet(startChar, endChar), start, it, child.toSet()).bind()
                             endStates.add(it)
                         }
                     }
@@ -177,7 +177,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 is ElementNode.LexerId -> {
                     end = createState()
                     val rule = declarationsInfo.lexerRules[node.lexerId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransition(rule, start, end, listOf(node)).bind()
+                    RuleTransition(rule, start, end, node.toSet()).bind()
 
                     node.elementSuffix.processElementSuffix()
                 }
@@ -185,7 +185,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                 is ElementNode.ParserId -> {
                     end = createState()
                     val rule = declarationsInfo.parserRules[node.parserId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransition(rule, start, end, listOf(node)).bind()
+                    RuleTransition(rule, start, end, node.toSet()).bind()
 
                     node.elementSuffix.processElementSuffix()
                 }
@@ -214,16 +214,10 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
     }
 
     private fun bind(previous: State, next: State, treeNode: AntlrNode): EpsilonTransition {
-        return EpsilonTransition(previous, next, listOf(treeNode)).also {
-            it.bind()
-        }
+        return EpsilonTransition(previous, next, treeNode.toSet()).also { it.bind() }
     }
 
-    private fun Transition.bind(): Transition {
-        target.inTransitions.add(this)
-        source.outTransitions.add(this)
-        return this
-    }
+    private fun createState(): State = State(stateCounter++)
 
-    private fun createState(): State = State(LinkedHashSet(), LinkedHashSet(), stateCounter++)
+    private fun AntlrNode.toSet() = LinkedHashSet<AntlrNode>().also { it.add(this) }
 }

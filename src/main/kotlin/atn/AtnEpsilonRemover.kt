@@ -86,7 +86,7 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)
                 oldOutTransition is EpsilonTransition && newSource === oldOutTransition.target
             val isNewTransitionAlreadyPresented by lazy(LazyThreadSafetyMode.NONE) {
                 transitionsReplacement.checkOutTransitions(newSource) {
-                    it.checkExistingByInfo(oldOutTransition) && it.target === oldOutTransition.target
+                    it.checkByInfo(oldOutTransition) && it.target === oldOutTransition.target
                 }
             }
 
@@ -97,25 +97,5 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostics) -> Unit)
             }
         }
         return replacement
-    }
-
-    private fun Transition.checkExistingByInfo(other: Transition): Boolean {
-        when (this) {
-            is EpsilonTransition -> {
-                if (other !is EpsilonTransition) return false
-            }
-            is SetTransition -> {
-                if (other !is SetTransition || set !== other.set) return false
-            }
-            is RuleTransition -> {
-                if (other !is RuleTransition || rule !== other.rule) return false
-            }
-            is EndTransition -> {
-                if (other !is EndTransition || rule !== other.rule) return false
-            }
-            else -> error("Unknown transition type: ${this@AtnEpsilonRemover}")
-        }
-
-        return treeNodes === other.treeNodes
     }
 }

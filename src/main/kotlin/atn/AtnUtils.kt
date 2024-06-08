@@ -9,3 +9,39 @@ fun Transition.clone(newSource: State, newTarget: State): Transition {
         else -> error("Unknown transition type: $this")
     }
 }
+
+fun Transition.bind(): Transition {
+    target.inTransitions.add(this)
+    source.outTransitions.add(this)
+    return this
+}
+
+fun Transition.unbind() {
+    target.inTransitions.remove(this)
+    source.outTransitions.remove(this)
+}
+
+fun State.unbindOuts() {
+    outTransitions.forEach { it.target.inTransitions.remove(it) }
+    outTransitions.clear()
+}
+
+fun Transition.checkByInfo(other: Transition, disambiguation: Boolean = false): Boolean {
+    when (this) {
+        is EpsilonTransition -> {
+            if (other !is EpsilonTransition) return false
+        }
+        is SetTransition -> {
+            if (other !is SetTransition || (if (disambiguation) set != other.set else set !== other.set)) return false
+        }
+        is RuleTransition -> {
+            if (other !is RuleTransition || rule !== other.rule) return false
+        }
+        is EndTransition -> {
+            if (other !is EndTransition || rule !== other.rule) return false
+        }
+        else -> error("Unknown transition type: $this")
+    }
+
+    return if (disambiguation) true else treeNodes === other.treeNodes
+}

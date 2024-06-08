@@ -72,9 +72,5 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
         if (antlrNodes.isEmpty()) {
             throw IllegalStateException("Out-transition $transition is not bound to any antlr node")
         }
-
-        if (antlrNodes.toSet().size != antlrNodes.size) {
-            throw IllegalStateException("Out-transition $transition has duplicate antlr nodes")
-        }
     }
 }

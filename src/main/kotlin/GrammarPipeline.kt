@@ -28,9 +28,11 @@ object GrammarPipeline {
         }
         AtnEpsilonRemover(diagnosticReporter).run(minimizedAtn)
 
+        AtnDisambiguator(diagnosticReporter).run(minimizedAtn)
+
         AtnVerifier(checkNoEpsilons = true).verify(minimizedAtn)
 
-        return GrammarPipelineResult(tree.parserIdToken.value, lexer.lineOffsets, declarationsInfo, atn, minimizedAtn)
+        return GrammarPipelineResult(tree.parserIdToken.value, lexer.lineOffsets, declarationsInfo, originalAtn, minimizedAtn)
     }
 }
 

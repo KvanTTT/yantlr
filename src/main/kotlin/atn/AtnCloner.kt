@@ -36,9 +36,9 @@ object AtnCloner {
 
             val number = if (stateCounter == null) state.number else stateCounter!!
             val result = when (state) {
-                is RuleState -> RuleState(state.rule, LinkedHashSet(), number)
-                is ModeState -> ModeState(state.mode, LinkedHashSet(), number)
-                else -> State(LinkedHashSet(), LinkedHashSet(), number)
+                is RuleState -> RuleState(state.rule, number)
+                is ModeState -> ModeState(state.mode, number)
+                else -> State(number)
             }.also {
                 statesMap[state] = it
             }
