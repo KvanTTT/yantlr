@@ -24,6 +24,8 @@ class EmptyToken(val rule: Rule) : SemanticsDiagnostics(DiagnosticSeverity.Warni
 
 class ReversedInterval(treeNode: AntlrTreeNode) : SemanticsDiagnostics(DiagnosticSeverity.Error, treeNode.getInterval())
 
+class EmptyStringOrSet(treeNode: AntlrTreeNode) : SemanticsDiagnostics(DiagnosticSeverity.Error, treeNode.getInterval())
+
 enum class DiagnosticSeverity {
     Error,
     Warning,

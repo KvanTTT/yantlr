@@ -1,6 +1,7 @@
 package atn
 
 import AntlrTreeVisitor
+import EmptyStringOrSet
 import ReversedInterval
 import SemanticsDiagnostics
 import parser.*
@@ -134,11 +135,17 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
             when (node) {
                 is ElementNode.StringLiteral -> {
-                    for (charToken in node.chars) {
-                        val state = createState()
-                        val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
-                        SetTransition(intervalSet, end, state, charToken.toSet()).bind()
-                        end = state
+                    if (node.chars.isNotEmpty()) {
+                        for (charToken in node.chars) {
+                            val state = createState()
+                            val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
+                            SetTransition(intervalSet, end, state, charToken.toSet()).bind()
+                            end = state
+                        }
+                    } else {
+                        diagnosticReporter?.invoke(EmptyStringOrSet(node))
+                        end = createState()
+                        bind(start, end, node)
                     }
 
                     node.elementSuffix.processElementSuffix()
@@ -146,22 +153,26 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
 
                 is ElementNode.CharSet -> {
                     val endStates = mutableListOf<State>()
-                    for (child in node.children) {
-                        val startChar = getCharCode(child.char, stringLiteral = false)
-                        val endChar = if (child.range != null) {
-                            getCharCode(child.range.char, stringLiteral = false)
-                        } else {
-                            startChar
-                        }
-                        // Split set by intervals to make it possible to optimize them later
-                        if (endChar >= startChar) {
-                            createState().also {
-                                SetTransition(IntervalSet(startChar, endChar), start, it, child.toSet()).bind()
-                                endStates.add(it)
+                    if (node.children.isNotEmpty()) {
+                        for (child in node.children) {
+                            val startChar = getCharCode(child.char, stringLiteral = false)
+                            val endChar = if (child.range != null) {
+                                getCharCode(child.range.char, stringLiteral = false)
+                            } else {
+                                startChar
                             }
-                        } else {
-                            diagnosticReporter?.invoke(ReversedInterval(child))
+                            // Split set by intervals to make it possible to optimize them later
+                            if (endChar >= startChar) {
+                                createState().also {
+                                    SetTransition(IntervalSet(startChar, endChar), start, it, child.toSet()).bind()
+                                    endStates.add(it)
+                                }
+                            } else {
+                                diagnosticReporter?.invoke(ReversedInterval(child))
+                            }
                         }
+                    } else {
+                        diagnosticReporter?.invoke(EmptyStringOrSet(node))
                     }
 
                     end = createState()
