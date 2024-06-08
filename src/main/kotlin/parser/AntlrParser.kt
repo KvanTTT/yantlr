@@ -153,7 +153,7 @@ class AntlrParser(
     //   : ( LexerId
     //     | ParserId
     //     | '(' block? ')'
-    //     | '\'' char* '\''
+    //     | '\'' char* '\'' range=('..' '\'' char* '\'')?
     //     | '[' (char range=('-' char)?)* ']')
     //     ) elementSuffix?
     //   |
@@ -189,34 +189,44 @@ class AntlrParser(
                 emitEndNode(extraTokens, matchToEof),
             )
             AntlrTokenType.Quote -> {
-                val openQuote = matchToken() // Consume quote
-                var closeQuote: AntlrToken
+                fun matchStringLiteral(): ElementNode.StringLiteralOrRange.StringLiteral {
+                    val openQuote = matchToken() // Consume quote
+                    var closeQuote: AntlrToken
 
-                val charTokens = buildList {
-                    while (true) {
-                        when (getToken().type) {
-                            AntlrTokenType.Quote -> {
-                                closeQuote = matchToken()
-                                break
-                            }
-                            AntlrTokenType.LineBreak, AntlrTokenType.Eof -> {
-                                closeQuote = AntlrToken(AntlrTokenType.Quote, getToken().offset, 0, channel = AntlrTokenChannel.Error)
-                                break
-                            }
-                            AntlrTokenType.Char, AntlrTokenType.EscapedChar, AntlrTokenType.UnicodeEscapedChar -> {
-                                add(matchToken())
-                            }
-                            else -> {
-                                extraTokens.add(matchToken())
+                    val charTokens = buildList {
+                        while (true) {
+                            when (getToken().type) {
+                                AntlrTokenType.Quote -> {
+                                    closeQuote = matchToken()
+                                    break
+                                }
+                                AntlrTokenType.LineBreak, AntlrTokenType.Eof -> {
+                                    closeQuote = AntlrToken(AntlrTokenType.Quote, getToken().offset, 0, channel = AntlrTokenChannel.Error)
+                                    break
+                                }
+                                AntlrTokenType.Char, AntlrTokenType.EscapedChar, AntlrTokenType.UnicodeEscapedChar -> {
+                                    add(matchToken())
+                                }
+                                else -> {
+                                    extraTokens.add(matchToken())
+                                }
                             }
                         }
                     }
+
+                    return ElementNode.StringLiteralOrRange.StringLiteral(openQuote, charTokens, closeQuote)
                 }
 
-                ElementNode.StringLiteral(
-                    openQuote,
-                    charTokens,
-                    closeQuote,
+                ElementNode.StringLiteralOrRange(
+                    matchStringLiteral(),
+                    if (getToken().type == AntlrTokenType.Range) {
+                        ElementNode.StringLiteralOrRange.Range(
+                            matchToken(),
+                            matchStringLiteral(),
+                        )
+                    } else {
+                        null
+                    },
                     tryParseElementSuffix(),
                     emitEndNode(extraTokens, matchToEof)
                 )

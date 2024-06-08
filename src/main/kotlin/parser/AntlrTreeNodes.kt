@@ -173,15 +173,39 @@ sealed class ElementNode(val endNode: EndNode?) : AntlrTreeNode() {
         }
     }
 
-    class StringLiteral(val openQuote: AntlrToken, val chars: List<AntlrToken>, val closeQuote: AntlrToken, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
-        override fun calculateLeftToken(): AntlrToken = openQuote
+    class StringLiteralOrRange(val stringLiteral: StringLiteral, val range: Range?, val elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(endNode) {
+        class Range(val rangeToken: AntlrToken, val stringLiteral: StringLiteral) : AntlrTreeNode() {
+            override fun calculateLeftToken(): AntlrToken = rangeToken
 
-        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: closeQuote
+            override fun calculateRightToken(): AntlrToken = stringLiteral.rightToken
+
+            override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
+                visitor.visitToken(rangeToken)
+                visitor.visitTreeNode(stringLiteral)
+                return null
+            }
+        }
+
+        class StringLiteral(val openQuote: AntlrToken, val chars: List<AntlrToken>, val closeQuote: AntlrToken) : AntlrTreeNode() {
+            override fun calculateLeftToken(): AntlrToken = openQuote
+
+            override fun calculateRightToken(): AntlrToken = closeQuote
+
+            override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
+                visitor.visitToken(openQuote)
+                chars.forEach { visitor.visitToken(it) }
+                visitor.visitToken(closeQuote)
+                return null
+            }
+        }
+
+        override fun calculateLeftToken(): AntlrToken = stringLiteral.leftToken
+
+        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: range?.rightToken ?: stringLiteral.rightToken
 
         override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
-            visitor.visitToken(openQuote)
-            chars.forEach { visitor.visitToken(it) }
-            visitor.visitToken(closeQuote)
+            visitor.visitTreeNode(stringLiteral)
+            range?.let { visitor.visitElementStringLiteralRange(it) }
             elementSuffix?.let { visitor.visitTreeNode(it) }
             return null
         }

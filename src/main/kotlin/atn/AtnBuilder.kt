@@ -2,6 +2,7 @@ package atn
 
 import AntlrTreeVisitor
 import EmptyStringOrSet
+import MultiCharacterLiteralInRange
 import ReversedInterval
 import SemanticsDiagnostics
 import parser.*
@@ -134,26 +135,58 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
             }
 
             when (node) {
-                is ElementNode.StringLiteral -> {
-                    if (node.chars.isNotEmpty()) {
-                        for (charToken in node.chars) {
-                            val state = createState()
-                            val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
-                            SetTransition(intervalSet, end, state, charToken.toSet()).bind()
-                            end = state
+                is ElementNode.StringLiteralOrRange -> {
+                    if (node.range == null) {
+                        val chars = node.stringLiteral.chars
+                        if (chars.isNotEmpty()) {
+                            for (charToken in chars) {
+                                val state = createState()
+                                val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
+                                SetTransition(intervalSet, end, state, charToken.toSet()).bind()
+                                end = state
+                            }
+                        } else {
+                            diagnosticReporter?.invoke(EmptyStringOrSet(node))
+                            end = createState()
+                            bind(start, end, node) // TODO: use `ErrorTransition`
                         }
                     } else {
-                        diagnosticReporter?.invoke(EmptyStringOrSet(node))
-                        end = createState()
-                        bind(start, end, node)
+                        fun ElementNode.StringLiteralOrRange.StringLiteral.getBound(): Int? = when {
+                            chars.isEmpty() -> {
+                                diagnosticReporter?.invoke(EmptyStringOrSet(this))
+                                null
+                            }
+                            chars.size > 1 -> {
+                                diagnosticReporter?.invoke(MultiCharacterLiteralInRange(this))
+                                null
+                            }
+                            else -> {
+                                getCharCode(chars.first(), stringLiteral = true)
+                            }
+                        }
+
+                        val startBound = node.stringLiteral.getBound()
+                        val endBound = node.range.stringLiteral.getBound()
+                        val state = createState()
+                        if (startBound != null && endBound != null) {
+                            if (endBound >= startBound) {
+                                SetTransition(IntervalSet(startBound, endBound), end, state, node.toSet())
+                            } else {
+                                diagnosticReporter?.invoke(ReversedInterval(node))
+                                EpsilonTransition(end, state, node.toSet()) // TODO: use `ErrorTransition`
+                            }
+                        } else {
+                            EpsilonTransition(end, state, node.toSet()) // TODO: use `ErrorTransition`
+                        }.bind()
+                        end = state
                     }
 
                     node.elementSuffix.processElementSuffix()
                 }
 
                 is ElementNode.CharSet -> {
-                    val endStates = mutableListOf<State>()
                     if (node.children.isNotEmpty()) {
+                        val endStates = mutableListOf<State>()
                         for (child in node.children) {
                             val startChar = getCharCode(child.char, stringLiteral = false)
                             val endChar = if (child.range != null) {
@@ -162,24 +195,22 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostics) -> Unit
                                 startChar
                             }
                             // Split set by intervals to make it possible to optimize them later
-                            if (endChar >= startChar) {
-                                createState().also {
-                                    SetTransition(IntervalSet(startChar, endChar), start, it, child.toSet()).bind()
-                                    endStates.add(it)
-                                }
-                            } else {
-                                diagnosticReporter?.invoke(ReversedInterval(child))
+                            createState().also {
+                                if (endChar >= startChar) {
+                                    SetTransition(IntervalSet(startChar, endChar), start, it, child.toSet())
+                                } else {
+                                    diagnosticReporter?.invoke(ReversedInterval(child))
+                                    EpsilonTransition(start, it, child.toSet()) // TODO: use `ErrorTransition`
+                                }.bind()
+                                endStates.add(it)
                             }
                         }
-                    } else {
-                        diagnosticReporter?.invoke(EmptyStringOrSet(node))
-                    }
-
-                    end = createState()
-                    if (endStates.isNotEmpty()) {
+                        end = createState()
                         endStates.forEach { bind(it, end, node) }
                     } else {
-                        bind(start, end, node)
+                        end = createState()
+                        bind(start, end, node) // TODO: use `ErrorTransition`
+                        diagnosticReporter?.invoke(EmptyStringOrSet(node))
                     }
 
                     node.elementSuffix.processElementSuffix()

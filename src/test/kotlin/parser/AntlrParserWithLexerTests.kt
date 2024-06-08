@@ -11,16 +11,19 @@ object AntlrParserWithLexerTests {
     @Test
     fun stringLiteral() {
         infrastructure.check(
-            ElementNode.StringLiteral(
-                AntlrToken(AntlrTokenType.Quote),
-                listOf(
-                    AntlrToken(AntlrTokenType.Char, value = "a"),
-                    AntlrToken(AntlrTokenType.Char, value = "b"),
-                    AntlrToken(AntlrTokenType.EscapedChar, value = "\\r"),
-                    AntlrToken(AntlrTokenType.EscapedChar, value = "\\t"),
-                    AntlrToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u000A"),
+            ElementNode.StringLiteralOrRange(
+                ElementNode.StringLiteralOrRange.StringLiteral(
+                    AntlrToken(AntlrTokenType.Quote),
+                    listOf(
+                        AntlrToken(AntlrTokenType.Char, value = "a"),
+                        AntlrToken(AntlrTokenType.Char, value = "b"),
+                        AntlrToken(AntlrTokenType.EscapedChar, value = "\\r"),
+                        AntlrToken(AntlrTokenType.EscapedChar, value = "\\t"),
+                        AntlrToken(AntlrTokenType.UnicodeEscapedChar, value = "\\u000A"),
+                    ),
+                    AntlrToken(AntlrTokenType.Quote)
                 ),
-                AntlrToken(AntlrTokenType.Quote),
+                range = null,
                 elementSuffix = null,
             ),
             """'ab\r\t\u000A'"""
@@ -28,12 +31,38 @@ object AntlrParserWithLexerTests {
     }
 
     @Test
+    fun range() {
+        infrastructure.check(
+            ElementNode.StringLiteralOrRange(
+                ElementNode.StringLiteralOrRange.StringLiteral(
+                    AntlrToken(AntlrTokenType.Quote),
+                    listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
+                    AntlrToken(AntlrTokenType.Quote)
+                ),
+                range = ElementNode.StringLiteralOrRange.Range(
+                    AntlrToken(AntlrTokenType.Range),
+                    ElementNode.StringLiteralOrRange.StringLiteral(
+                        AntlrToken(AntlrTokenType.Quote),
+                        listOf(AntlrToken(AntlrTokenType.Char, value = "z")),
+                        AntlrToken(AntlrTokenType.Quote)
+                    )
+                ),
+                elementSuffix = null,
+            ),
+            """'a'..'z'"""
+        ) { it.parseElement() }
+    }
+
+    @Test
     fun unterminatedStringLiteral() {
         infrastructure.check(
-            ElementNode.StringLiteral(
-                AntlrToken(AntlrTokenType.Quote),
-                listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
-                AntlrToken(AntlrTokenType.Quote, channel = AntlrTokenChannel.Error),
+            ElementNode.StringLiteralOrRange(
+                ElementNode.StringLiteralOrRange.StringLiteral(
+                    AntlrToken(AntlrTokenType.Quote),
+                    listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
+                    AntlrToken(AntlrTokenType.Quote, channel = AntlrTokenChannel.Error),
+                ),
+                range = null,
                 elementSuffix = null,
             ),
             """'a"""
@@ -43,11 +72,14 @@ object AntlrParserWithLexerTests {
     @Test
     fun stringLiteralWithIncorrectEscaping() {
         infrastructure.check(
-            ElementNode.StringLiteral(
-                AntlrToken(AntlrTokenType.Quote),
-                // Unrecognized token '\u' can be extract from hidden channel
-                listOf(AntlrToken(AntlrTokenType.Char, value = "X")),
-                AntlrToken(AntlrTokenType.Quote),
+            ElementNode.StringLiteralOrRange(
+                ElementNode.StringLiteralOrRange.StringLiteral(
+                    AntlrToken(AntlrTokenType.Quote),
+                    // Unrecognized token '\u' can be extract from hidden channel
+                    listOf(AntlrToken(AntlrTokenType.Char, value = "X")),
+                    AntlrToken(AntlrTokenType.Quote),
+                ),
+                range = null,
                 elementSuffix = null,
             ),
             """'\uX'"""

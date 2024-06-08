@@ -26,6 +26,8 @@ class ReversedInterval(treeNode: AntlrTreeNode) : SemanticsDiagnostics(Diagnosti
 
 class EmptyStringOrSet(treeNode: AntlrTreeNode) : SemanticsDiagnostics(DiagnosticSeverity.Error, treeNode.getInterval())
 
+class MultiCharacterLiteralInRange(treeNode: AntlrTreeNode) : SemanticsDiagnostics(DiagnosticSeverity.Error, treeNode.getInterval())
+
 enum class DiagnosticSeverity {
     Error,
     Warning,

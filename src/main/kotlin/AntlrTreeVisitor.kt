@@ -27,7 +27,9 @@ abstract class AntlrTreeVisitor<out R> {
 
     open fun visitElementBlock(node: ElementNode.Block) = visitElementNode(node)
 
-    open fun visitElementStringLiteral(node: ElementNode.StringLiteral) = visitElementNode(node)
+    open fun visitElementStringLiteralOrRange(node: ElementNode.StringLiteralOrRange) = visitElementNode(node)
+
+    open fun visitElementStringLiteralRange(node: ElementNode.StringLiteralOrRange.Range) = visitTreeNode(node)
 
     open fun visitElementCharSet(node: ElementNode.CharSet) = visitElementNode(node)
 
