@@ -8,6 +8,7 @@ import parser.AntlrNode
 import parser.getLineColumn
 import parser.getLineOffsetsAndMainLineBreak
 import parser.stringEscapeToLiteralChars
+import semantics.Mode
 import semantics.Rule
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
@@ -122,7 +123,8 @@ object InfoEmbedder {
             append(' ')
 
             val normalizedValue = when (val value = property.get(diagnostic)) {
-                is Rule -> value.ruleNode.idToken.value!!
+                is Mode -> value.name
+                is Rule -> value.name
                 is AntlrNode -> value.getInterval().offset.getLineColumn(lineOffsets)
                 is SourceInterval -> value.offset.getLineColumn(lineOffsets)
                 else -> value

@@ -20,7 +20,7 @@ abstract class SemanticsDiagnostic(severity: DiagnosticSeverity, sourceInterval:
 
 class RuleRedefinition(val previousRule: Rule, val ruleNode: RuleNode) : SemanticsDiagnostic(DiagnosticSeverity.Error, ruleNode.idToken.getInterval())
 
-class EmptyToken(val rule: Rule) : SemanticsDiagnostic(DiagnosticSeverity.Warning, rule.ruleNode.idToken.getInterval())
+class EmptyToken(val rule: Rule) : SemanticsDiagnostic(DiagnosticSeverity.Warning, rule.treeNode.idToken.getInterval())
 
 class ReversedInterval(treeNode: AntlrTreeNode) : SemanticsDiagnostic(DiagnosticSeverity.Error, treeNode.getInterval())
 

@@ -28,10 +28,11 @@ class DeclarationCollector(
                 null
             } else {
                 id to Rule(
+                    id,
+                    ruleNode,
                     isLexer,
                     isFragment = ruleNode.fragmentToken != null,
                     isRecursive = recursiveRules.contains(ruleNode),
-                    ruleNode
                 )
             }
         }
@@ -43,7 +44,7 @@ class DeclarationCollector(
                 currentModeRules[ruleName] = rule
                 lexerRules[ruleName] = rule
             }
-            lexerModes[modeName] = Mode(mode.treeNode, currentModeRules)
+            lexerModes[modeName] = Mode(modeName, mode.treeNode, currentModeRules)
         }
 
         for (ruleNode in parserRuleNodes) {

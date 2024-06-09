@@ -17,7 +17,7 @@ abstract class RootState(number: Int) : State(number)
 
 class RuleState(val rule: Rule, number: Int) : RootState(number) {
     override fun toString(): String {
-        return "${rule.ruleNode.idToken.value!!}(${super.toString()})"
+        return "${rule.name}(${super.toString()})"
     }
 }
 
