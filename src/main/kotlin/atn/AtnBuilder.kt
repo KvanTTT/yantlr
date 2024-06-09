@@ -22,7 +22,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
         val parserStartStates = mutableListOf<RuleState>()
 
         fun Rule.createAndBindEndTransition(start: State, end: State) {
-            EndTransition(this, start, end, treeNode.toLinkedSet()).bind()
+            EndTransition(this.toLinkedSet(), start, end, treeNode.toLinkedSet()).bind()
         }
 
         for (mode in declarationsInfo.lexerModes.values) {

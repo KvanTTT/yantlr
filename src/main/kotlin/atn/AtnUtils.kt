@@ -6,7 +6,7 @@ fun Transition.clone(newSource: State, newTarget: State, deep: Boolean = true): 
         is EpsilonTransition -> EpsilonTransition(newSource, newTarget, newTreeNodes)
         is SetTransition -> SetTransition(set, newSource, newTarget, newTreeNodes)
         is RuleTransition -> RuleTransition(rule, newSource, newTarget, newTreeNodes)
-        is EndTransition -> EndTransition(rule, newSource, newTarget, newTreeNodes)
+        is EndTransition -> EndTransition(if (deep) LinkedHashSet(rules) else rules , newSource, newTarget, newTreeNodes)
         is ErrorTransition -> ErrorTransition(if (deep) LinkedHashSet(diagnostics) else diagnostics, newSource, newTarget, newTreeNodes)
     }
 }
@@ -39,7 +39,7 @@ fun Transition.checkByInfo(other: Transition, disambiguation: Boolean = false): 
             if (other !is RuleTransition || rule !== other.rule) return false
         }
         is EndTransition -> {
-            if (other !is EndTransition || rule !== other.rule) return false
+            if (other !is EndTransition || !rules.containsAll(other.rules)) return false
         }
         is ErrorTransition -> {
             if (other !is ErrorTransition) return false

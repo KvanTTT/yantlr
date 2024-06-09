@@ -96,7 +96,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             is EpsilonTransition -> "ε"
             is SetTransition -> set.dumpSet()
             is RuleTransition -> "rule(${rule.name})"
-            is EndTransition -> "end(${rule.name})"
+            is EndTransition -> "end(${rules.joinToString(", ") { it.name }})"
             is ErrorTransition -> "error(${diagnostics.joinToString(", ") { it::class.simpleName as String }})"
         }
 

@@ -35,15 +35,6 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
 
                 inferredInTransitionsMap.getOrPut(target) { mutableListOf() }.add(outTransition)
 
-                if (outTransition is EndTransition) {
-                    val endTransitionWithTheSameRule =
-                        existingEndTransitions.firstOrNull { it.rule === outTransition.rule }
-                    if (endTransitionWithTheSameRule != null) {
-                        throw IllegalStateException("Multiple end transitions with the same (${outTransition.rule}) rule found: $outTransition and $endTransitionWithTheSameRule")
-                    }
-                    existingEndTransitions.add(outTransition)
-                }
-
                 verifyInternal(target)
             }
         }

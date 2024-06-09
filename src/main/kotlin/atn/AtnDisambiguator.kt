@@ -71,7 +71,8 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? 
                             SetTransition(info.data as IntervalSet, currentState, newState, treeNodes)
                         }
                         EndTransition::class -> {
-                            EndTransition(info.data as Rule, currentState, newState, treeNodes)
+                            @Suppress("UNCHECKED_CAST")
+                            EndTransition(info.data as LinkedHashSet<Rule>, currentState, newState, treeNodes)
                         }
                         ErrorTransition::class -> {
                             @Suppress("UNCHECKED_CAST")
@@ -299,7 +300,7 @@ class AtnDisambiguator(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? 
 
                 for ((transitionClass, groupedTransitions) in groupedOtherTransitions) {
                     val data: Any? = when (transitionClass) {
-                        EndTransition::class -> (groupedTransitions.first() as EndTransition).rule
+                        EndTransition::class -> groupedTransitions.flatMapTo(LinkedHashSet()) { (it as EndTransition).rules }
                         ErrorTransition::class -> groupedTransitions.flatMapTo(LinkedHashSet()) { (it as ErrorTransition).diagnostics }
                         else -> null
                     }

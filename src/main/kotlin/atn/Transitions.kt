@@ -30,14 +30,14 @@ class RuleTransition(val rule: Rule, source: State, target: State, treeNodes: Li
     }
 }
 
-class EndTransition(val rule: Rule, source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
+class EndTransition(val rules: LinkedHashSet<Rule>, source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
     override fun toString(): String {
-        return "end ($rule, ${super.toString()})"
+        return "end (${rules.joinToString(", ") { it.name }}, ${super.toString()})"
     }
 }
 
 class ErrorTransition(val diagnostics: LinkedHashSet<Diagnostic>, source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
     override fun toString(): String {
-        return "error (${diagnostics.joinToString(",") { it::class.simpleName as String }} ${super.toString()})"
+        return "error (${diagnostics.joinToString(", ") { it::class.simpleName as String }} ${super.toString()})"
     }
 }

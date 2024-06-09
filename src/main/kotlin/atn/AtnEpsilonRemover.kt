@@ -11,8 +11,12 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)?
             } while (true)
 
             for (outTransition in rootState.outTransitions) {
-                if (outTransition is EndTransition && outTransition.rule.let { it.isLexer && !it.isFragment }) {
-                    diagnosticReporter?.invoke(EmptyToken(outTransition.rule))
+                if (outTransition is EndTransition) {
+                    for (rule in outTransition.rules) {
+                        if (rule.isLexer && !rule.isFragment) {
+                            diagnosticReporter?.invoke(EmptyToken(rule))
+                        }
+                    }
                 }
             }
         }
