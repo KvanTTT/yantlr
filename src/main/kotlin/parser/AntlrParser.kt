@@ -15,25 +15,25 @@ class AntlrParser(
             AntlrTokenType.Fragment,
         )
 
+        private val elementSuffixTokenTypes = setOf(
+            AntlrTokenType.Question,
+            AntlrTokenType.Star,
+            AntlrTokenType.Plus,
+        )
+
         private val elementTokenTypes = setOf(
             AntlrTokenType.LexerId,
             AntlrTokenType.ParserId,
             AntlrTokenType.LeftParen,
             AntlrTokenType.Quote,
             AntlrTokenType.LeftBracket,
-        )
+        ) + elementSuffixTokenTypes
 
         private val charSetTokenTypes = setOf(
             AntlrTokenType.Char,
             AntlrTokenType.EscapedChar,
             AntlrTokenType.UnicodeEscapedChar,
             AntlrTokenType.Hyphen,
-        )
-
-        private val elementSuffixTokenTypes = setOf(
-            AntlrTokenType.Question,
-            AntlrTokenType.Star,
-            AntlrTokenType.Plus,
         )
     }
 
@@ -155,8 +155,8 @@ class AntlrParser(
     //     | '(' block? ')'
     //     | '\'' char* '\'' range=('..' '\'' char* '\'')?
     //     | '[' (char range=('-' char)?)* ']')
+    //     |
     //     ) elementSuffix?
-    //   |
     //   ;
     //
     // char
@@ -275,7 +275,11 @@ class AntlrParser(
                 )
             }
             else -> {
-                ElementNode.Empty(AntlrToken(AntlrTokenType.Empty, lastTokenEnd, 0), emitEndNode(extraTokens, matchToEof))
+                ElementNode.Empty(
+                    AntlrToken(AntlrTokenType.Empty, lastTokenEnd, 0),
+                    tryParseElementSuffix(),
+                    emitEndNode(extraTokens, matchToEof)
+                )
             }
         }
     }
@@ -283,7 +287,7 @@ class AntlrParser(
     // elementSuffix
     //   : ('?' | '*' | '+') '?'?
     //   ;
-    fun parseElementSuffix(): ElementSuffixNode {
+    private fun parseElementSuffix(): ElementSuffixNode {
         val ebnfToken = when (getToken().type) {
             AntlrTokenType.Question, AntlrTokenType.Star, AntlrTokenType.Plus -> matchToken()
             else -> emitMissingToken(tokenType = null)

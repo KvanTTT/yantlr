@@ -101,7 +101,10 @@ x
                                 BlockNode.OrAlternative(
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
-                                        listOf(ElementNode.Empty(AntlrToken(AntlrTokenType.Empty))),
+                                        listOf(ElementNode.Empty(
+                                            emptyToken = AntlrToken(AntlrTokenType.Empty),
+                                            elementSuffix = null,
+                                        )),
                                     ),
                                 ),
                             ),

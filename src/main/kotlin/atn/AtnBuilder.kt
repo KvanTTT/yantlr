@@ -111,29 +111,6 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             val start = createState()
             var end = start
 
-            // TODO: implement greedy processing
-            fun ElementSuffixNode?.processElementSuffix() {
-                if (this == null) return
-                when (ebnf.type) {
-                    AntlrTokenType.Question -> {
-                        bindEpsilon(start, end, ebnf)
-                    }
-
-                    AntlrTokenType.Star -> {
-                        bindEpsilon(start, end, ebnf)
-                        bindEpsilon(end, start, ebnf)
-                    }
-
-                    AntlrTokenType.Plus -> {
-                        bindEpsilon(end, start, ebnf)
-                    }
-
-                    else -> {
-                        error("Unexpected token type: ${ebnf.type}")
-                    }
-                }
-            }
-
             when (node) {
                 is ElementNode.StringLiteralOrRange -> {
                     if (node.range == null) {
@@ -189,8 +166,6 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         }
                         end = state
                     }
-
-                    node.elementSuffix.processElementSuffix()
                 }
 
                 is ElementNode.CharSet -> {
@@ -224,8 +199,6 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             diagnosticReporter?.invoke(it)
                         }
                     }
-
-                    node.elementSuffix.processElementSuffix()
                 }
 
                 is ElementNode.Block -> {
@@ -233,29 +206,43 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     bindEpsilon(start, blockNodeHandle.start, node)
                     end = createState()
                     bindEpsilon(blockNodeHandle.end, end, node)
-
-                    node.elementSuffix.processElementSuffix()
                 }
 
                 is ElementNode.LexerId -> {
                     end = createState()
                     val rule = declarationsInfo.lexerRules[node.lexerId.value!!]!! // TODO: handle unresolved rule
                     RuleTransitionData(rule, listOf(node)).bind(start, end)
-
-                    node.elementSuffix.processElementSuffix()
                 }
 
                 is ElementNode.ParserId -> {
                     end = createState()
                     val rule = declarationsInfo.parserRules[node.parserId.value!!]!! // TODO: handle unresolved rule
                     RuleTransitionData(rule, listOf(node)).bind(start, end)
-
-                    node.elementSuffix.processElementSuffix()
                 }
 
                 is ElementNode.Empty -> {
                     end = createState()
                     bindEpsilon(start, end, node)
+                }
+            }
+
+            // TODO: implement greedy processing
+            node.elementSuffix?.let {
+                val ebnf = it.ebnf
+                when (ebnf.type) {
+                    AntlrTokenType.Question -> {
+                        bindEpsilon(start, end, ebnf)
+                    }
+                    AntlrTokenType.Star -> {
+                        bindEpsilon(start, end, ebnf)
+                        bindEpsilon(end, start, ebnf)
+                    }
+                    AntlrTokenType.Plus -> {
+                        bindEpsilon(end, start, ebnf)
+                    }
+                    else -> {
+                        error("Unexpected token type: ${ebnf.type}")
+                    }
                 }
             }
 

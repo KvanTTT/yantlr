@@ -8,9 +8,10 @@ object AntlrParseWithErrors {
         infrastructure.check(
             ElementNode.Empty(
                 AntlrToken(AntlrTokenType.Empty, 0, 0),
-                endNode = null
+                elementSuffix = null,
+                endNode = null,
             ),
-            "+"
+            "-"
         ) { it.parseElement(matchToEof = false) }
     }
 
@@ -19,13 +20,14 @@ object AntlrParseWithErrors {
         infrastructure.check(
             ElementNode.Empty(
                 AntlrToken(AntlrTokenType.Empty, 0, 0),
+                elementSuffix = null,
                 EndNode(
                     listOf(
-                        AntlrToken(AntlrTokenType.Plus, channel = AntlrTokenChannel.Default)
+                        AntlrToken(AntlrTokenType.Bar, channel = AntlrTokenChannel.Default)
                     ), AntlrToken(AntlrTokenType.Eof)
-                )
+                ),
             ),
-            "+"
+            "|"
         ) { it.parseElement(matchToEof = true) }
     }
 
