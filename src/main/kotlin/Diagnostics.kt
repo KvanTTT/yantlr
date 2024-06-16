@@ -1,3 +1,4 @@
+import parser.AntlrNode
 import parser.AntlrTreeNode
 import parser.RuleNode
 import semantics.Rule
@@ -27,6 +28,8 @@ class ReversedInterval(treeNode: AntlrTreeNode) : SemanticsDiagnostic(Diagnostic
 class EmptyStringOrSet(treeNode: AntlrTreeNode) : SemanticsDiagnostic(DiagnosticSeverity.Error, treeNode.getInterval())
 
 class MultiCharacterLiteralInRange(treeNode: AntlrTreeNode) : SemanticsDiagnostic(DiagnosticSeverity.Error, treeNode.getInterval())
+
+class EmptyClosure(treeNode: AntlrNode) : SemanticsDiagnostic(DiagnosticSeverity.Error, treeNode.getInterval())
 
 enum class DiagnosticSeverity {
     Error,

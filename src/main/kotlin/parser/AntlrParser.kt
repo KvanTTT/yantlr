@@ -142,7 +142,7 @@ class AntlrParser(
         val elementNodes = buildList {
             add(parseElement(false, lastTokenEnd))
             while (getToken().type in elementTokenTypes) {
-                add(parseElement(false))
+                add(parseElement(false, lastTokenEnd))
             }
         }
 

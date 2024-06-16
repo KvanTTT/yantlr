@@ -9,9 +9,9 @@ lexer grammar EmptyToken;
     ;
 
 /*❗EmptyToken*/EmptyClosure/*❗*/
-    : ()*
+    : (/*❗EmptyClosure*//*❗*/)*
     ;
 
 /*❗EmptyToken*/EmptyClosure2/*❗*/
-    : ('D' | )*
+    : ('D' |/*❗EmptyClosure*//*❗*/ )*
     ;

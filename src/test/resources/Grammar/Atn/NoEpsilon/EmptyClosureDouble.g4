@@ -1,4 +1,4 @@
 lexer grammar EmptyClosureDouble;
 EmptyClosureDouble
-    : ('A' | )* ( | 'B')* 'C'
+    : ('A' |/*❗EmptyClosure*//*❗*/ )* (/*❗EmptyClosure*//*❗*/ | 'B')* 'C'
     ;
