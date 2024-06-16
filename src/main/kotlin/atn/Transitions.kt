@@ -1,43 +1,43 @@
 package atn
 
-import Diagnostic
+import SemanticsDiagnostic
 import parser.AntlrNode
 import semantics.Rule
 
-sealed class Transition(val source: State, val target: State, val treeNodes: LinkedHashSet<AntlrNode>) {
-    val isLoop = source === target
+class Transition<T : TransitionData>(val data: T, val source: State, val target: State) {
+    val isEnclosed = source === target
 
     override fun toString(): String {
-        return "$source -> $target"
+        return "$data ($source -> $target)"
     }
 }
 
-class EpsilonTransition(source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
+sealed class TransitionData(val antlrNodes: List<AntlrNode>)
+
+class EpsilonTransitionData(antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
+    override fun toString(): String = "ε"
+}
+
+class SetTransitionData(val set: IntervalSet, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
     override fun toString(): String {
-        return "ε (${super.toString()})"
+        return "$set"
     }
 }
 
-class SetTransition(val set: IntervalSet, source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
+class RuleTransitionData(val rule: Rule, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
     override fun toString(): String {
-        return "$set (${super.toString()})"
+        return "rule(${rule.name})"
     }
 }
 
-class RuleTransition(val rule: Rule, source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
+class EndTransitionData(val rule: Rule, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
     override fun toString(): String {
-        return "$rule (${super.toString()})"
+        return "end(${rule.name})"
     }
 }
 
-class EndTransition(val rules: LinkedHashSet<Rule>, source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
+class ErrorTransitionData(var diagnostic: SemanticsDiagnostic, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
     override fun toString(): String {
-        return "end (${rules.joinToString(", ") { it.name }}, ${super.toString()})"
-    }
-}
-
-class ErrorTransition(val diagnostics: LinkedHashSet<Diagnostic>, source: State, target: State, treeNodes: LinkedHashSet<AntlrNode>) : Transition(source, target, treeNodes) {
-    override fun toString(): String {
-        return "error (${diagnostics.joinToString(", ") { it::class.simpleName as String }} ${super.toString()})"
+        return "error(${diagnostic::class.simpleName})"
     }
 }

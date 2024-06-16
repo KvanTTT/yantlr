@@ -1,7 +1,6 @@
 package atn
 
 import AntlrTreeVisitor
-import Diagnostic
 import EmptyStringOrSet
 import MultiCharacterLiteralInRange
 import ReversedInterval
@@ -22,7 +21,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
         val parserStartStates = mutableListOf<RuleState>()
 
         fun Rule.createAndBindEndTransition(start: State, end: State) {
-            EndTransition(this.toLinkedSet(), start, end, treeNode.toLinkedSet()).bind()
+            EndTransitionData(this, listOf(treeNode)).bind(start, end)
         }
 
         for (mode in declarationsInfo.lexerModes.values) {
@@ -40,7 +39,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     lexerStartStates.add(cloneInfo.getMappedState(ruleState) as RuleState)
                 }
 
-                bind(modeStartState, ruleState, rule.treeNode)
+                bindEpsilon(modeStartState, ruleState, rule.treeNode)
             }
             val modeEnd = createState()
             ruleEndStates.forEach { (rule, ruleEnd) -> rule.createAndBindEndTransition(ruleEnd, modeEnd) }
@@ -62,7 +61,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
         val ruleState = RuleState(rule, stateCounter++)
         val ruleBodyHandle = visitor.visitBlockNode(rule.treeNode.blockNode)
 
-        bind(ruleState, ruleBodyHandle.start, ruleNode)
+        bindEpsilon(ruleState, ruleBodyHandle.start, ruleNode)
 
         return Handle(ruleState, ruleBodyHandle.end)
     }
@@ -82,7 +81,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
             fun processAlternative(alternativeNode: AlternativeNode) {
                 val altNodeHandle = visitAlternativeNode(alternativeNode)
-                bind(start, altNodeHandle.start, alternativeNode)
+                bindEpsilon(start, altNodeHandle.start, alternativeNode)
                 endNodes.add(altNodeHandle.end to alternativeNode)
             }
 
@@ -90,7 +89,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             node.orAlternativeNodes.forEach { processAlternative(it.alternativeNode) }
 
             val end = createState()
-            endNodes.forEach { (endNode, treeNode) -> bind(endNode, end, treeNode) }
+            endNodes.forEach { (endNode, treeNode) -> bindEpsilon(endNode, end, treeNode) }
 
             return Handle(start, end)
         }
@@ -101,7 +100,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
             node.elementNodes.forEach {
                 val newHandle = visitElementNode(it)
-                bind(end, newHandle.start, it)
+                bindEpsilon(end, newHandle.start, it)
                 end = newHandle.end
             }
 
@@ -117,16 +116,16 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 if (this == null) return
                 when (ebnf.type) {
                     AntlrTokenType.Question -> {
-                        bind(start, end, ebnf)
+                        bindEpsilon(start, end, ebnf)
                     }
 
                     AntlrTokenType.Star -> {
-                        bind(start, end, ebnf)
-                        bind(end, start, ebnf)
+                        bindEpsilon(start, end, ebnf)
+                        bindEpsilon(end, start, ebnf)
                     }
 
                     AntlrTokenType.Plus -> {
-                        bind(end, start, ebnf)
+                        bindEpsilon(end, start, ebnf)
                     }
 
                     else -> {
@@ -143,14 +142,14 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             for (charToken in chars) {
                                 val state = createState()
                                 val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
-                                SetTransition(intervalSet, end, state, charToken.toLinkedSet()).bind()
+                                SetTransitionData(intervalSet, listOf(charToken)).bind(end, state)
                                 end = state
                             }
                         } else {
                             val diagnostic = EmptyStringOrSet(node)
                             diagnosticReporter?.invoke(diagnostic)
                             end = createState()
-                            ErrorTransition(diagnostic.toLinkedSet(), start, end, node.toLinkedSet()).bind()
+                            ErrorTransitionData(diagnostic, listOf(node)).bind(start, end)
                         }
                     } else {
                         fun ElementNode.StringLiteralOrRange.StringLiteral.getBound(): Pair<Int?, SemanticsDiagnostic?> = when {
@@ -174,18 +173,20 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         val state = createState()
                         if (startBound != null && endBound != null) {
                             if (endBound >= startBound) {
-                                SetTransition(IntervalSet(startBound, endBound), end, state, node.toLinkedSet())
+                                SetTransitionData(IntervalSet(startBound, endBound), listOf(node))
                             } else {
                                 val diagnostic = ReversedInterval(node)
                                 diagnosticReporter?.invoke(diagnostic)
-                                ErrorTransition(diagnostic.toLinkedSet(), end, state, node.toLinkedSet())
-                            }
+                                ErrorTransitionData(diagnostic, listOf(node))
+                            }.bind(end, state)
                         } else {
-                            val diagnostics = LinkedHashSet<Diagnostic>()
-                            startDiagnostic?.let { diagnostics.add(it) }
-                            endDiagnostic?.let { diagnostics.add(it) }
-                            ErrorTransition(diagnostics, end, state, node.toLinkedSet())
-                        }.bind()
+                            startDiagnostic?.let {
+                                ErrorTransitionData(it, listOf(node)).bind(end, state)
+                            }
+                            endDiagnostic?.let {
+                                ErrorTransitionData(it, listOf(node)).bind(end, state)
+                            }
+                        }
                         end = state
                     }
 
@@ -205,21 +206,21 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             // Split set by intervals to make it possible to optimize them later
                             createState().also {
                                 if (endChar >= startChar) {
-                                    SetTransition(IntervalSet(startChar, endChar), start, it, child.toLinkedSet())
+                                    SetTransitionData(IntervalSet(startChar, endChar), listOf(child))
                                 } else {
                                     val diagnostic = ReversedInterval(child)
                                     diagnosticReporter?.invoke(diagnostic)
-                                    ErrorTransition(diagnostic.toLinkedSet(), start, it, child.toLinkedSet())
-                                }.bind()
+                                    ErrorTransitionData(diagnostic, listOf(child))
+                                }.bind(start, it)
                                 endStates.add(it)
                             }
                         }
                         end = createState()
-                        endStates.forEach { bind(it, end, node) }
+                        endStates.forEach { bindEpsilon(it, end, node) }
                     } else {
                         end = createState()
                         EmptyStringOrSet(node).also {
-                            ErrorTransition(it.toLinkedSet(), start, end, node.toLinkedSet()).bind()
+                            ErrorTransitionData(it, listOf(node)).bind(start, end)
                             diagnosticReporter?.invoke(it)
                         }
                     }
@@ -229,9 +230,9 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
                 is ElementNode.Block -> {
                     val blockNodeHandle = visitBlockNode(node.blockNode)
-                    bind(start, blockNodeHandle.start, node)
+                    bindEpsilon(start, blockNodeHandle.start, node)
                     end = createState()
-                    bind(blockNodeHandle.end, end, node)
+                    bindEpsilon(blockNodeHandle.end, end, node)
 
                     node.elementSuffix.processElementSuffix()
                 }
@@ -239,7 +240,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 is ElementNode.LexerId -> {
                     end = createState()
                     val rule = declarationsInfo.lexerRules[node.lexerId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransition(rule, start, end, node.toLinkedSet()).bind()
+                    RuleTransitionData(rule, listOf(node)).bind(start, end)
 
                     node.elementSuffix.processElementSuffix()
                 }
@@ -247,14 +248,14 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 is ElementNode.ParserId -> {
                     end = createState()
                     val rule = declarationsInfo.parserRules[node.parserId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransition(rule, start, end, node.toLinkedSet()).bind()
+                    RuleTransitionData(rule, listOf(node)).bind(start, end)
 
                     node.elementSuffix.processElementSuffix()
                 }
 
                 is ElementNode.Empty -> {
                     end = createState()
-                    bind(start, end, node)
+                    bindEpsilon(start, end, node)
                 }
             }
 
@@ -275,11 +276,9 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
         }
     }
 
-    private fun bind(previous: State, next: State, treeNode: AntlrNode): EpsilonTransition {
-        return EpsilonTransition(previous, next, treeNode.toLinkedSet()).also { it.bind() }
+    private fun bindEpsilon(previous: State, next: State, treeNode: AntlrNode): Transition<*> {
+        return EpsilonTransitionData(listOf(treeNode)).bind(previous, next)
     }
 
     private fun createState(): State = State(stateCounter++)
-
-    private fun <T> T.toLinkedSet(): LinkedHashSet<T> = LinkedHashSet<T>().also { it.add(this) }
 }

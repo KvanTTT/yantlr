@@ -19,7 +19,6 @@ object AtnCloner {
 
     private class Helper(var stateCounter: Int?) {
         val statesMap: MutableMap<State, State> = mutableMapOf()
-        val transitionsMap: MutableMap<Transition, Transition> = mutableMapOf()
 
         fun getCloneInfo(): CloneInfo {
             return CloneInfo(stateCounter!!, statesMap)
@@ -52,24 +51,11 @@ object AtnCloner {
         }
 
         private fun createNewTransitions() {
-            for ((oldState, newState) in statesMap) {
-                newState.inTransitions.cloneTransitionsFrom(oldState.inTransitions)
-                newState.outTransitions.cloneTransitionsFrom(oldState.outTransitions)
+            for ((oldState, _) in statesMap) {
+                for (transition in oldState.outTransitions) {
+                    transition.data.bind(statesMap.getValue(transition.source), statesMap.getValue(transition.target))
+                }
             }
-        }
-
-        private fun MutableCollection<Transition>.cloneTransitionsFrom(transitions: Collection<Transition>) {
-            for (transition in transitions) {
-                add(transition.clone())
-            }
-        }
-
-        private fun Transition.clone(): Transition {
-            transitionsMap[this]?.let { return it }
-
-            val newSource = statesMap.getValue(source)
-            val newTarget = statesMap.getValue(target)
-            return clone(newSource, newTarget).also { transitionsMap[this] = it }
         }
     }
 }

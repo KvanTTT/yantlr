@@ -8,6 +8,7 @@ digraph ATN {
   s11 -> s13 [label="error(EmptyStringOrSet)" style=dotted color=red]
   s13 -> s20 [label="end(ErrorToken)" style=dotted]
   "DEFAULT_MODE(s0)" -> s16 [label=2 taillabel=2]
-  s16 -> s18 [label="error(MultiCharacterLiteralInRange, MultiCharacterLiteralInRange)" style=dotted color=red]
+  s16 -> s18 [label="error(MultiCharacterLiteralInRange)" taillabel=0 style=dotted color=red]
   s18 -> s20 [label="end(ErrorToken)" style=dotted]
+  s16 -> s18 [label="error(MultiCharacterLiteralInRange)" taillabel=1 style=dotted color=red]
 }

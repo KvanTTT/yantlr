@@ -79,9 +79,9 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
                 append(" taillabel=")
                 append(index)
             }
-            if (transition is EndTransition) {
+            if (transition.data is EndTransitionData) {
                 append(" style=dotted")
-            } else if (transition is ErrorTransition) {
+            } else if (transition.data is ErrorTransitionData) {
                 append(" style=dotted color=red")
             }
             append("]")
@@ -91,21 +91,21 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
         }
     }
 
-    private fun Transition.getLabel(): String {
-        val name = when (this) {
-            is EpsilonTransition -> "ε"
-            is SetTransition -> set.dumpSet()
-            is RuleTransition -> "rule(${rule.name})"
-            is EndTransition -> "end(${rules.joinToString(", ") { it.name }})"
-            is ErrorTransition -> "error(${diagnostics.joinToString(", ") { it::class.simpleName as String }})"
+    private fun Transition<*>.getLabel(): String {
+        val name = when (data) {
+            is EpsilonTransitionData -> "ε"
+            is SetTransitionData -> data.set.dumpSet()
+            is RuleTransitionData -> "rule(${data.rule.name})"
+            is EndTransitionData -> "end(${data.rule.name})"
+            is ErrorTransitionData -> "error(${data.diagnostic::class.simpleName})"
         }
 
-        val treeNodes = if (treeNodes.size > 1) {
+        val treeNodes = if (data.antlrNodes.size > 1) {
             buildString {
                 append(" {")
-                for ((treeNodeIndex, treeNode) in treeNodes.withIndex()) {
-                    val interval = treeNode.getInterval().let {
-                        if (this@getLabel is EndTransition) SourceInterval(it.end(), 0) else it
+                for ((antlrNodeIndex, antlrNode) in data.antlrNodes.withIndex()) {
+                    val interval = antlrNode.getInterval().let {
+                        if (this@getLabel.data is EndTransitionData) SourceInterval(it.end(), 0) else it
                     }
                     append(interval.offset.let {
                         if (lineOffsets != null) it.getLineColumn(lineOffsets) else it
@@ -115,7 +115,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
                         append(interval.length)
                         append(')')
                     }
-                    if (treeNodeIndex < treeNodes.size - 1) {
+                    if (antlrNodeIndex < data.antlrNodes.size - 1) {
                         append(", ")
                     }
                 }

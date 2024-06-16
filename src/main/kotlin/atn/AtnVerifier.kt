@@ -11,17 +11,17 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
 
     private fun verify(rootState: RootState) {
         val visitedStates = mutableSetOf<State>()
-        val inferredInTransitionsMap = mutableMapOf<State, MutableList<Transition>>()
+        val inferredInTransitionsMap = mutableMapOf<State, MutableList<Transition<*>>>()
 
         inferredInTransitionsMap[rootState] = mutableListOf()
 
         fun verifyInternal(currentState: State) {
             if (!visitedStates.add(currentState)) return
 
-            val existingEndTransitions = mutableListOf<EndTransition>()
-
             for (outTransition in currentState.outTransitions) {
-                checkAntlrNodes(outTransition)
+                if (outTransition.data.antlrNodes.isEmpty()) {
+                    throw IllegalStateException("Out-transition $outTransition is not bound to any antlr node")
+                }
 
                 val target = outTransition.target
 
@@ -29,7 +29,7 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
                     throw IllegalStateException("Source of out-transition does not match the current state: $outTransition")
                 }
 
-                if (checkNoEpsilons && outTransition is EpsilonTransition) {
+                if (checkNoEpsilons && outTransition.data is EpsilonTransitionData) {
                     throw IllegalStateException("Epsilon transition found in the ATN: $outTransition")
                 }
 
@@ -54,14 +54,6 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
             if (unexpectedActualInTransitions.isNotEmpty()) {
                 throw IllegalStateException("Unexpected actual in-transitions $unexpectedActualInTransitions for state $state")
             }
-        }
-    }
-
-    private fun checkAntlrNodes(transition: Transition) {
-        val antlrNodes = transition.treeNodes
-
-        if (antlrNodes.isEmpty()) {
-            throw IllegalStateException("Out-transition $transition is not bound to any antlr node")
         }
     }
 }

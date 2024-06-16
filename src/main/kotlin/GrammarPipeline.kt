@@ -27,9 +27,6 @@ object GrammarPipeline {
             minimizedAtn = atn
         }
         AtnEpsilonRemover(diagnosticReporter).run(minimizedAtn)
-
-        AtnDisambiguator(diagnosticReporter).run(minimizedAtn)
-
         AtnVerifier(checkNoEpsilons = true).verify(minimizedAtn)
 
         return GrammarPipelineResult(tree.parserIdToken.value, lexer.lineOffsets, declarationsInfo, originalAtn, minimizedAtn)

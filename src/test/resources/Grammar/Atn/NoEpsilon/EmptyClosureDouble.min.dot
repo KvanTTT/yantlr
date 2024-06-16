@@ -3,11 +3,11 @@ digraph ATN {
 
   "DEFAULT_MODE(s0)" -> s8 [label=A taillabel=0]
   s8 -> s8 [label=A taillabel=0]
-  s8 -> s25 [label=C taillabel=1]
-  s25 -> s27 [label="end(EmptyClosureDouble)" style=dotted]
-  s8 -> s21 [label=B taillabel=2]
+  s8 -> s21 [label=B taillabel=1]
   s21 -> s21 [label=B taillabel=0]
   s21 -> s25 [label=C taillabel=1]
-  "DEFAULT_MODE(s0)" -> s25 [label=C taillabel=1]
-  "DEFAULT_MODE(s0)" -> s21 [label=B taillabel=2]
+  s25 -> s27 [label="end(EmptyClosureDouble)" style=dotted]
+  s8 -> s25 [label=C taillabel=2]
+  "DEFAULT_MODE(s0)" -> s21 [label=B taillabel=1]
+  "DEFAULT_MODE(s0)" -> s25 [label=C taillabel=2]
 }

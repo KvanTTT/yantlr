@@ -21,6 +21,7 @@ digraph ATN {
   s14 -> s15 [label=ε]
   s15 -> s16 [label=2]
   s16 -> s17 [label=ε]
-  s17 -> s18 [label="error(MultiCharacterLiteralInRange, MultiCharacterLiteralInRange)" style=dotted color=red]
+  s17 -> s18 [label="error(MultiCharacterLiteralInRange)" taillabel=0 style=dotted color=red]
   s18 -> s19 [label=ε]
+  s17 -> s18 [label="error(MultiCharacterLiteralInRange)" taillabel=1 style=dotted color=red]
 }

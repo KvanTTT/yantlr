@@ -5,8 +5,8 @@ import semantics.Mode
 import semantics.Rule
 
 open class State(val number: Int) {
-    val inTransitions: LinkedHashSet<Transition> = LinkedHashSet()
-    val outTransitions: LinkedHashSet<Transition> = LinkedHashSet()
+    val inTransitions: MutableList<Transition<*>> = mutableListOf()
+    val outTransitions: MutableList<Transition<*>> = mutableListOf()
 
     override fun toString(): String {
         return "s$number"
