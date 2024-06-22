@@ -18,6 +18,12 @@ class EpsilonTransitionData(antlrNodes: List<AntlrNode>) : TransitionData(antlrN
     override fun toString(): String = "ε"
 }
 
+class IntervalTransitionData(val interval: Interval, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
+    override fun toString(): String {
+        return "$interval"
+    }
+}
+
 class SetTransitionData(val set: IntervalSet, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
     override fun toString(): String {
         return "$set"

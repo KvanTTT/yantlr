@@ -94,7 +94,8 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
     private fun Transition<*>.getLabel(): String {
         val name = when (data) {
             is EpsilonTransitionData -> "ε"
-            is SetTransitionData -> data.set.dumpSet()
+            is IntervalTransitionData -> buildString { this.appendInterval(names = null, data.interval) }
+            is SetTransitionData -> data.set.dump()
             is RuleTransitionData -> "rule(${data.rule.name})"
             is EndTransitionData -> "end(${data.rule.name})"
             is ErrorTransitionData -> "error(${data.diagnostic::class.simpleName})"
@@ -131,22 +132,26 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
     /*
      * If names == null then it's a lexer set, otherwise it's a parser set.
      */
-    private fun IntervalSet.dumpSet(names: Map<Int, String>? = null): String {
+    private fun IntervalSet.dump(names: Map<Int, String>? = null): String {
         return buildString {
-            fun appendElement(element: Int) {
-                append(names?.getValue(element) ?: element.toChar())
-            }
-
-            for ((index, range) in this@dumpSet.intervals.withIndex()) {
-                appendElement(range.start)
-                if (range.start != range.end) {
-                    append("..")
-                    appendElement(range.end)
-                }
-                if (index < this@dumpSet.intervals.size - 1) {
+            for ((index, range) in this@dump.intervals.withIndex()) {
+                this.appendInterval(names, range)
+                if (index < this@dump.intervals.size - 1) {
                     append(", ")
                 }
             }
+        }
+    }
+
+    private fun StringBuilder.appendInterval(names: Map<Int, String>?, interval: Interval) {
+        fun appendElement(element: Int) {
+            append(names?.getValue(element) ?: element.toChar())
+        }
+
+        appendElement(interval.start)
+        if (interval.start != interval.end) {
+            append("..")
+            appendElement(interval.end)
         }
     }
 

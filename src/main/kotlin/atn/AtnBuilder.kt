@@ -118,8 +118,8 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         if (chars.isNotEmpty()) {
                             for (charToken in chars) {
                                 val state = createState()
-                                val intervalSet = IntervalSet(getCharCode(charToken, stringLiteral = true))
-                                SetTransitionData(intervalSet, listOf(charToken)).bind(end, state)
+                                val interval = Interval(getCharCode(charToken, stringLiteral = true))
+                                IntervalTransitionData(interval, listOf(charToken)).bind(end, state)
                                 end = state
                             }
                         } else {
@@ -150,7 +150,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         val state = createState()
                         if (startBound != null && endBound != null) {
                             if (endBound >= startBound) {
-                                SetTransitionData(IntervalSet(startBound, endBound), listOf(node))
+                                IntervalTransitionData(Interval(startBound, endBound), listOf(node))
                             } else {
                                 val diagnostic = ReversedInterval(node)
                                 diagnosticReporter?.invoke(diagnostic)
@@ -181,7 +181,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             // Split set by intervals to make it possible to optimize them later
                             createState().also {
                                 if (endChar >= startChar) {
-                                    SetTransitionData(IntervalSet(startChar, endChar), listOf(child))
+                                    IntervalTransitionData(Interval(startChar, endChar), listOf(child))
                                 } else {
                                     val diagnostic = ReversedInterval(child)
                                     diagnosticReporter?.invoke(diagnostic)
