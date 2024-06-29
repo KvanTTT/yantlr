@@ -2,11 +2,8 @@ digraph ATN {
   rankdir=LR;
 
   "DEFAULT_MODE(s0)" -> s5 [label="\\r" taillabel=0]
-  s5 -> s11 [label="end(CharSet)" style=dotted]
-  "DEFAULT_MODE(s0)" -> s6 [label="-" taillabel=1]
-  s6 -> s11 [label="end(CharSet)" style=dotted]
-  "DEFAULT_MODE(s0)" -> s7 [label=b taillabel=2]
-  s7 -> s11 [label="end(CharSet)" style=dotted]
-  "DEFAULT_MODE(s0)" -> s8 [label="e..g" taillabel=3]
-  s8 -> s11 [label="end(CharSet)" style=dotted]
+  s5 -> s7 [label="end(CharSet)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s5 [label="-" taillabel=1]
+  "DEFAULT_MODE(s0)" -> s5 [label=b taillabel=2]
+  "DEFAULT_MODE(s0)" -> s5 [label="e..g" taillabel=3]
 }

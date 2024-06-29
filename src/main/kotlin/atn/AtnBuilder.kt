@@ -169,8 +169,8 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 }
 
                 is ElementNode.CharSet -> {
+                    end = createState()
                     if (node.children.isNotEmpty()) {
-                        val endStates = mutableListOf<State>()
                         for (child in node.children) {
                             val startChar = getCharCode(child.char, stringLiteral = false)
                             val endChar = if (child.range != null) {
@@ -179,21 +179,15 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                                 startChar
                             }
                             // Split set by intervals to make it possible to optimize them later
-                            createState().also {
-                                if (endChar >= startChar) {
-                                    IntervalTransitionData(Interval(startChar, endChar), listOf(child))
-                                } else {
-                                    val diagnostic = ReversedInterval(child)
-                                    diagnosticReporter?.invoke(diagnostic)
-                                    ErrorTransitionData(diagnostic, listOf(child))
-                                }.bind(start, it)
-                                endStates.add(it)
-                            }
+                            if (endChar >= startChar) {
+                                IntervalTransitionData(Interval(startChar, endChar), listOf(child))
+                            } else {
+                                val diagnostic = ReversedInterval(child)
+                                diagnosticReporter?.invoke(diagnostic)
+                                ErrorTransitionData(diagnostic, listOf(child))
+                            }.bind(start, end)
                         }
-                        end = createState()
-                        endStates.forEach { bindEpsilon(it, end, node) }
                     } else {
-                        end = createState()
                         EmptyStringOrSet(node).also {
                             ErrorTransitionData(it, listOf(node)).bind(start, end)
                             diagnosticReporter?.invoke(it)
