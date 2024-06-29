@@ -27,6 +27,7 @@ class AntlrParser(
             AntlrTokenType.LeftParen,
             AntlrTokenType.Quote,
             AntlrTokenType.LeftBracket,
+            AntlrTokenType.Dot,
         ) + elementSuffixTokenTypes
 
         private val charSetTokenTypes = setOf(
@@ -155,6 +156,7 @@ class AntlrParser(
     //     | '(' block? ')'
     //     | '\'' char* '\'' range=('..' '\'' char* '\'')?
     //     | '[' (char range=('-' char)?)* ']')
+    //     | '.'
     //     |
     //     ) elementSuffix?
     //   ;
@@ -180,6 +182,9 @@ class AntlrParser(
             }
             AntlrTokenType.ParserId -> {
                 ElementNode.ParserId(matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
+            }
+            AntlrTokenType.Dot -> {
+                ElementNode.Dot(matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
             }
             AntlrTokenType.LeftParen -> ElementNode.Block(
                 matchToken(),

@@ -186,4 +186,15 @@ object AntlrParserWithLexerTests {
             "A? a* A+ a*?"
         ) { it.parseAlternative() }
     }
+
+    @Test
+    fun dot() {
+        infrastructure.check(
+            ElementNode.Dot(
+                AntlrToken(AntlrTokenType.Dot),
+                elementSuffix = null,
+            ),
+            "."
+        ) { it.parseElement() }
+    }
 }

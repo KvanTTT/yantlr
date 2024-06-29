@@ -25,6 +25,8 @@ abstract class AntlrTreeVisitor<out R> {
 
     open fun visitElementParserId(node: ElementNode.ParserId) = visitElementNode(node)
 
+    open fun visitElementDot(node: ElementNode.Dot) = visitElementNode(node)
+
     open fun visitElementBlock(node: ElementNode.Block) = visitElementNode(node)
 
     open fun visitElementStringLiteralOrRange(node: ElementNode.StringLiteralOrRange) = visitElementNode(node)

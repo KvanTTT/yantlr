@@ -12,6 +12,10 @@ data class Interval(val start: Int, val end: Int = start) {
     }
 
     private fun Int.renderElement(): String {
-        return toChar().let { char -> stringEscapeToLiteralChars[char]?.let { "\\" + it } ?: char }.toString()
+        return when (this) {
+            Int.MIN_VALUE -> return "-∞"
+            Int.MAX_VALUE -> return "+∞"
+            else -> toChar().let { char -> stringEscapeToLiteralChars[char]?.let { "\\" + it } ?: char }.toString()
+        }
     }
 }

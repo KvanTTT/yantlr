@@ -145,7 +145,13 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
 
     private fun StringBuilder.appendInterval(names: Map<Int, String>?, interval: Interval) {
         fun appendElement(element: Int) {
-            append(names?.getValue(element) ?: element.toChar())
+            append(names?.getValue(element) ?:
+                when (element) {
+                    Int.MIN_VALUE -> "-∞"
+                    Int.MAX_VALUE -> "+∞"
+                    else -> element.toChar()
+                }
+            )
         }
 
         appendElement(interval.start)

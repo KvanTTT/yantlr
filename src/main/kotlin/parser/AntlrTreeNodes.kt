@@ -162,6 +162,18 @@ sealed class ElementNode(val elementSuffix: ElementSuffixNode?, val endNode: End
         }
     }
 
+    class Dot(val dotToken: AntlrToken, elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(elementSuffix, endNode) {
+        override fun calculateLeftToken(): AntlrToken = dotToken
+
+        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: dotToken
+
+        override fun <R> acceptChildren(visitor: AntlrTreeVisitor<R>): R? {
+            visitor.visitToken(dotToken)
+            elementSuffix?.let { visitor.visitTreeNode(it) }
+            return null
+        }
+    }
+
     class Block(val leftParen: AntlrToken, val blockNode: BlockNode, val rightParen: AntlrToken, elementSuffix: ElementSuffixNode?, endNode: EndNode? = null) : ElementNode(elementSuffix, endNode) {
         override fun calculateLeftToken(): AntlrToken = leftParen
 

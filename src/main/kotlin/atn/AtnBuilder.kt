@@ -214,6 +214,11 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     RuleTransitionData(rule, listOf(node)).bind(start, end)
                 }
 
+                is ElementNode.Dot -> {
+                    end = createState()
+                    IntervalTransitionData(Interval(Int.MIN_VALUE, Int.MAX_VALUE), listOf(node)).bind(start, end)
+                }
+
                 is ElementNode.Empty -> {
                     end = createState()
                     bindEpsilon(start, end, node)
