@@ -14,7 +14,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
     companion object {
         private const val INDENT = "  "
         private const val IGNORE_INDEX = -1
-        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', '.', ' ', '-', '\\')
+        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', '.', ' ', '-', '\\', '/', '*')
     }
 
     private val visitedStates: MutableSet<State> = mutableSetOf()
@@ -147,8 +147,8 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
         fun appendElement(element: Int) {
             append(names?.getValue(element) ?:
                 when (element) {
-                    Int.MIN_VALUE -> "-∞"
-                    Int.MAX_VALUE -> "+∞"
+                    Interval.MIN -> "-∞"
+                    Interval.MAX -> "+∞"
                     else -> element.toChar()
                 }
             )

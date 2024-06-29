@@ -216,7 +216,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
                 is ElementNode.Dot -> {
                     end = createState()
-                    IntervalTransitionData(Interval(Int.MIN_VALUE, Int.MAX_VALUE), listOf(node)).bind(start, end)
+                    IntervalTransitionData(Interval(Interval.MIN, Interval.MAX), listOf(node)).bind(start, end)
                 }
 
                 is ElementNode.Empty -> {

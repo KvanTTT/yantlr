@@ -3,6 +3,11 @@ package atn
 import parser.stringEscapeToLiteralChars
 
 data class Interval(val start: Int, val end: Int = start) {
+    companion object {
+        const val MIN = Int.MIN_VALUE
+        const val MAX = Int.MAX_VALUE - 1
+    }
+
     init {
         require(start <= end) { "Start must be less than or equal to end" }
     }
@@ -13,8 +18,8 @@ data class Interval(val start: Int, val end: Int = start) {
 
     private fun Int.renderElement(): String {
         return when (this) {
-            Int.MIN_VALUE -> return "-∞"
-            Int.MAX_VALUE -> return "+∞"
+            MIN -> return "-∞"
+            MAX -> return "+∞"
             else -> toChar().let { char -> stringEscapeToLiteralChars[char]?.let { "\\" + it } ?: char }.toString()
         }
     }
