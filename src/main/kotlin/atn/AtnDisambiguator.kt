@@ -38,7 +38,8 @@ class AtnDisambiguator(
 
             containsAmbiguity = performDisambiguation(currentState) or containsAmbiguity
 
-            // Run recursively for all out transitions and create a map to avoid concurrent modification
+            // Run recursively, but ignore new states to avoid infinite loop (fixed-point)
+            // The new states will be processed in the next iteration
             oldTargets.forEach { runInternal(it) }
         }
 
@@ -143,7 +144,8 @@ class AtnDisambiguator(
 
         val ruleToTransitionMap: MutableMap<Rule, MutableList<Transition<RuleTransitionData>>> = mutableMapOf()
         val endRuleTransitionMap: MutableMap<Rule, MutableList<Transition<EndTransitionData>>> = mutableMapOf()
-        val errorTransitions: MutableList<Transition<ErrorTransitionData>> = mutableListOf()
+        val errorTransitionsMap: MutableMap<SemanticsDiagnostic, MutableList<Transition<ErrorTransitionData>>> = mutableMapOf()
+
         val transitionOrderMap: MutableMap<Transition<*>, Int> = mutableMapOf()
 
         // Collect interval infos for every set transition and collect other transitions with their order
@@ -178,7 +180,8 @@ class AtnDisambiguator(
                 }
 
                 is ErrorTransitionData -> {
-                    errorTransitions.add(transition as Transition<ErrorTransitionData>)
+                    errorTransitionsMap.getOrPut(data.diagnostic) { mutableListOf() }
+                        .add(transition as Transition<ErrorTransitionData>)
                 }
             }
         }
@@ -209,8 +212,8 @@ class AtnDisambiguator(
             disjointInfos.add(rule, endRuleTransitions, transitionOrderMap, statesMap)
         }
 
-        if (errorTransitions.isNotEmpty()) {
-            disjointInfos.add(null, errorTransitions, transitionOrderMap, statesMap)
+        errorTransitionsMap.forEach { (error, errorTransitions) ->
+            disjointInfos.add(error, errorTransitions, transitionOrderMap, statesMap)
         }
 
         return disjointInfos.toSortedMap().flatMap { it.value }
@@ -250,61 +253,36 @@ class AtnDisambiguator(
         val oldStates = groupedTransitions.map { it.target }.toSet()
         val antlrNodes = groupedTransitions.flatMap { it.data.antlrNodes }.distinct()
 
-        fun <T : TransitionData> getType(existingData: T, checkData: (T) -> Boolean): DisjointInfoType {
-            return when {
-                oldStates.size > 1 -> {
-                    DisjointInfoType.NewState
-                }
-                !checkData(existingData) || antlrNodes != existingData.antlrNodes -> {
-                    DisjointInfoType.NewTransition
-                }
-                else -> {
-                    DisjointInfoType.NoChange
-                }
-            }
-        }
-
-        val type: DisjointInfoType
         val firstTransition = groupedTransitions.first()
-        val newData = when (val firstTransitionData = firstTransition.data) {
-            is IntervalTransitionData -> {
-                val interval = data as Interval
-                type = getType(firstTransitionData) { interval == it.interval }
-                IntervalTransitionData(interval, antlrNodes)
-            }
+        val newData = when (firstTransition.data) {
+            is IntervalTransitionData -> IntervalTransitionData(data as Interval, antlrNodes)
 
-            is RuleTransitionData -> {
-                val rule = data as Rule
-                type = getType(firstTransitionData) { rule == it.rule }
-                RuleTransitionData(data, antlrNodes)
-            }
+            is RuleTransitionData -> RuleTransitionData(data as Rule, antlrNodes)
 
-            is EndTransitionData -> {
-                val rule = data as Rule
-                type = getType(firstTransitionData) { rule == it.rule }
-                EndTransitionData(data, antlrNodes)
-            }
+            is EndTransitionData -> EndTransitionData(data as Rule, antlrNodes)
 
-            is ErrorTransitionData -> {
-                // Don't group error transitions
-                type = DisjointInfoType.NoChange
-                firstTransition.data
-            }
+            is ErrorTransitionData -> ErrorTransitionData(data as SemanticsDiagnostic, antlrNodes)
 
-            else -> {
-                error("Should not be here")
-            }
+            else -> error("Should not be here")
         }
 
-        val newState = if (type == DisjointInfoType.NewState) {
+        val type = when {
+            oldStates.size > 1 -> DisjointInfoType.NewState
+
+            // Transitions with the same data should be merged
+            groupedTransitions.size > 1 -> DisjointInfoType.NewTransition
+
+            else -> DisjointInfoType.NoChange
+        }
+
+        val state = if (type == DisjointInfoType.NewState) {
             statesMap.getOrPut(oldStates) { State(stateCounter++) }
         } else {
             firstTransition.target
         }
 
-        val disjointTransitionInfo = DisjointTransitionInfo(type, newData, newState, oldStates)
         // Try to preserve the order of transitions
         val order = groupedTransitions.minOf { transitionOrderMap.getValue(it) }
-        getOrPut(order) { mutableListOf() }.add(disjointTransitionInfo)
+        getOrPut(order) { mutableListOf() }.add(DisjointTransitionInfo(type, newData, state, oldStates))
     }
 }
