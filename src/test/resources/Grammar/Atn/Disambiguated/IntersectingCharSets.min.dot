@@ -1,0 +1,13 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s20 [label="a {3:5(3), 4:5(1)}" taillabel=0]
+  s20 -> s19 [label="end(A)" taillabel=0 style=dotted]
+  s20 -> s19 [label="end(B)" taillabel=1 style=dotted]
+  "DEFAULT_MODE(s0)" -> s5 [label="b..c" taillabel=1]
+  s5 -> s19 [label="end(A)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s20 [label="d..e {3:5(3), 4:6(3)}" taillabel=2]
+  "DEFAULT_MODE(s0)" -> s5 [label=f taillabel=3]
+  "DEFAULT_MODE(s0)" -> s17 [label=z taillabel=4]
+  s17 -> s19 [label="end(C)" style=dotted]
+}

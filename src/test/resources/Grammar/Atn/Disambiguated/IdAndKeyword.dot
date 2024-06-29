@@ -1,0 +1,20 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "ID(s1)" [label=ε taillabel=0]
+  "ID(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label="a..z"]
+  s5 -> s4 [label=ε taillabel=0]
+  s5 -> s6 [label=ε taillabel=1]
+  s6 -> s14 [label="end(ID)" style=dotted]
+  "DEFAULT_MODE(s0)" -> "KEYWORD(s7)" [label=ε taillabel=1]
+  "KEYWORD(s7)" -> s8 [label=ε]
+  s8 -> s9 [label=ε]
+  s9 -> s10 [label=ε]
+  s10 -> s11 [label=a]
+  s11 -> s12 [label=b]
+  s12 -> s13 [label=ε]
+  s13 -> s14 [label="end(KEYWORD)" style=dotted]
+}

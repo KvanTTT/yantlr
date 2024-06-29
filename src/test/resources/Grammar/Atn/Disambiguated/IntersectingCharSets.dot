@@ -1,0 +1,26 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "A(s1)" [label=ε taillabel=0]
+  "A(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label="a..f"]
+  s5 -> s6 [label=ε]
+  s6 -> s19 [label="end(A)" style=dotted]
+  "DEFAULT_MODE(s0)" -> "B(s7)" [label=ε taillabel=1]
+  "B(s7)" -> s8 [label=ε]
+  s8 -> s9 [label=ε]
+  s9 -> s10 [label=ε]
+  s10 -> s11 [label=a taillabel=0]
+  s11 -> s12 [label=ε]
+  s12 -> s19 [label="end(B)" style=dotted]
+  s10 -> s11 [label="d..e" taillabel=1]
+  "DEFAULT_MODE(s0)" -> "C(s13)" [label=ε taillabel=2]
+  "C(s13)" -> s14 [label=ε]
+  s14 -> s15 [label=ε]
+  s15 -> s16 [label=ε]
+  s16 -> s17 [label=z]
+  s17 -> s18 [label=ε]
+  s18 -> s19 [label="end(C)" style=dotted]
+}
