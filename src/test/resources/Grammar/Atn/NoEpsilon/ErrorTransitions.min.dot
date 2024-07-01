@@ -2,13 +2,12 @@ digraph ATN {
   rankdir=LR;
 
   "DEFAULT_MODE(s0)" -> s5 [label=0 taillabel=0]
-  s5 -> s7 [label="error(ReversedInterval)" style=dotted color=red]
+  s5 -> s7 [label=∅]
   s7 -> s19 [label="end(ErrorToken)" style=dotted]
   "DEFAULT_MODE(s0)" -> s10 [label=1 taillabel=1]
-  s10 -> s12 [label="error(EmptyStringOrSet)" style=dotted color=red]
+  s10 -> s12 [label=∅]
   s12 -> s19 [label="end(ErrorToken)" style=dotted]
   "DEFAULT_MODE(s0)" -> s15 [label=2 taillabel=2]
-  s15 -> s17 [label="error(MultiCharacterLiteralInRange)" taillabel=0 style=dotted color=red]
+  s15 -> s17 [label=∅]
   s17 -> s19 [label="end(ErrorToken)" style=dotted]
-  s15 -> s17 [label="error(MultiCharacterLiteralInRange)" taillabel=1 style=dotted color=red]
 }

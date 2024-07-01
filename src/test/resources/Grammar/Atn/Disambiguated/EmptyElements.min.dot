@@ -1,0 +1,11 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s5 [label=∅ taillabel=0]
+  s5 -> s20 [label="end(EmptyInterval)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s8 [label=a taillabel=1]
+  s8 -> s20 [label="end(EmptyInterval)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s14 [label=b taillabel=2]
+  s14 -> s18 [label=c]
+  s18 -> s20 [label="end(EmptyStringLiteral)" style=dotted]
+}

@@ -81,8 +81,6 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             }
             if (transition.data is EndTransitionData) {
                 append(" style=dotted")
-            } else if (transition.data is ErrorTransitionData) {
-                append(" style=dotted color=red")
             }
             append("]")
             append(lineBreak)
@@ -98,7 +96,6 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             is SetTransitionData -> data.set.dump()
             is RuleTransitionData -> "rule(${data.rule.name})"
             is EndTransitionData -> "end(${data.rule.name})"
-            is ErrorTransitionData -> "error(${data.diagnostic::class.simpleName})"
         }
 
         val treeNodes = if (data.antlrNodes.size > 1) {
@@ -154,10 +151,14 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             )
         }
 
-        appendElement(interval.start)
-        if (interval.start != interval.end) {
-            append("..")
-            appendElement(interval.end)
+        if (interval.isEmpty) {
+            append('∅')
+        } else {
+            appendElement(interval.start)
+            if (interval.start != interval.end) {
+                append("..")
+                appendElement(interval.end)
+            }
         }
     }
 

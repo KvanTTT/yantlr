@@ -1,6 +1,6 @@
 lexer grammar IncorrectStringsAndSets;
 
-EmptyString: /*❗EmptyStringOrSet*/''/*❗*/;
+/*❗EmptyToken*/EmptyString/*❗*/: /*❗EmptyStringOrSet*/''/*❗*/;
 EmptySet: /*❗EmptyStringOrSet*/[]/*❗*/;
 
 ReversedIntervalInRange: [/*❗ReversedInterval*/d-a/*❗*/0-9];

@@ -126,44 +126,38 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             val diagnostic = EmptyStringOrSet(node)
                             diagnosticReporter?.invoke(diagnostic)
                             end = createState()
-                            ErrorTransitionData(diagnostic, listOf(node)).bind(start, end)
+                            EpsilonTransitionData(listOf(node)).bind(start, end)
                         }
                     } else {
-                        fun ElementNode.StringLiteralOrRange.StringLiteral.getBound(): Pair<Int?, SemanticsDiagnostic?> = when {
+                        fun ElementNode.StringLiteralOrRange.StringLiteral.getBound(): Int? = when {
                             chars.isEmpty() -> {
-                                val diagnostic = EmptyStringOrSet(this)
                                 diagnosticReporter?.invoke(EmptyStringOrSet(this))
-                                null to diagnostic
+                                null
                             }
                             chars.size > 1 -> {
-                                val diagnostic = MultiCharacterLiteralInRange(this)
-                                diagnosticReporter?.invoke(diagnostic)
-                                null to diagnostic
+                                diagnosticReporter?.invoke(MultiCharacterLiteralInRange(this))
+                                null
                             }
                             else -> {
-                                getCharCode(chars.first(), stringLiteral = true) to null
+                                getCharCode(chars.first(), stringLiteral = true)
                             }
                         }
 
-                        val (startBound, startDiagnostic) = node.stringLiteral.getBound()
-                        val (endBound, endDiagnostic) = node.range.stringLiteral.getBound()
+                        val startBound = node.stringLiteral.getBound()
+                        val endBound = node.range.stringLiteral.getBound()
                         val state = createState()
-                        if (startBound != null && endBound != null) {
+                        val interval = if (startBound != null && endBound != null) {
                             if (endBound >= startBound) {
-                                IntervalTransitionData(Interval(startBound, endBound), listOf(node))
+                                Interval(startBound, endBound)
                             } else {
                                 val diagnostic = ReversedInterval(node)
                                 diagnosticReporter?.invoke(diagnostic)
-                                ErrorTransitionData(diagnostic, listOf(node))
-                            }.bind(end, state)
+                                Interval.Empty
+                            }
                         } else {
-                            startDiagnostic?.let {
-                                ErrorTransitionData(it, listOf(node)).bind(end, state)
-                            }
-                            endDiagnostic?.let {
-                                ErrorTransitionData(it, listOf(node)).bind(end, state)
-                            }
+                            Interval.Empty
                         }
+                        IntervalTransitionData(interval, listOf(node)).bind(end, state)
                         end = state
                     }
                 }
@@ -179,19 +173,17 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                                 startChar
                             }
                             // Split set by intervals to make it possible to optimize them later
-                            if (endChar >= startChar) {
-                                IntervalTransitionData(Interval(startChar, endChar), listOf(child))
+                            val interval = if (endChar >= startChar) {
+                                Interval(startChar, endChar)
                             } else {
-                                val diagnostic = ReversedInterval(child)
-                                diagnosticReporter?.invoke(diagnostic)
-                                ErrorTransitionData(diagnostic, listOf(child))
-                            }.bind(start, end)
+                                diagnosticReporter?.invoke(ReversedInterval(child))
+                                Interval.Empty
+                            }
+                            IntervalTransitionData(interval, listOf(child)).bind(start, end)
                         }
                     } else {
-                        EmptyStringOrSet(node).also {
-                            ErrorTransitionData(it, listOf(node)).bind(start, end)
-                            diagnosticReporter?.invoke(it)
-                        }
+                        IntervalTransitionData(Interval.Empty, listOf(node)).bind(start, end)
+                        diagnosticReporter?.invoke(EmptyStringOrSet(node))
                     }
                 }
 

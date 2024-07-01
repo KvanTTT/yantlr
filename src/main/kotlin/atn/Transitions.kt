@@ -41,9 +41,3 @@ class EndTransitionData(val rule: Rule, antlrNodes: List<AntlrNode>) : Transitio
         return "end(${rule.name})"
     }
 }
-
-class ErrorTransitionData(var diagnostic: SemanticsDiagnostic, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
-    override fun toString(): String {
-        return "error(${diagnostic::class.simpleName})"
-    }
-}

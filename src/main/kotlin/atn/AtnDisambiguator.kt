@@ -144,7 +144,6 @@ class AtnDisambiguator(
 
         val ruleToTransitionMap: MutableMap<Rule, MutableList<Transition<RuleTransitionData>>> = mutableMapOf()
         val endRuleTransitionMap: MutableMap<Rule, MutableList<Transition<EndTransitionData>>> = mutableMapOf()
-        val errorTransitionsMap: MutableMap<SemanticsDiagnostic, MutableList<Transition<ErrorTransitionData>>> = mutableMapOf()
 
         val transitionOrderMap: MutableMap<Transition<*>, Int> = mutableMapOf()
 
@@ -178,11 +177,6 @@ class AtnDisambiguator(
                     endRuleTransitionMap.getOrPut(data.rule) { mutableListOf() }
                         .add(transition as Transition<EndTransitionData>)
                 }
-
-                is ErrorTransitionData -> {
-                    errorTransitionsMap.getOrPut(data.diagnostic) { mutableListOf() }
-                        .add(transition as Transition<ErrorTransitionData>)
-                }
             }
         }
 
@@ -210,10 +204,6 @@ class AtnDisambiguator(
 
         endRuleTransitionMap.forEach { (rule, endRuleTransitions) ->
             disjointInfos.add(rule, endRuleTransitions, transitionOrderMap, statesMap)
-        }
-
-        errorTransitionsMap.forEach { (error, errorTransitions) ->
-            disjointInfos.add(error, errorTransitions, transitionOrderMap, statesMap)
         }
 
         return disjointInfos.toSortedMap().flatMap { it.value }
@@ -260,8 +250,6 @@ class AtnDisambiguator(
             is RuleTransitionData -> RuleTransitionData(data as Rule, antlrNodes)
 
             is EndTransitionData -> EndTransitionData(data as Rule, antlrNodes)
-
-            is ErrorTransitionData -> ErrorTransitionData(data as SemanticsDiagnostic, antlrNodes)
 
             else -> error("Should not be here")
         }
