@@ -59,28 +59,28 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
     private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): Handle {
         val ruleNode = rule.treeNode
         val ruleState = RuleState(rule, stateCounter++)
-        val ruleBodyHandle = visitor.visitBlockNode(rule.treeNode.blockNode)
+        val ruleBodyHandle = visitor.visitBlockNode(rule.treeNode.blockNode, null)
 
         bindEpsilon(ruleState, ruleBodyHandle.start, ruleNode)
 
         return Handle(ruleState, ruleBodyHandle.end)
     }
 
-    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?>() {
-        override fun visitTreeNode(node: AntlrTreeNode): Handle? {
-            return node.acceptChildren(this)
+    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?, Nothing?>() {
+        override fun visitTreeNode(node: AntlrTreeNode, data: Nothing?): Handle? {
+            return node.acceptChildren(this, data)
         }
 
-        override fun visitToken(token: AntlrToken): Handle? {
+        override fun visitToken(token: AntlrToken, data: Nothing?): Handle? {
             return null
         }
 
-        override fun visitBlockNode(node: BlockNode): Handle {
+        override fun visitBlockNode(node: BlockNode, data: Nothing?): Handle {
             val start = createState()
             val endNodes = mutableListOf<Pair<State, AntlrNode>>()
 
             fun processAlternative(alternativeNode: AlternativeNode) {
-                val altNodeHandle = visitAlternativeNode(alternativeNode)
+                val altNodeHandle = visitAlternativeNode(alternativeNode, data)
                 bindEpsilon(start, altNodeHandle.start, alternativeNode)
                 endNodes.add(altNodeHandle.end to alternativeNode)
             }
@@ -94,12 +94,12 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitAlternativeNode(node: AlternativeNode): Handle {
+        override fun visitAlternativeNode(node: AlternativeNode, data: Nothing?): Handle {
             val start = createState()
             var end = start
 
             node.elementNodes.forEach {
-                val newHandle = visitElementNode(it)
+                val newHandle = visitElementNode(it, data)
                 bindEpsilon(end, newHandle.start, it)
                 end = newHandle.end
             }
@@ -107,7 +107,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitElementNode(node: ElementNode): Handle {
+        override fun visitElementNode(node: ElementNode, data: Nothing?): Handle {
             val start = createState()
             var end = start
 
@@ -196,7 +196,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 }
 
                 is ElementNode.Block -> {
-                    val blockNodeHandle = visitBlockNode(node.blockNode)
+                    val blockNodeHandle = visitBlockNode(node.blockNode, data)
                     bindEpsilon(start, blockNodeHandle.start, node)
                     end = createState()
                     bindEpsilon(blockNodeHandle.end, end, node)

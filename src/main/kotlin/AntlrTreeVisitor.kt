@@ -1,43 +1,43 @@
 import parser.*
 
-abstract class AntlrTreeVisitor<out R> {
-    abstract fun visitTreeNode(node: AntlrTreeNode): R
+abstract class AntlrTreeVisitor<out R, in D> {
+    abstract fun visitTreeNode(node: AntlrTreeNode, data: D): R
 
-    abstract fun visitToken(token: AntlrToken): R
+    abstract fun visitToken(token: AntlrToken, data: D): R
 
-    open fun visitGrammarNode(node: GrammarNode) = visitTreeNode(node)
+    open fun visitGrammarNode(node: GrammarNode, data: D) = visitTreeNode(node, data)
 
-    open fun visitRuleNode(node: RuleNode) = visitTreeNode(node)
+    open fun visitRuleNode(node: RuleNode, data: D) = visitTreeNode(node, data)
 
-    open fun visitModeNode(node: ModeNode) = visitTreeNode(node)
+    open fun visitModeNode(node: ModeNode, data: D) = visitTreeNode(node, data)
 
-    open fun visitModeDeclaration(node: ModeNode.ModeDeclaration) = visitTreeNode(node)
+    open fun visitModeDeclaration(node: ModeNode.ModeDeclaration, data: D) = visitTreeNode(node, data)
 
-    open fun visitBlockNode(node: BlockNode) = visitTreeNode(node)
+    open fun visitBlockNode(node: BlockNode, data: D) = visitTreeNode(node, data)
 
-    open fun visitBlockOrAlternativeNodes(node: BlockNode.OrAlternative) = visitTreeNode(node)
+    open fun visitBlockOrAlternativeNodes(node: BlockNode.OrAlternative, data: D) = visitTreeNode(node, data)
 
-    open fun visitAlternativeNode(node: AlternativeNode) = visitTreeNode(node)
+    open fun visitAlternativeNode(node: AlternativeNode, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementNode(node: ElementNode) = visitTreeNode(node)
+    open fun visitElementNode(node: ElementNode, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementLexerId(node: ElementNode.LexerId) = visitElementNode(node)
+    open fun visitElementLexerId(node: ElementNode.LexerId, data: D) = visitElementNode(node, data)
 
-    open fun visitElementParserId(node: ElementNode.ParserId) = visitElementNode(node)
+    open fun visitElementParserId(node: ElementNode.ParserId, data: D) = visitElementNode(node, data)
 
-    open fun visitElementDot(node: ElementNode.Dot) = visitElementNode(node)
+    open fun visitElementDot(node: ElementNode.Dot, data: D) = visitElementNode(node, data)
 
-    open fun visitElementBlock(node: ElementNode.Block) = visitElementNode(node)
+    open fun visitElementBlock(node: ElementNode.Block, data: D) = visitElementNode(node, data)
 
-    open fun visitElementStringLiteralOrRange(node: ElementNode.StringLiteralOrRange) = visitElementNode(node)
+    open fun visitElementStringLiteralOrRange(node: ElementNode.StringLiteralOrRange, data: D) = visitElementNode(node, data)
 
-    open fun visitElementStringLiteralRange(node: ElementNode.StringLiteralOrRange.Range) = visitTreeNode(node)
+    open fun visitElementStringLiteralRange(node: ElementNode.StringLiteralOrRange.Range, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementCharSet(node: ElementNode.CharSet) = visitElementNode(node)
+    open fun visitElementCharSet(node: ElementNode.CharSet, data: D) = visitElementNode(node, data)
 
-    open fun visitElementCharSetCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange) = visitTreeNode(node)
+    open fun visitElementCharSetCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementCharSetCharHyphenCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange.Range) = visitTreeNode(node)
+    open fun visitElementCharSetCharHyphenCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange.Range, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementSuffixNode(node: ElementSuffixNode) = visitTreeNode(node)
+    open fun visitElementSuffixNode(node: ElementSuffixNode, data: D) = visitTreeNode(node, data)
 }

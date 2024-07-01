@@ -63,7 +63,7 @@ class DeclarationCollector(
 
     private class ModeInfo(val treeNode: ModeNode, val ruleNodes: MutableList<RuleNode>)
 
-    private inner class DeclarationCollectorVisitor : AntlrTreeVisitor<Unit>() {
+    private inner class DeclarationCollectorVisitor : AntlrTreeVisitor<Unit, Nothing?>() {
         private lateinit var currentRule: RuleNode
         private var currentModeLexerRules: MutableList<RuleNode> = mutableListOf()
         private var lexerModes: LinkedHashMap<String, ModeInfo> = linkedMapOf()
@@ -71,26 +71,26 @@ class DeclarationCollector(
         private val recursiveRules: MutableSet<RuleNode> = mutableSetOf()
 
         fun collect(grammarNode: GrammarNode): InternalDeclarationsInfo {
-            grammarNode.acceptChildren(this)
+            grammarNode.acceptChildren(this, null)
             return InternalDeclarationsInfo(lexerModes, parserRules, recursiveRules)
         }
 
-        override fun visitTreeNode(node: AntlrTreeNode) {
-            node.acceptChildren(this)
+        override fun visitTreeNode(node: AntlrTreeNode, data: Nothing?) {
+            node.acceptChildren(this, data)
         }
 
-        override fun visitToken(token: AntlrToken) {}
+        override fun visitToken(token: AntlrToken, data: Nothing?) {}
 
-        override fun visitRuleNode(node: RuleNode) {
+        override fun visitRuleNode(node: RuleNode, data: Nothing?) {
             currentRule = node
             val isLexer = node.idToken.type == AntlrTokenType.LexerId
             val rulesList = if (isLexer) { currentModeLexerRules } else { parserRules }
             rulesList.add(node)
 
-            visitBlockNode(node.blockNode)
+            visitBlockNode(node.blockNode, data)
         }
 
-        override fun visitModeNode(node: ModeNode) {
+        override fun visitModeNode(node: ModeNode, data: Nothing?) {
             val id = if (node.modeDeclaration != null) {
                 lexer.getTokenValue(node.modeDeclaration.idToken)
             } else {
@@ -104,14 +104,14 @@ class DeclarationCollector(
                 lexerModes[id] = ModeInfo(node, currentModeLexerRules)
             }
 
-            node.ruleNodes.forEach { visitRuleNode(it) }
+            node.ruleNodes.forEach { visitRuleNode(it, data) }
         }
 
-        override fun visitElementNode(node: ElementNode) {
+        override fun visitElementNode(node: ElementNode, data: Nothing?) {
             when (node) {
                 is ElementNode.LexerId,
                 is ElementNode.ParserId -> recursiveRules.add(currentRule)
-                is ElementNode.Block -> { visitBlockNode(node.blockNode) }
+                is ElementNode.Block -> { visitBlockNode(node.blockNode, data) }
                 else -> {}
             }
         }
