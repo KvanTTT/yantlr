@@ -27,6 +27,7 @@ object GrammarPipeline {
             minimizedAtn = atn
         }
         AtnEpsilonRemover(diagnosticReporter).run(minimizedAtn)
+        AtnNegationRemover(diagnosticReporter).run(minimizedAtn)
         AtnDisambiguator(diagnosticReporter).run(minimizedAtn)
         AtnVerifier(checkNoEpsilons = true).verify(minimizedAtn)
 
