@@ -22,6 +22,7 @@ class AntlrParser(
         )
 
         private val elementTokenTypes = setOf(
+            AntlrTokenType.Tilde,
             AntlrTokenType.LexerId,
             AntlrTokenType.ParserId,
             AntlrTokenType.LeftParen,
@@ -151,7 +152,8 @@ class AntlrParser(
     }
 
     // element
-    //   : ( LexerId
+    //   : '~'?
+    //     ( LexerId
     //     | ParserId
     //     | '(' block? ')'
     //     | '\'' char* '\'' range=('..' '\'' char* '\'')?
@@ -165,6 +167,12 @@ class AntlrParser(
     //   : Char | EscapedChar | UnicodeEscapedChar
     //   ;
     fun parseElement(matchToEof: Boolean = false, lastTokenEnd: Int = 0): ElementNode {
+        val tildeToken: AntlrToken? = if (getToken().type == AntlrTokenType.Tilde) {
+            matchToken()
+        } else {
+            null
+        }
+
         val nextToken = getToken()
 
         fun tryParseElementSuffix(): ElementSuffixNode? {
@@ -178,15 +186,16 @@ class AntlrParser(
         val extraTokens = mutableListOf<AntlrToken>()
         return when (nextToken.type) {
             AntlrTokenType.LexerId -> {
-                ElementNode.LexerId(matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
+                ElementNode.LexerId(tildeToken, matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
             }
             AntlrTokenType.ParserId -> {
-                ElementNode.ParserId(matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
+                ElementNode.ParserId(tildeToken, matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
             }
             AntlrTokenType.Dot -> {
-                ElementNode.Dot(matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
+                ElementNode.Dot(tildeToken, matchToken(), tryParseElementSuffix(), emitEndNode(extraTokens, matchToEof))
             }
             AntlrTokenType.LeftParen -> ElementNode.Block(
+                tildeToken,
                 matchToken(),
                 parseBlock(nextToken.end()),
                 matchToken(AntlrTokenType.RightParen),
@@ -223,6 +232,7 @@ class AntlrParser(
                 }
 
                 ElementNode.StringLiteralOrRange(
+                    tildeToken,
                     matchStringLiteral(),
                     if (getToken().type == AntlrTokenType.Range) {
                         ElementNode.StringLiteralOrRange.Range(
@@ -272,6 +282,7 @@ class AntlrParser(
                 }
 
                 ElementNode.CharSet(
+                    tildeToken,
                     openBracket,
                     charSetNodes,
                     closeBracket,
@@ -281,6 +292,7 @@ class AntlrParser(
             }
             else -> {
                 ElementNode.Empty(
+                    tildeToken,
                     AntlrToken(AntlrTokenType.Empty, lastTokenEnd, 0),
                     tryParseElementSuffix(),
                     emitEndNode(extraTokens, matchToEof)

@@ -1,0 +1,9 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s8 [label=b taillabel=0]
+  s8 -> s10 [label=d]
+  s10 -> s14 [label="end(NotSeqNot)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s10 [label="-∞..a" taillabel=1]
+  "DEFAULT_MODE(s0)" -> s10 [label="c..+∞" taillabel=2]
+}

@@ -82,6 +82,9 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             if (transition.data is EndTransitionData) {
                 append(" style=dotted")
             }
+            if (transition.data is NegationTransitionData && transition.data.negationNode != null) {
+                append(" color=gold")
+            }
             append("]")
             append(lineBreak)
 
@@ -93,7 +96,6 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
         val name = when (data) {
             is EpsilonTransitionData -> "ε"
             is IntervalTransitionData -> buildString { this.appendInterval(names = null, data.interval) }
-            is SetTransitionData -> data.set.dump()
             is RuleTransitionData -> "rule(${data.rule.name})"
             is EndTransitionData -> "end(${data.rule.name})"
         }

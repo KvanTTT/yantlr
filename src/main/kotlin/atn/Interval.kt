@@ -7,10 +7,14 @@ data class Interval(val start: Int, val end: Int = start) {
         const val MIN = Int.MIN_VALUE
         const val MAX = Int.MAX_VALUE - 1
         val Empty = Interval(0, -1)
+        val Full = Interval(MIN, MAX)
     }
 
     val isEmpty: Boolean
         get() = this == Empty
+
+    val isFull: Boolean
+        get() = this == Full
 
     override fun toString(): String {
         if (isEmpty) return "∅"

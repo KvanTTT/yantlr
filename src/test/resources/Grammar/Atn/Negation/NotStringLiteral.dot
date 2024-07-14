@@ -1,0 +1,11 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "NotStringLiteral(s1)" [label=ε]
+  "NotStringLiteral(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label=A color=gold]
+  s5 -> s6 [label=ε]
+  s6 -> s7 [label="end(NotStringLiteral)" style=dotted]
+}

@@ -1,0 +1,18 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s8 [label=a taillabel=0]
+  s8 -> s9 [label="-∞..a" taillabel=0]
+  s9 -> s25 [label="end(NotComplexBlock)" style=dotted]
+  s8 -> s9 [label="c..+∞" taillabel=1]
+  "DEFAULT_MODE(s0)" -> s26 [label="c {3:21(1), 3:30(1)}" taillabel=1]
+  s26 -> s25 [label="end(NotComplexBlock)" taillabel=0 style=dotted]
+  s26 -> s16 [label=d taillabel=1]
+  s16 -> s25 [label="end(NotComplexBlock)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s27 [label="e {3:21(1), 3:37(1)}" taillabel=2]
+  s27 -> s25 [label="end(NotComplexBlock)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s9 [label="-∞..`" taillabel=3]
+  "DEFAULT_MODE(s0)" -> s9 [label=b taillabel=4]
+  "DEFAULT_MODE(s0)" -> s9 [label=d taillabel=5]
+  "DEFAULT_MODE(s0)" -> s9 [label="f..+∞" taillabel=6]
+}

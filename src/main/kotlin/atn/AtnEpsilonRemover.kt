@@ -90,9 +90,7 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)?
         })
 
         // If the target state of the epsilon transition becomes an orphan, it should be just removed
-        if (epsilonTransition.target.inTransitions.all { it.isEnclosed }) {
-            epsilonTransition.target.unbindOuts()
-        }
+        epsilonTransition.target.unbindOutsIfNoIns()
 
         return true
     }

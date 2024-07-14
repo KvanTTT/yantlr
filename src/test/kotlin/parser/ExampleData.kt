@@ -71,25 +71,26 @@ x
                         AntlrToken(AntlrTokenType.Colon),
 
                         BlockNode(
-                            AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(AntlrTokenType.LexerId, value = "A"), elementSuffix = null))),
+                            AlternativeNode(listOf(ElementNode.LexerId(tilde = null, AntlrToken(AntlrTokenType.LexerId, value = "A"), elementSuffix = null))),
 
                             listOf(
                                 BlockNode.OrAlternative(
                                     AntlrToken(AntlrTokenType.Bar),
-                                    AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(AntlrTokenType.ParserId, value = "b"), elementSuffix = null))),
+                                    AlternativeNode(listOf(ElementNode.ParserId(tilde = null, AntlrToken(AntlrTokenType.ParserId, value = "b"), elementSuffix = null))),
                                 ),
                                 BlockNode.OrAlternative(
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
                                         listOf(
                                             ElementNode.Block(
+                                                tilde = null,
                                                 AntlrToken(AntlrTokenType.LeftParen),
                                                 BlockNode(
-                                                    AlternativeNode(listOf(ElementNode.LexerId(AntlrToken(AntlrTokenType.LexerId, value = "C"), elementSuffix = null))),
+                                                    AlternativeNode(listOf(ElementNode.LexerId(tilde = null, AntlrToken(AntlrTokenType.LexerId, value = "C"), elementSuffix = null))),
                                                     listOf(
                                                         BlockNode.OrAlternative(
                                                             AntlrToken(AntlrTokenType.Bar),
-                                                            AlternativeNode(listOf(ElementNode.ParserId(AntlrToken(
+                                                            AlternativeNode(listOf(ElementNode.ParserId(tilde = null, AntlrToken(
                                                                 AntlrTokenType.ParserId, value = "d"), elementSuffix = null))),
                                                         )),
                                                 ),
@@ -102,6 +103,7 @@ x
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
                                         listOf(ElementNode.Empty(
+                                            tilde = null,
                                             emptyToken = AntlrToken(AntlrTokenType.Empty),
                                             elementSuffix = null,
                                         )),

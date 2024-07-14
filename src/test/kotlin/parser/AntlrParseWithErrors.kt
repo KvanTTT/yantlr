@@ -7,6 +7,7 @@ object AntlrParseWithErrors {
     fun elementWithErrors() {
         infrastructure.check(
             ElementNode.Empty(
+                tilde = null,
                 AntlrToken(AntlrTokenType.Empty, 0, 0),
                 elementSuffix = null,
                 endNode = null,
@@ -19,6 +20,7 @@ object AntlrParseWithErrors {
     fun elementWithErrorsToEof() {
         infrastructure.check(
             ElementNode.Empty(
+                tilde = null,
                 AntlrToken(AntlrTokenType.Empty, 0, 0),
                 elementSuffix = null,
                 EndNode(

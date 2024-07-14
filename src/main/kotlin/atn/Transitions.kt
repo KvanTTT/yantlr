@@ -1,7 +1,7 @@
 package atn
 
-import SemanticsDiagnostic
 import parser.AntlrNode
+import parser.ElementNode
 import semantics.Rule
 
 class Transition<T : TransitionData>(val data: T, val source: State, val target: State) {
@@ -14,23 +14,25 @@ class Transition<T : TransitionData>(val data: T, val source: State, val target:
 
 sealed class TransitionData(val antlrNodes: List<AntlrNode>)
 
+interface NegationTransitionData {
+    val negationNode: ElementNode?
+}
+
 class EpsilonTransitionData(antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
     override fun toString(): String = "ε"
 }
 
-class IntervalTransitionData(val interval: Interval, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
+class IntervalTransitionData(
+    val interval: Interval, antlrNodes: List<AntlrNode>, override val negationNode: ElementNode? = null
+) : TransitionData(antlrNodes), NegationTransitionData {
     override fun toString(): String {
         return "$interval"
     }
 }
 
-class SetTransitionData(val set: IntervalSet, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
-    override fun toString(): String {
-        return "$set"
-    }
-}
-
-class RuleTransitionData(val rule: Rule, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
+class RuleTransitionData(
+    val rule: Rule, antlrNodes: List<AntlrNode>, override val negationNode: ElementNode? = null
+) : TransitionData(antlrNodes), NegationTransitionData {
     override fun toString(): String {
         return "rule(${rule.name})"
     }

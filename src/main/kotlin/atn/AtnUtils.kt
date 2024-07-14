@@ -12,6 +12,12 @@ fun Transition<*>.unbind() {
     require(source.outTransitions.remove(this))
 }
 
+fun State.unbindOutsIfNoIns() {
+    if (inTransitions.all { it.isEnclosed }) {
+        unbindOuts()
+    }
+}
+
 fun State.unbindOuts() {
     outTransitions.forEach { it.target.inTransitions.remove(it) }
     outTransitions.clear()

@@ -1,0 +1,13 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s5 [label=A taillabel=0]
+  s5 -> s6 [label=B taillabel=0]
+  s6 -> s7 [label="-∞..B" taillabel=0]
+  s7 -> s9 [label="end(NotStringLiteralSequence)" style=dotted]
+  s6 -> s7 [label="D..+∞" taillabel=1]
+  s5 -> s7 [label="-∞..A" taillabel=1]
+  s5 -> s7 [label="C..+∞" taillabel=2]
+  "DEFAULT_MODE(s0)" -> s7 [label="-∞..@" taillabel=1]
+  "DEFAULT_MODE(s0)" -> s7 [label="B..+∞" taillabel=2]
+}

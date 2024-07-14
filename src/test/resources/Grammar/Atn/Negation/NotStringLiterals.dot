@@ -1,0 +1,26 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "NotStringLiterals(s1)" [label=ε]
+  "NotStringLiterals(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label=ε]
+  s5 -> s6 [label=ε taillabel=0]
+  s6 -> s7 [label=ε]
+  s7 -> s8 [label=B color=gold]
+  s8 -> s15 [label=ε]
+  s15 -> s16 [label=ε]
+  s16 -> s17 [label=ε]
+  s17 -> s18 [label=E]
+  s18 -> s19 [label=ε]
+  s19 -> s20 [label="end(NotStringLiterals)" style=dotted]
+  s5 -> s9 [label=ε taillabel=1]
+  s9 -> s10 [label=ε]
+  s10 -> s11 [label=C color=gold]
+  s11 -> s15 [label=ε]
+  s5 -> s12 [label=ε taillabel=2]
+  s12 -> s13 [label=ε]
+  s13 -> s14 [label=D color=gold]
+  s14 -> s15 [label=ε]
+}

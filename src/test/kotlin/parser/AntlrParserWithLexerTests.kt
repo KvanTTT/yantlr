@@ -12,6 +12,7 @@ object AntlrParserWithLexerTests {
     fun stringLiteral() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
                     listOf(
@@ -34,6 +35,7 @@ object AntlrParserWithLexerTests {
     fun range() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
                     listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
@@ -57,6 +59,7 @@ object AntlrParserWithLexerTests {
     fun unterminatedStringLiteral() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
                     listOf(AntlrToken(AntlrTokenType.Char, value = "a")),
@@ -73,6 +76,7 @@ object AntlrParserWithLexerTests {
     fun stringLiteralWithIncorrectEscaping() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
                     // Unrecognized token '\u' can be extract from hidden channel
@@ -90,6 +94,7 @@ object AntlrParserWithLexerTests {
     fun charSet() {
         infrastructure.check(
             ElementNode.CharSet(
+                tilde = null,
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
                     ElementNode.CharSet.CharOrRange(
@@ -130,6 +135,7 @@ object AntlrParserWithLexerTests {
     fun unterminatedCharSet() {
         infrastructure.check(
             ElementNode.CharSet(
+                tilde = null,
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
                     ElementNode.CharSet.CharOrRange(
@@ -154,6 +160,7 @@ object AntlrParserWithLexerTests {
             AlternativeNode(
                 listOf(
                     ElementNode.LexerId(
+                        tilde = null,
                         AntlrToken(AntlrTokenType.LexerId, value = "A"),
                         elementSuffix = ElementSuffixNode(
                             AntlrToken(AntlrTokenType.Question),
@@ -161,6 +168,7 @@ object AntlrParserWithLexerTests {
                         ),
                     ),
                     ElementNode.ParserId(
+                        tilde = null,
                         AntlrToken(AntlrTokenType.ParserId, value = "a"),
                         elementSuffix = ElementSuffixNode(
                             AntlrToken(AntlrTokenType.Star),
@@ -168,6 +176,7 @@ object AntlrParserWithLexerTests {
                         ),
                     ),
                     ElementNode.LexerId(
+                        tilde = null,
                         AntlrToken(AntlrTokenType.LexerId, value = "A"),
                         elementSuffix = ElementSuffixNode(
                             AntlrToken(AntlrTokenType.Plus),
@@ -175,6 +184,7 @@ object AntlrParserWithLexerTests {
                         ),
                     ),
                     ElementNode.ParserId(
+                        tilde = null,
                         AntlrToken(AntlrTokenType.ParserId, value = "a"),
                         elementSuffix = ElementSuffixNode(
                             AntlrToken(AntlrTokenType.Star),
@@ -191,10 +201,23 @@ object AntlrParserWithLexerTests {
     fun dot() {
         infrastructure.check(
             ElementNode.Dot(
+                tilde = null,
                 AntlrToken(AntlrTokenType.Dot),
                 elementSuffix = null,
             ),
             "."
+        ) { it.parseElement() }
+    }
+
+    @Test
+    fun tilde() {
+        infrastructure.check(
+            ElementNode.LexerId(
+                tilde = AntlrToken(AntlrTokenType.Tilde),
+                AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                elementSuffix = null,
+            ),
+            "~A"
         ) { it.parseElement() }
     }
 }
