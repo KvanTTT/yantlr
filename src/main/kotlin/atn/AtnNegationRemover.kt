@@ -18,7 +18,9 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
         fun run(rootState: RootState) {
             searchNegationStates(rootState)
-            performNegation(rootState)
+            if (negationStateMap.isNotEmpty()) {
+                performNegation(rootState)
+            }
         }
 
         private fun searchNegationStates(state: State) {
