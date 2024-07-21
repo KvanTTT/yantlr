@@ -1,0 +1,7 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s11 [label="-∞..@" taillabel=0]
+  s11 -> s17 [label="end(DoubleNegation)" style=dotted]
+  "DEFAULT_MODE(s0)" -> s11 [label="B..+∞" taillabel=1]
+}

@@ -25,29 +25,36 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
         private fun searchNegationStates(state: State) {
             val visitedStates: MutableSet<State> = mutableSetOf()
-            val currentNegationNodes: MutableList<ElementNode> = mutableListOf()
+            var currentNegationNode: ElementNode? = null
 
             fun searchNegationStatesInternal(state: State) {
                 if (!visitedStates.add(state)) return
 
-                for (outTransition in state.outTransitions) {
-                    (outTransition.data as? NegationTransitionData)?.negationNode?.let { currentNegationNodes.add(it) }
+                val regularTransitions = mutableListOf<Transition<*>>()
 
-                    val antlrNodeEndOffset by lazy(LazyThreadSafetyMode.NONE) {
-                        outTransition.data.antlrNodes.minOf { it.getInterval().end() }
-                    }
-                    currentNegationNodes.removeAll {
+                for (outTransition in state.outTransitions) {
+                    if (currentNegationNode != null) {
                         // Check by end offset to handle EndTransition correctly
-                        if (antlrNodeEndOffset > it.getInterval().end()) {
-                            negationStateMap.putIfAbsent(it, state)
-                            true
-                        } else {
-                            false
+                        val antlrNodeEndOffset = outTransition.data.antlrNodes.minOf { it.getInterval().end() }
+                        if (antlrNodeEndOffset > currentNegationNode!!.getInterval().end()) {
+                            negationStateMap.putIfAbsent(currentNegationNode!!, state)
+                            currentNegationNode = null
                         }
+                    }
+
+                    val negationNode = (outTransition.data as? NegationTransitionData)?.negationNode
+                    if (negationNode != null) {
+                        currentNegationNode = negationNode
+                        // Process negation nodes at first
+                        searchNegationStatesInternal(outTransition.target)
+                    } else {
+                        regularTransitions.add(outTransition)
                     }
                 }
 
-                state.outTransitions.forEach { searchNegationStatesInternal(it.target) }
+                for (transition in regularTransitions) {
+                    searchNegationStatesInternal(transition.target)
+                }
             }
 
             searchNegationStatesInternal(state)

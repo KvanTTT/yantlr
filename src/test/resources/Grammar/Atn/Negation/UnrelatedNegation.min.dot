@@ -1,0 +1,14 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s5 [label=A taillabel=0]
+  s5 -> s7 [label="-∞..A" taillabel=0]
+  s7 -> s9 [label="-∞..D" taillabel=0]
+  s9 -> s16 [label="end(UnrelatedNegation)" style=dotted]
+  s7 -> s9 [label="F..+∞" taillabel=1]
+  s5 -> s7 [label="C..+∞" taillabel=1]
+  "DEFAULT_MODE(s0)" -> s12 [label=C taillabel=1]
+  s12 -> s14 [label="-∞..C" taillabel=0]
+  s14 -> s16 [label="end(UnrelatedNegation)" style=dotted]
+  s12 -> s14 [label="E..+∞" taillabel=1]
+}

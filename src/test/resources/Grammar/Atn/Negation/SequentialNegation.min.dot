@@ -1,0 +1,11 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> s5 [label="-∞..a" taillabel=0]
+  s5 -> s7 [label="-∞..b" taillabel=0]
+  s7 -> s9 [label="-∞..c" taillabel=0]
+  s9 -> s11 [label="end(SequentialNegation)" style=dotted]
+  s7 -> s9 [label="e..+∞" taillabel=1]
+  s5 -> s7 [label="d..+∞" taillabel=1]
+  "DEFAULT_MODE(s0)" -> s5 [label="c..+∞" taillabel=1]
+}

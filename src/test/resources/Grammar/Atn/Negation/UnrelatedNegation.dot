@@ -1,0 +1,21 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "UnrelatedNegation(s1)" [label=ε]
+  "UnrelatedNegation(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε taillabel=0]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label=A]
+  s5 -> s6 [label=ε]
+  s6 -> s7 [label=B color=gold]
+  s7 -> s8 [label=ε]
+  s8 -> s9 [label=E color=gold]
+  s9 -> s15 [label=ε]
+  s15 -> s16 [label="end(UnrelatedNegation)" style=dotted]
+  s2 -> s10 [label=ε taillabel=1]
+  s10 -> s11 [label=ε]
+  s11 -> s12 [label=C]
+  s12 -> s13 [label=ε]
+  s13 -> s14 [label=D color=gold]
+  s14 -> s15 [label=ε]
+}
