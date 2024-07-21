@@ -3,18 +3,13 @@ package atn
 import SourceInterval
 import parser.getLineColumn
 import parser.stringEscapeToLiteralChars
-import kotlin.collections.contains
-import kotlin.collections.getOrPut
-import kotlin.collections.getValue
-import kotlin.collections.withIndex
-import kotlin.let
-import kotlin.text.any
+import java.awt.event.KeyEvent
 
 class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: String = "\n") {
     companion object {
         private const val INDENT = "  "
         private const val IGNORE_INDEX = -1
-        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', '.', ' ', '-', '\\', '/', '*')
+        private val enquoteChars = setOf('(', ')', '{', '}', '[', ']', ',', '.', ' ', '-', '\\', '/', '*', '"')
     }
 
     private val visitedStates: MutableSet<State> = mutableSetOf()
@@ -171,18 +166,43 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
     }
 
     private fun String.escapeAndEnquoteIfNeeded(): String {
-        return if (any { it in stringEscapeToLiteralChars }) {
-            buildString {
-                append('"')
-                for (char in this@escapeAndEnquoteIfNeeded) {
-                    append(stringEscapeToLiteralChars[char]?.let { "\\\\" + it } ?: char.toString())
-                }
+        val useQuotes = any { it in stringEscapeToLiteralChars || it in enquoteChars }
+        return buildString {
+            if (useQuotes) {
                 append('"')
             }
-        } else if (any { it in enquoteChars }) {
-            "\"$this\""
+            for (char in this@escapeAndEnquoteIfNeeded) {
+                val escapedChar = stringEscapeToLiteralChars[char]
+                if (escapedChar != null) {
+                    if (escapedChar != char) {
+                        // If escaped char is a letter, double escaping is needed,
+                        // because it's not a letter, but still a special char
+                        append('\\')
+                    }
+                    append('\\')
+                    append(escapedChar)
+                } else {
+                    appendPrintable(char)
+                }
+            }
+            if (useQuotes) {
+                append('"')
+            }
+        }
+    }
+
+    private fun StringBuilder.appendPrintable(char: Char) {
+        // Copied from https://stackoverflow.com/a/418560/1046374
+        if (!Character.isISOControl(char) &&
+            char != KeyEvent.CHAR_UNDEFINED &&
+            Character.UnicodeBlock.of(char).let { it != null && it !== Character.UnicodeBlock.SPECIALS }
+        ) {
+            append(char)
         } else {
-            this
+            // Avoid printing non-printable characters because they could cause incorrect Graphviz rendering,
+            // and they are confusing
+            append("\\\\u")
+            append(char.code.toString(16).uppercase().padStart(4, '0'))
         }
     }
 }
