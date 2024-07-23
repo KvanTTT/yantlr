@@ -15,10 +15,14 @@ class AtnDisambiguator(
 
         fun <T : RootState> run(rootStates: List<T>) {
             rootStates.forEach {
+                statesMap.clear()
+                newStatesMap.clear()
                 do {
                     // Repeat removing until no ambiguity transitions left (fixed-point theorem)
                     if (!run(it)) break
                 } while (true)
+
+                removeUnreachableStates(it)
             }
         }
 
@@ -27,24 +31,44 @@ class AtnDisambiguator(
         run(atn.parserStartStates)
     }
 
+    // Reuse the same new state in case of different transitions to the same set of states
+    private val statesMap: MutableMap<Set<State>, State> = mutableMapOf()
+    private val newStatesMap: MutableMap<State, Set<State>> = mutableMapOf()
+
     private fun run(rootState: State): Boolean {
         val visitedStates: MutableSet<State> = mutableSetOf()
+
         var mayContainAmbiguity = false
 
         fun runInternal(currentState: State) {
             if (!visitedStates.add(currentState)) return
 
-            val oldTargets = currentState.outTransitions.map { it.target }
-
             mayContainAmbiguity = performDisambiguation(currentState) or mayContainAmbiguity
 
-            // Run recursively, but ignore new states to avoid infinite loop (fixed-point)
-            // The new states will be processed in the next iteration
-            oldTargets.forEach { runInternal(it) }
+            currentState.outTransitions.map { it.target }.forEach { runInternal(it) }
         }
 
         runInternal(rootState)
         return mayContainAmbiguity
+    }
+
+    private fun removeUnreachableStates(rootState: State) {
+        val reachableStates: MutableSet<State> = mutableSetOf()
+
+        fun removeUnreachableStates(currentState: State) {
+            if (!reachableStates.add(currentState)) return
+            currentState.outTransitions.forEach { removeUnreachableStates(it.target) }
+        }
+
+        removeUnreachableStates(rootState)
+
+        for (states in newStatesMap.values) {
+            for (state in states) {
+                if (state !in reachableStates) {
+                    state.unbindOuts()
+                }
+            }
+        }
     }
 
     internal fun performDisambiguation(currentState: State): Boolean {
@@ -61,19 +85,23 @@ class AtnDisambiguator(
         }
 
         // Create new states and helper map
-        val oldToNewStatesMap: MutableMap<State, MutableSet<State>> = mutableMapOf()
         val oldOutTransitionsToRemap: MutableMap<State, List<Transition<*>>> = mutableMapOf()
 
+        var newStateCreated = false
         for (disjointGroup in disjointGroups) {
             if (disjointGroup.type == DisjointInfoType.NewState) {
+                newStateCreated = true
                 // Preserve old out transitions for later use
                 val newState = disjointGroup.targetState
                 val oldOutTransition = oldOutTransitionsToRemap[newState]
                 if (oldOutTransition == null) {
                     oldOutTransitionsToRemap[newState] = buildList {
                         for (oldState in disjointGroup.oldStates) {
-                            addAll(oldState.outTransitions)
-                            oldToNewStatesMap.getOrPut(oldState) { mutableSetOf() }.add(newState)
+                            for (outTransition in oldState.outTransitions) {
+                                if (!any { it.data === outTransition.data }) {
+                                    add(outTransition)
+                                }
+                            }
                         }
                     }
                 }
@@ -91,34 +119,12 @@ class AtnDisambiguator(
         // Remap out transitions to newly created states
         for ((newState, oldOutTransitions) in oldOutTransitionsToRemap) {
             for (oldOutTransition in oldOutTransitions) {
-                val newTargetStates = oldToNewStatesMap[oldOutTransition.target]
-
-                fun Transition<*>.bindIfNeeded(target: State) {
-                    // Ignore the transition if not enclosed transition becomes enclosed
-                    if (isEnclosed || newState !== target) {
-                        data.bind(newState, target)
-                    }
-                }
-
-                if (newTargetStates != null) {
-                    for (newTargetState in newTargetStates) {
-                        oldOutTransition.bindIfNeeded(newTargetState)
-                    }
-                } else {
-                    oldOutTransition.bindIfNeeded(oldOutTransition.target)
-                }
-            }
-        }
-
-        // If the old target states become orphan, they should be unbound
-        for (oldOutTransitions in oldOutTransitionsToRemap.values) {
-            for (oldOutTransition in oldOutTransitions) {
-                oldOutTransition.source.unbindOutsIfNoIns()
+                oldOutTransition.data.bind(newState, oldOutTransition.target)
             }
         }
 
         // Only new state may affect result ATN, so there is no need to recheck if no new states were created
-        return disjointGroups.any { it.type == DisjointInfoType.NewState }
+        return newStateCreated
     }
 
     internal enum class DisjointInfoType {
@@ -184,19 +190,16 @@ class AtnDisambiguator(
 
         val disjointInfos: MutableMap<Int, MutableList<DisjointTransitionInfo<*>>> = mutableMapOf()
 
-        // Reuse the same new state in case of different transitions to the same set of states
-        val statesMap: MutableMap<Set<State>, State> = mutableMapOf()
-
         intervalsToTransitions.forEach { (interval, intervalTransitions) ->
-            disjointInfos.add(interval, intervalTransitions, transitionOrderMap, statesMap)
+            disjointInfos.add(interval, intervalTransitions, transitionOrderMap)
         }
 
         ruleToTransitionMap.forEach { (rule, ruleTransitions) ->
-            disjointInfos.add(rule, ruleTransitions, transitionOrderMap, statesMap)
+            disjointInfos.add(rule, ruleTransitions, transitionOrderMap)
         }
 
         endRuleTransitionMap.forEach { (rule, endRuleTransitions) ->
-            disjointInfos.add(rule, endRuleTransitions, transitionOrderMap, statesMap)
+            disjointInfos.add(rule, endRuleTransitions, transitionOrderMap)
         }
 
         return disjointInfos.toSortedMap().flatMap { it.value }
@@ -206,9 +209,17 @@ class AtnDisambiguator(
         data: Any?,
         groupedTransitions: List<Transition<*>>,
         transitionOrderMap: MutableMap<Transition<*>, Int>,
-        statesMap: MutableMap<Set<State>, State>
     ) {
-        val oldStates = groupedTransitions.map { it.target }.toSet()
+        val oldStates = buildSet {
+            groupedTransitions.forEach {
+                val newStates = newStatesMap[it.target]
+                if (newStates != null) {
+                    addAll(newStates)
+                } else {
+                    add(it.target)
+                }
+            }
+        }
         val antlrNodes = groupedTransitions.flatMap { it.data.antlrNodes }.distinct()
 
         val firstTransition = groupedTransitions.first()
@@ -222,19 +233,37 @@ class AtnDisambiguator(
             else -> error("Should not be here")
         }
 
-        val type = when {
-            oldStates.size > 1 -> DisjointInfoType.NewState
+        val targetState: State
+        val type: DisjointInfoType
+        when {
+            oldStates.size > 1 -> {
+                val existingState = statesMap[oldStates]
+                if (existingState == null) {
+                    targetState = State(stateCounter++).also {
+                        newStatesMap[it] = oldStates
+                        statesMap[oldStates] = it
+                    }
+                    type = DisjointInfoType.NewState
+                } else {
+                    targetState = existingState
+                    type = if (groupedTransitions.size > 1) {
+                        DisjointInfoType.MergedTransition
+                    } else {
+                        DisjointInfoType.NoChange
+                    }
+                }
+            }
 
             // Transitions with the same data should be merged
-            groupedTransitions.size > 1 -> DisjointInfoType.MergedTransition
+            groupedTransitions.size > 1 -> {
+                targetState = firstTransition.target
+                type = DisjointInfoType.MergedTransition
+            }
 
-            else -> DisjointInfoType.NoChange
-        }
-
-        val targetState = if (type == DisjointInfoType.NewState) {
-            statesMap.getOrPut(oldStates) { State(stateCounter++) }
-        } else {
-            firstTransition.target
+            else -> {
+                targetState = firstTransition.target
+                type = DisjointInfoType.NoChange
+            }
         }
 
         // Try to preserve the order of transitions

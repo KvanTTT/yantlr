@@ -1,0 +1,3 @@
+lexer grammar String;
+
+String: '"' (~[\\"] | '\\' .)* '"';
