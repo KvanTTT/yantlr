@@ -9,6 +9,12 @@ abstract class AntlrTreeVisitor<out R, in D> {
 
     open fun visitRuleNode(node: RuleNode, data: D) = visitTreeNode(node, data)
 
+    open fun visitCommandsNode(node: CommandsNode, data: D) = visitTreeNode(node, data)
+
+    open fun visitCommaCommandNode(node: CommandsNode.CommaCommandNode, data: D) = visitTreeNode(node, data)
+
+    open fun visitCommandNode(node: CommandNode, data: D) = visitTreeNode(node, data)
+
     open fun visitModeNode(node: ModeNode, data: D) = visitTreeNode(node, data)
 
     open fun visitModeDeclaration(node: ModeNode.ModeDeclaration, data: D) = visitTreeNode(node, data)

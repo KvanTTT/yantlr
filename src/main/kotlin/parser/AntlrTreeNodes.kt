@@ -47,6 +47,7 @@ class RuleNode(
     val idToken: AntlrToken,
     val colonToken: AntlrToken,
     val blockNode: BlockNode,
+    val commandsNode: CommandsNode?,
     val semicolonToken: AntlrToken,
 ) : AntlrTreeNode() {
     override fun calculateLeftToken(): AntlrToken = idToken
@@ -58,10 +59,69 @@ class RuleNode(
         visitor.visitToken(idToken, data)
         visitor.visitToken(colonToken, data)
         visitor.visitBlockNode(blockNode, data)
+        commandsNode?.let { visitor.visitCommandsNode(it, data) }
         visitor.visitToken(semicolonToken, data)
         return null
     }
 }
+
+class CommandsNode(
+    val arrowToken: AntlrToken,
+    val commandNode: CommandNode,
+    val commaCommandNodes: List<CommaCommandNode>,
+) : AntlrTreeNode() {
+    class CommaCommandNode(val comma: AntlrToken, val command: CommandNode) : AntlrTreeNode() {
+        override fun calculateLeftToken(): AntlrToken = comma
+
+        override fun calculateRightToken(): AntlrToken = command.rightToken
+
+        override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
+            visitor.visitToken(comma, data)
+            visitor.visitCommandNode(command, data)
+            return null
+        }
+    }
+
+    override fun calculateLeftToken(): AntlrToken = arrowToken
+
+    override fun calculateRightToken(): AntlrToken = commaCommandNodes.lastOrNull()?.rightToken ?: commandNode.rightToken
+
+    override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
+        visitor.visitToken(arrowToken, data)
+        visitor.visitTreeNode(commandNode, data)
+        commaCommandNodes.forEach { visitor.visitCommaCommandNode(it, data) }
+        return null
+    }
+}
+
+class CommandNode(
+    val nameToken: AntlrToken,
+    val paramsNode: Params?,
+) : AntlrTreeNode() {
+    class Params(val leftParenToken: AntlrToken, val paramToken: AntlrToken, val rightParenToken: AntlrToken) : AntlrTreeNode() {
+        override fun calculateLeftToken(): AntlrToken = leftParenToken
+
+        override fun calculateRightToken(): AntlrToken = rightParenToken
+
+        override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
+            visitor.visitToken(leftParenToken, data)
+            visitor.visitToken(paramToken, data)
+            visitor.visitToken(rightParenToken, data)
+            return null
+        }
+    }
+
+    override fun calculateLeftToken(): AntlrToken = nameToken
+
+    override fun calculateRightToken(): AntlrToken = paramsNode?.rightParenToken ?: nameToken
+
+    override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
+        visitor.visitToken(nameToken, data)
+        paramsNode?.let { visitor.visitTreeNode(it, data) }
+        return null
+    }
+}
+
 
 class ModeNode(val modeDeclaration: ModeDeclaration?, val ruleNodes: List<RuleNode>) : AntlrTreeNode() {
     class ModeDeclaration(val modeToken: AntlrToken, val idToken: AntlrToken, val semicolonToken: AntlrToken) : AntlrTreeNode() {

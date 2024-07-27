@@ -97,7 +97,7 @@ class AntlrParser(
     }
 
     // rule
-    //   : 'fragment'? id ':' block ';'
+    //   : 'fragment'? id ':' block commands? ';'
     //   ;
     fun parseRule(): RuleNode {
         val fragmentToken = if (getToken().type == AntlrTokenType.Fragment) matchToken() else null
@@ -108,6 +108,12 @@ class AntlrParser(
 
         val blockNode = parseBlock(colonToken.end())
 
+        val commandsNode = if (getToken().type == AntlrTokenType.RightArrow) {
+            parseCommands()
+        } else {
+            null
+        }
+
         val semicolonToken = matchToken(AntlrTokenType.Semicolon)
 
         return RuleNode(
@@ -115,8 +121,51 @@ class AntlrParser(
             lexerIdOrParserIdToken,
             colonToken,
             blockNode,
-            semicolonToken
+            commandsNode,
+            semicolonToken,
         )
+    }
+
+    // commands
+    //   : '->' command (',' command)*
+    //   ;
+    private fun parseCommands(): CommandsNode {
+        val leftArrowToken = matchToken(AntlrTokenType.RightArrow)
+
+        val commandNode = parseCommand()
+
+        val commaCommandChildren = buildList {
+            var nextToken = getToken()
+            while (nextToken.type == AntlrTokenType.Comma) {
+                val commaToken = matchToken()
+                add(CommandsNode.CommaCommandNode(commaToken, parseCommand()))
+                nextToken = getToken()
+            }
+        }
+
+        return CommandsNode(leftArrowToken, commandNode, commaCommandChildren)
+    }
+
+    // command
+    //   : id ('(' (id | digit) ')')?
+    //   ;
+    private fun parseCommand(): CommandNode {
+        val nameToken = parseId()
+
+        val paramsNode = if (getToken().type == AntlrTokenType.LeftParen) {
+            val leftParenToken = matchToken()
+            val paramToken = when (getToken().type) {
+                AntlrTokenType.LexerId, AntlrTokenType.ParserId -> parseId()
+                AntlrTokenType.Digit -> matchToken()
+                else -> emitMissingToken(tokenType = null)
+            }
+            val rightParenToken = matchToken(AntlrTokenType.RightParen)
+            CommandNode.Params(leftParenToken, paramToken, rightParenToken)
+        } else {
+            null
+        }
+
+        return CommandNode(nameToken, paramsNode)
     }
 
     // block

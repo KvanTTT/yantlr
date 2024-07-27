@@ -220,4 +220,51 @@ object AntlrParserWithLexerTests {
             "~A"
         ) { it.parseElement() }
     }
+
+    @Test
+    fun commands() {
+        infrastructure.check(
+            RuleNode(
+                fragmentToken = null,
+                AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                AntlrToken(AntlrTokenType.Colon),
+                BlockNode(
+                    alternativeNode = AlternativeNode(
+                        listOf(ElementNode.StringLiteralOrRange(
+                            tilde = null,
+                            ElementNode.StringLiteralOrRange.StringLiteral(
+                                AntlrToken(AntlrTokenType.Quote),
+                                listOf(AntlrToken(AntlrTokenType.Char, value = "A")),
+                                AntlrToken(AntlrTokenType.Quote)
+                            ),
+                            range = null,
+                            elementSuffix = null
+                        ))
+                    ),
+                    orAlternativeNodes = emptyList(),
+                ),
+                CommandsNode(
+                    AntlrToken(AntlrTokenType.RightArrow),
+                    commandNode = CommandNode(
+                        AntlrToken(AntlrTokenType.ParserId, value = "skip"),
+                        paramsNode = null
+                    ),
+                    commaCommandNodes = listOf(CommandsNode.CommaCommandNode(
+                        AntlrToken(AntlrTokenType.Comma),
+                        command = CommandNode(
+                            AntlrToken(AntlrTokenType.ParserId, value = "pushMode"),
+                            paramsNode = CommandNode.Params(
+                                AntlrToken(AntlrTokenType.LeftParen),
+                                AntlrToken(AntlrTokenType.LexerId, value = "DEFAULT_MODE"),
+                                AntlrToken(AntlrTokenType.RightParen)
+                            )
+                        ))
+                    ),
+                ),
+                AntlrToken(AntlrTokenType.Semicolon),
+            ),
+            "A: 'A' -> skip, pushMode(DEFAULT_MODE);") {
+            it.parseRule()
+        }
+    }
 }

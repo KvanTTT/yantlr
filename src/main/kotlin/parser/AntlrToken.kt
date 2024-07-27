@@ -68,6 +68,7 @@ enum class AntlrTokenType {
     Char,
     EscapedChar,
     UnicodeEscapedChar,
+    Digit,
     Empty, // Special token type needed for preserving location of empty alternatives
 }
 

@@ -36,7 +36,8 @@ class AntlrLexer(
             '\u0300'..'\u036F',
             '\u203F'..'\u2040',
         )
-        private val hexDigits = charSetOf('0'..'9', 'a'..'f', 'A'..'F')
+        private val digits = charSetOf('0'..'9')
+        private val hexDigits = digits + charSetOf('a'..'f', 'A'..'F')
 
         private val fragmentKeyword = Keyword(AntlrTokenType.Fragment, "fragment")
         private val grammarKeyword = Keyword(AntlrTokenType.Grammar, "grammar")
@@ -165,6 +166,8 @@ class AntlrLexer(
                 if (Character.isUpperCase(getChar(charIndex))) AntlrTokenType.LexerId else AntlrTokenType.ParserId,
                 idContinueChars
             )
+
+            in digits -> tokenizeSequence(AntlrTokenType.Digit, digits)
 
             else -> tokenizeSingleChar(AntlrTokenType.Error, AntlrTokenChannel.Error)
         }

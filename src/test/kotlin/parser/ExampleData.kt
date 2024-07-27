@@ -112,6 +112,8 @@ x
                             ),
                         ),
 
+                        commandsNode = null,
+
                         AntlrToken(AntlrTokenType.Semicolon),
                     ),
                 )
