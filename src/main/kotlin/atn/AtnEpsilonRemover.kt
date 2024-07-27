@@ -61,7 +61,7 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)?
         if (epsilonTransition.isEnclosed) {
             // Optimization: looped transitions are disallowed, and they are just being removed,
             // because they don't affect resulting ATN
-            diagnosticReporter?.invoke(EmptyClosure(epsilonTransition.data.antlrNodes.single()))
+            diagnosticReporter?.invoke(EmptyClosure((epsilonTransition.data as EpsilonTransitionData).antlrNode))
             return false
         }
 
@@ -104,8 +104,8 @@ class AtnEpsilonRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)?
         currentEpsilonTransitionData: EpsilonTransitionData,
         emptyClosureAntlrNodes: MutableSet<AntlrNode>
     ) {
-        val removingTransitionAntlrNode = removingEpsilonTransitionData.antlrNodes.single()
-        val currentTransitionAntlrNode = currentEpsilonTransitionData.antlrNodes.single()
+        val removingTransitionAntlrNode = removingEpsilonTransitionData.antlrNode
+        val currentTransitionAntlrNode = currentEpsilonTransitionData.antlrNode
         val removingTransitionAntlrNodeLength = removingTransitionAntlrNode.getInterval().length
         val currentTransitionAntlrNodeLength = currentTransitionAntlrNode.getInterval().length
 

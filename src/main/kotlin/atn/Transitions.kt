@@ -12,33 +12,34 @@ class Transition<T : TransitionData>(val data: T, val source: State, val target:
     }
 }
 
-sealed class TransitionData(val antlrNodes: List<AntlrNode>)
+sealed class TransitionData
 
-interface NegationTransitionData {
+sealed interface RealTransitionData {
     val negationNode: ElementNode?
+    val antlrNodes: List<AntlrNode>
 }
 
-class EpsilonTransitionData(antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
+class EpsilonTransitionData(val antlrNode: AntlrNode) : TransitionData() {
     override fun toString(): String = "ε"
 }
 
 class IntervalTransitionData(
-    val interval: Interval, antlrNodes: List<AntlrNode>, override val negationNode: ElementNode? = null
-) : TransitionData(antlrNodes), NegationTransitionData {
+    val interval: Interval, override val antlrNodes: List<AntlrNode>, override val negationNode: ElementNode? = null
+) : TransitionData(), RealTransitionData {
     override fun toString(): String {
         return "$interval"
     }
 }
 
 class RuleTransitionData(
-    val rule: Rule, antlrNodes: List<AntlrNode>, override val negationNode: ElementNode? = null
-) : TransitionData(antlrNodes), NegationTransitionData {
+    val rule: Rule, override val antlrNodes: List<AntlrNode>, override val negationNode: ElementNode? = null
+) : TransitionData(), RealTransitionData {
     override fun toString(): String {
         return "rule(${rule.name})"
     }
 }
 
-class EndTransitionData(val rule: Rule, antlrNodes: List<AntlrNode>) : TransitionData(antlrNodes) {
+class EndTransitionData(val rule: Rule) : TransitionData() {
     override fun toString(): String {
         return "end(${rule.name})"
     }

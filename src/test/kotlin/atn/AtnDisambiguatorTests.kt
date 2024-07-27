@@ -5,7 +5,6 @@ import parser.AntlrToken
 import parser.AntlrTokenType
 import kotlin.test.Ignore
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 
 object AtnDisambiguatorTests {
     @Test
@@ -22,7 +21,7 @@ object AtnDisambiguatorTests {
         )
 
         val result = AtnDisambiguator().buildDisjointGroups(transitions).single()
-        assertEquals(listOf(antlrNode0, antlrNode1), result.data.antlrNodes)
+        assertEquals(listOf(antlrNode0, antlrNode1), (result.data as IntervalTransitionData).antlrNodes)
     }
 
     // A* {0} A {1} => A {0, 1} -> A {0}

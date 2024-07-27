@@ -35,14 +35,13 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 for (outTransition in state.outTransitions) {
                     if (currentNegationNode != null) {
                         // Check by end offset to handle EndTransition correctly
-                        val antlrNodeEndOffset = outTransition.data.antlrNodes.minOf { it.getInterval().end() }
-                        if (antlrNodeEndOffset > currentNegationNode!!.getInterval().end()) {
+                        if (outTransition.getEndOffset() > currentNegationNode!!.getInterval().end()) {
                             negationStateMap.putIfAbsent(currentNegationNode!!, state)
                             currentNegationNode = null
                         }
                     }
 
-                    val negationNode = (outTransition.data as? NegationTransitionData)?.negationNode
+                    val negationNode = (outTransition.data as? RealTransitionData)?.negationNode
                     if (negationNode != null) {
                         currentNegationNode = negationNode
                         // Process negation nodes at first
@@ -66,7 +65,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             fun performNegationInternal(state: State) {
                 if (!visitedStates.add(state)) return
 
-                if (state.outTransitions.any { it.data is NegationTransitionData && it.data.negationNode != null }) {
+                if (state.outTransitions.any { it.data is RealTransitionData && it.data.negationNode != null }) {
                     val negationInfos = negate(state.outTransitions)
 
                     // TODO: report a diagnostic when negationInfos is empty
@@ -129,9 +128,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         if (negationNode != null) {
                             val negationNodeEnd = negationNode.getInterval().end()
                             val dropRegularTransition = transition.target.outTransitions.any {
-                                it.data.antlrNodes.any { antlrNode ->
-                                    antlrNode.getInterval().end() > negationNodeEnd
-                                }
+                                it.getEndOffset() > negationNodeEnd
                             }
                             // If the current transition is the last in negation sequence, it should be removed
                             if (!dropRegularTransition) {
@@ -178,6 +175,14 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             }
 
             return resultNegationInfo
+        }
+
+        private fun Transition<*>.getEndOffset(): Int {
+            return when (data) {
+                is EpsilonTransitionData -> error("Epsilon transitions should be removed before AtnNegationRemover running")
+                is RealTransitionData -> data.antlrNodes.singleOrNull() ?: error("AtnNegationRemover should be run before AtnDisambiguator")
+                is EndTransitionData -> data.rule.treeNode
+            }.getInterval().end()
         }
     }
 }

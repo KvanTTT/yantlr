@@ -19,8 +19,8 @@ class AtnVerifier(val checkNoEpsilons: Boolean) {
             if (!visitedStates.add(currentState)) return
 
             for (outTransition in currentState.outTransitions) {
-                if (outTransition.data.antlrNodes.isEmpty()) {
-                    throw IllegalStateException("Out-transition $outTransition is not bound to any antlr node")
+                if ((outTransition.data as? RealTransitionData)?.antlrNodes?.isEmpty() == true) {
+                    throw IllegalStateException("Out-transition $outTransition is not bound to an antlr node")
                 }
 
                 val target = outTransition.target

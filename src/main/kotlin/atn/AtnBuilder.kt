@@ -21,7 +21,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
         val parserStartStates = mutableListOf<RuleState>()
 
         fun Rule.createAndBindEndTransition(start: State, end: State) {
-            EndTransitionData(this, listOf(treeNode)).bind(start, end)
+            EndTransitionData(this).bind(start, end)
         }
 
         for (mode in declarationsInfo.lexerModes.values) {
@@ -137,7 +137,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             val diagnostic = EmptyStringOrSet(node)
                             diagnosticReporter?.invoke(diagnostic)
                             end = createState()
-                            EpsilonTransitionData(listOf(node)).bind(start, end)
+                            EpsilonTransitionData(node).bind(start, end)
                         }
                     } else {
                         fun ElementNode.StringLiteralOrRange.StringLiteral.getBound(): Int? = when {
@@ -266,7 +266,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
     }
 
     private fun bindEpsilon(previous: State, next: State, treeNode: AntlrNode): Transition<*> {
-        return EpsilonTransitionData(listOf(treeNode)).bind(previous, next)
+        return EpsilonTransitionData(treeNode).bind(previous, next)
     }
 
     private fun createState(): State = State(stateCounter++)

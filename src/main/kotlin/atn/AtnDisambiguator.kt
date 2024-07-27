@@ -206,12 +206,12 @@ class AtnDisambiguator(
     }
 
     private fun MutableMap<Int, MutableList<DisjointTransitionInfo<*>>>.add(
-        data: Any?,
-        groupedTransitions: List<Transition<*>>,
+        groupKey: Any?,
+        groupTransitions: List<Transition<*>>,
         transitionOrderMap: MutableMap<Transition<*>, Int>,
     ) {
         val oldStates = buildSet {
-            groupedTransitions.forEach {
+            groupTransitions.forEach {
                 val newStates = newStatesMap[it.target]
                 if (newStates != null) {
                     addAll(newStates)
@@ -220,15 +220,19 @@ class AtnDisambiguator(
                 }
             }
         }
-        val antlrNodes = groupedTransitions.flatMap { it.data.antlrNodes }.distinct()
 
-        val firstTransition = groupedTransitions.first()
-        val newData = when (firstTransition.data) {
-            is IntervalTransitionData -> IntervalTransitionData(data as Interval, antlrNodes, null)
+        val firstTransition = groupTransitions.first()
+        val newData = when (val data = firstTransition.data) {
+            is RealTransitionData -> {
+                val antlrNodes = groupTransitions.flatMap { (it.data as RealTransitionData).antlrNodes }.distinct()
+                if (data is IntervalTransitionData) {
+                    IntervalTransitionData(groupKey as Interval, antlrNodes, negationNode = null)
+                } else {
+                    RuleTransitionData(groupKey as Rule, antlrNodes, negationNode = null)
+                }
+            }
 
-            is RuleTransitionData -> RuleTransitionData(data as Rule, antlrNodes, null)
-
-            is EndTransitionData -> EndTransitionData(data as Rule, antlrNodes)
+            is EndTransitionData -> EndTransitionData(groupKey as Rule)
 
             else -> error("Should not be here")
         }
@@ -246,7 +250,7 @@ class AtnDisambiguator(
                     type = DisjointInfoType.NewState
                 } else {
                     targetState = existingState
-                    type = if (groupedTransitions.size > 1) {
+                    type = if (groupTransitions.size > 1) {
                         DisjointInfoType.MergedTransition
                     } else {
                         DisjointInfoType.NoChange
@@ -255,7 +259,7 @@ class AtnDisambiguator(
             }
 
             // Transitions with the same data should be merged
-            groupedTransitions.size > 1 -> {
+            groupTransitions.size > 1 -> {
                 targetState = firstTransition.target
                 type = DisjointInfoType.MergedTransition
             }
@@ -267,7 +271,7 @@ class AtnDisambiguator(
         }
 
         // Try to preserve the order of transitions
-        val order = groupedTransitions.minOf { transitionOrderMap.getValue(it) }
+        val order = groupTransitions.minOf { transitionOrderMap.getValue(it) }
         getOrPut(order) { mutableListOf() }.add(DisjointTransitionInfo(type, newData, targetState, oldStates))
     }
 }
