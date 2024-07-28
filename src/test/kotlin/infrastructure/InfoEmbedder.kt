@@ -24,7 +24,7 @@ object InfoEmbedder {
     fun embed(extractionResult: ExtractionResult, embeddedInfos: List<InfoWithDescriptor<*>>): String {
         if (embeddedInfos.isEmpty()) return extractionResult.refinedInput
 
-        val offsetToInfoMap = linkedMapOf<Int, MutableList<InfoWithOffset>>()
+        val offsetToInfoMap = sortedMapOf<Int, MutableList<InfoWithOffset>>()
 
         fun getInfosWithOffset(offset: Int): MutableList<InfoWithOffset> =
             offsetToInfoMap[offset] ?: run {
