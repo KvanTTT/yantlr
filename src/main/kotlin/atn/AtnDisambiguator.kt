@@ -176,7 +176,7 @@ class AtnDisambiguator(
 
                 is IntervalTransitionData -> {
                     transition as Transition<IntervalTransitionData>
-                    require(data.negationNode == null) { "Not transitions should be processed at AtnNegationRemover" }
+                    require(data.negationNodes.isEmpty()) { "Not transitions should be processed at AtnNegationRemover" }
                     intervalInfoMap.addIntervalInfo(data.interval, transition)
                 }
 
@@ -276,9 +276,9 @@ class AtnDisambiguator(
                     diagnosticReporter?.invoke(ElementsCollisionInSet(data, antlrNodes))
                 }
                 if (data is IntervalTransitionData) {
-                    IntervalTransitionData(groupKey as Interval, antlrNodes, negationNode = null)
+                    IntervalTransitionData(groupKey as Interval, antlrNodes)
                 } else {
-                    RuleTransitionData(groupKey as Rule, antlrNodes, negationNode = null)
+                    RuleTransitionData(groupKey as Rule, antlrNodes)
                 }
             }
 

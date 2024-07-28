@@ -10,7 +10,7 @@ digraph ATN {
   s6 -> s7 [label=ε]
   s7 -> s8 [label=b color=gold]
   s8 -> s9 [label=ε]
-  s9 -> s10 [label=d]
+  s9 -> s10 [label=d color=gold]
   s10 -> s11 [label=ε]
   s11 -> s12 [label=ε]
   s12 -> s13 [label=ε]

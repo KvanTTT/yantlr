@@ -15,6 +15,6 @@ digraph ATN {
   s14 -> s15 [label="end(NotAltNot)" style=dotted]
   s5 -> s9 [label=ε taillabel=1]
   s9 -> s10 [label=ε]
-  s10 -> s11 [label=d]
+  s10 -> s11 [label=d color=gold]
   s11 -> s12 [label=ε]
 }

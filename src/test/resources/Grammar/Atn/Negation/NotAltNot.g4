@@ -1,3 +1,4 @@
 lexer grammar NotAltNot;
 
-NotAltNot: ~('b' | ~'d/*❗UnreachableElement*//*❗*/'); // ~('b' | [-∞, c] | [e, ∞]) -> 'd'
+// ~('b' | [-∞, c] | [e, ∞]) -> 'd'
+NotAltNot: ~('b' | ~'d');

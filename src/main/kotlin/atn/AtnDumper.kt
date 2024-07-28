@@ -77,7 +77,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             if (transition.data is EndTransitionData) {
                 append(" style=dotted")
             }
-            if (transition.data is RealTransitionData && transition.data.negationNode != null) {
+            if (transition.data is RealTransitionData && transition.data.negationNodes.isNotEmpty()) {
                 append(" color=gold")
             }
             append("]")

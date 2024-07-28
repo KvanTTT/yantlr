@@ -25,7 +25,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
         private fun searchNegationStates(state: State) {
             val visitedStates: MutableSet<State> = mutableSetOf()
-            var currentNegationNode: ElementNode? = null
+            val currentNegationNodes: MutableSet<ElementNode> = mutableSetOf()
 
             fun searchNegationStatesInternal(state: State) {
                 if (!visitedStates.add(state)) return
@@ -33,19 +33,23 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 val regularTransitions = mutableListOf<Transition<*>>()
 
                 for (outTransition in state.outTransitions) {
-                    if (currentNegationNode != null) {
+                    currentNegationNodes.removeAll {
                         // Check by end offset to handle EndTransition correctly
-                        if (outTransition.getEndOffset() > currentNegationNode!!.getInterval().end()) {
-                            negationStateMap.putIfAbsent(currentNegationNode!!, state)
-                            currentNegationNode = null
+                        if (outTransition.getEndOffset() > it.getInterval().end()) {
+                            negationStateMap.putIfAbsent(it, state)
+                            true
+                        } else {
+                            false
                         }
                     }
 
-                    val negationNode = (outTransition.data as? RealTransitionData)?.negationNode
-                    if (negationNode != null) {
-                        currentNegationNode = negationNode
-                        // Process negation nodes at first
-                        searchNegationStatesInternal(outTransition.target)
+                    val negationNodes = outTransition.getNegationNodes()
+                    if (negationNodes != null) {
+                        currentNegationNodes.addAll(negationNodes)
+                        for (negationNode in negationNodes) {
+                            // Process negation nodes at first
+                            searchNegationStatesInternal(outTransition.target)
+                        }
                     } else {
                         regularTransitions.add(outTransition)
                     }
@@ -65,7 +69,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             fun performNegationInternal(state: State) {
                 if (!visitedStates.add(state)) return
 
-                if (state.outTransitions.any { it.data is RealTransitionData && it.data.negationNode != null }) {
+                if (state.outTransitions.any { it.getNegationNodes() != null }) {
                     val negationInfos = negate(state.outTransitions)
 
                     // TODO: report a diagnostic when negationInfos is empty
@@ -74,13 +78,15 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     state.unbindOuts()
 
                     for (negationInfo in negationInfos) {
-                        negationInfo.data.bind(state, negationInfo.targetState)
+                        if (negationInfo is RealNegationInfo) {
+                            negationInfo.data.bind(state, negationInfo.targetState)
+                        }
                     }
 
                     // If the old target states become orphan, they should be unbound
                     for (negationInfo in negationInfos) {
-                        if (negationInfo is Negation) {
-                            negationInfo.oldStates.forEach(State::unbindOutsIfNoIns)
+                        if (negationInfo is Drop) {
+                            negationInfo.targetState.unbindOutsIfNoIns()
                         }
                     }
                 }
@@ -91,15 +97,15 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             performNegationInternal(state)
         }
 
-        private sealed class NegationInfo(val data: TransitionData, val targetState: State)
+        private sealed class NegationInfo(val targetState: State)
 
-        private class NoNegation(data: TransitionData, targetState: State) : NegationInfo(data, targetState)
+        private sealed class RealNegationInfo(val data: TransitionData, targetState: State) : NegationInfo(targetState)
 
-        private class Negation(
-            data: TransitionData,
-            targetState: State,
-            val oldStates: Set<State>,
-        ) : NegationInfo(data, targetState)
+        private class NoChange(data: TransitionData, targetState: State) : RealNegationInfo(data, targetState)
+
+        private class Negation(data: TransitionData, targetState: State) : RealNegationInfo(data, targetState)
+
+        private class Drop(targetState: State) : NegationInfo(targetState)
 
         private fun negate(outTransitions: List<Transition<*>>): List<NegationInfo> {
             val negationIntervalInfoMap: MutableMap<ElementNode, SortedMap<Int, MutableList<IntervalInfo>>> =
@@ -111,44 +117,53 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 when (val data = transition.data) {
                     is EpsilonTransitionData -> error("Epsilon transitions should be removed before AtnNegationRemover running")
                     is EndTransitionData -> {
-                        resultNegationInfo.add(NoNegation(transition.data, transition.target))
+                        resultNegationInfo.add(NoChange(transition.data, transition.target))
                     }
 
                     is RuleTransitionData -> {
-                        resultNegationInfo.add(NoNegation(transition.data, transition.target))
+                        resultNegationInfo.add(NoChange(transition.data, transition.target))
                         // TODO: Report `Negation on rule`
                     }
 
                     is IntervalTransitionData -> {
-                        @Suppress("UNCHECKED_CAST")
-                        transition as Transition<IntervalTransitionData>
                         val interval = data.interval
 
-                        val negationNode = data.negationNode
-                        if (negationNode != null) {
-                            val negationNodeEnd = negationNode.getInterval().end()
-                            val dropRegularTransition = transition.target.outTransitions.any {
-                                it.getEndOffset() > negationNodeEnd
-                            }
-                            // If the current transition is the last in negation sequence, it should be removed
-                            if (!dropRegularTransition) {
-                                IntervalTransitionData(interval, data.antlrNodes, negationNode = null).also {
-                                    resultNegationInfo.add(NoNegation(it, transition.target))
-                                }
-                            }
+                        val negationNodes = transition.getNegationNodes()
+                        val negationInfo = if (negationNodes != null) {
+                            val mainNegationNode = negationNodes.first()
+                            val doubleNegation = negationNodes.size % 2 == 0
 
-                            val negateMap = negationIntervalInfoMap.getOrPut(data.negationNode) { sortedMapOf() }
+                            val negateMap = negationIntervalInfoMap.getOrPut(mainNegationNode) { sortedMapOf() }
 
-                            val negateTransition = Transition(
-                                IntervalTransitionData(interval, data.antlrNodes, negationNode = negationNode),
+                            fun Interval.createNegateTransition() = Transition(
+                                IntervalTransitionData(this, data.antlrNodes, negationNodes = listOf(mainNegationNode)),
                                 transition.source,
                                 transition.target,
                             )
 
-                            negateMap.addIntervalInfo(interval, negateTransition)
+                            if (!doubleNegation) {
+                                negateMap.addIntervalInfo(interval, interval.createNegateTransition())
+                            } else {
+                                interval.negate().forEach {
+                                    negateMap.addIntervalInfo(it, it.createNegateTransition())
+                                }
+                            }
+
+                            val negationNodeEnd = mainNegationNode.getInterval().end()
+                            val dropRegularTransition = transition.target.outTransitions.any {
+                                it.getEndOffset() > negationNodeEnd
+                            }
+
+                            // If the current transition is the last in negation sequence, it should be removed
+                            if (!dropRegularTransition) {
+                                NoChange(IntervalTransitionData(interval, data.antlrNodes, negationNodes = emptyList()), transition.target)
+                            } else {
+                                Drop(transition.target)
+                            }
                         } else {
-                            resultNegationInfo.add(NoNegation(data, transition.target))
+                            NoChange(data, transition.target)
                         }
+                        resultNegationInfo.add(negationInfo)
                     }
                 }
             }
@@ -158,19 +173,17 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
             negationIntervalsToTransitionsList.forEach { negationIntervalsToTransitions ->
                 negationIntervalsToTransitions.forEach { (interval, intervalTransitions) ->
-                    val oldStates = intervalTransitions.map { it.target }.toSet()
                     val antlrNodes = intervalTransitions.flatMap { it.data.antlrNodes }.distinct()
                     val firstTransition = intervalTransitions.first()
-                    val negationNode = firstTransition.data.negationNode!!
-                    require(intervalTransitions.all { it.data.negationNode === negationNode })
+                    val mainNegationNode = firstTransition.data.negationNodes.first()
 
-                    Negation(
-                        IntervalTransitionData(interval, antlrNodes, negationNode = null),
-                        negationStateMap.getValue(negationNode),
-                        oldStates
-                    ).also {
-                        resultNegationInfo.add(it) // TODO: probably it's better to insert right after all old transitions
-                    }
+                    // TODO: probably it's better to insert right after all old transitions
+                    resultNegationInfo.add(
+                        Negation(
+                            IntervalTransitionData(interval, antlrNodes, negationNodes = emptyList()),
+                            negationStateMap.getValue(mainNegationNode),
+                        )
+                    )
                 }
             }
 

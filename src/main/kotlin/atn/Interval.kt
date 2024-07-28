@@ -28,4 +28,13 @@ data class Interval(val start: Int, val end: Int = start) {
             else -> toChar().let { char -> stringEscapeToLiteralChars[char]?.let { "\\" + it } ?: char }.toString()
         }
     }
+
+    fun negate(): List<Interval> {
+        if (isEmpty) return listOf(Full)
+
+        return buildList {
+            if (start > MIN) add(Interval(MIN, start - 1))
+            if (end < MAX) add(Interval(end + 1, MAX))
+        }
+    }
 }

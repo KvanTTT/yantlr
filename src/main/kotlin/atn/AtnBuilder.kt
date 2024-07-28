@@ -59,23 +59,23 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
     private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): Handle {
         val ruleNode = rule.treeNode
         val ruleState = RuleState(rule, stateCounter++)
-        val ruleBodyHandle = visitor.visitBlockNode(rule.treeNode.blockNode, null)
+        val ruleBodyHandle = visitor.visitBlockNode(rule.treeNode.blockNode, emptyList())
 
         bindEpsilon(ruleState, ruleBodyHandle.start, ruleNode)
 
         return Handle(ruleState, ruleBodyHandle.end)
     }
 
-    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?, ElementNode?>() {
-        override fun visitTreeNode(node: AntlrTreeNode, data: ElementNode?): Handle? {
+    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?, List<ElementNode>>() {
+        override fun visitTreeNode(node: AntlrTreeNode, data: List<ElementNode>): Handle? {
             return node.acceptChildren(this, data)
         }
 
-        override fun visitToken(token: AntlrToken, data: ElementNode?): Handle? {
+        override fun visitToken(token: AntlrToken, data: List<ElementNode>): Handle? {
             return null
         }
 
-        override fun visitBlockNode(node: BlockNode, data: ElementNode?): Handle {
+        override fun visitBlockNode(node: BlockNode, data: List<ElementNode>): Handle {
             val start = createState()
             val endNodes = mutableListOf<Pair<State, AntlrNode>>()
 
@@ -94,7 +94,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitAlternativeNode(node: AlternativeNode, data: ElementNode?): Handle {
+        override fun visitAlternativeNode(node: AlternativeNode, data: List<ElementNode>): Handle {
             val start = createState()
             var end = start
 
@@ -107,17 +107,12 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitElementNode(node: ElementNode, data: ElementNode?): Handle {
+        override fun visitElementNode(node: ElementNode, data: List<ElementNode>): Handle {
             val start = createState()
             var end = start
 
             val newData = if (node.tilde != null) {
-                if (data == null) {
-                    node
-                } else {
-                    // TODO: report a diagnostic on double negation
-                    null
-                }
+                data + node
             } else {
                 data
             }
