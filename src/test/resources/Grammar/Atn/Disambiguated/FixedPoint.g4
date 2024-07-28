@@ -1,4 +1,4 @@
 lexer grammar FixedPoint;
 FixedPoint
-    : 'a' ('b' 'bc'? | 'b'? 'bc')*
+    : 'a' ('b' 'bc'? | 'b/*❗UnreachableElement*//*❗*/'? 'bc/*❗UnreachableElement*//*❗*/')* // 'a' ('b' | 'bbc' | 'bc' | 'bbc')*
     ;

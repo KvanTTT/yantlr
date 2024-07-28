@@ -1,3 +1,3 @@
 lexer grammar NotComplexBlock;
 
-NotComplexBlock: ~('ab' | ~('cd' | 'e'));
+NotComplexBlock: ~('ab' | ~('cd' | 'e/*❗UnreachableElement*//*❗*/'));
