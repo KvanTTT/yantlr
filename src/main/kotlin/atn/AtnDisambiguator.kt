@@ -4,6 +4,7 @@ import ElementsCollisionInSet
 import SemanticsDiagnostic
 import SourceInterval
 import UnreachableElement
+import UnreachableToken
 import parser.AntlrNode
 import semantics.Rule
 import java.util.*
@@ -98,26 +99,7 @@ class AtnDisambiguator(
             if (disjointGroup.type == DisjointInfoType.NewState) {
                 newStateCreated = true
                 // Preserve old out transitions for later use
-                oldOutTransitionsToRemap[disjointGroup.targetState] = buildList {
-                    for (oldState in disjointGroup.oldStates) {
-                        for (outTransition in oldState.outTransitions) {
-                            if (!any { it.data === outTransition.data }) {
-                                add(outTransition)
-                            } else {
-                                // TODO: it should report on more precise element,
-                                //  but not at the end of unreachable antlr node
-                                val unreachableAntlrNode =
-                                    outTransition.source.inTransitions.flatMap { (it.data as RealTransitionData).antlrNodes }
-                                        .distinct().single()
-                                if (unreachableAntlrElements.add(unreachableAntlrNode)) {
-                                    diagnosticReporter?.invoke(
-                                        UnreachableElement(SourceInterval(unreachableAntlrNode.getInterval().end(), 0))
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                oldOutTransitionsToRemap[disjointGroup.targetState] = checkAndCollectOutTransitions(disjointGroup)
             }
         }
 
@@ -138,6 +120,66 @@ class AtnDisambiguator(
 
         // Only new state may affect result ATN, so there is no need to recheck if no new states were created
         return newStateCreated
+    }
+
+    private fun checkAndCollectOutTransitions(disjointGroup: DisjointTransitionInfo<*>): List<Transition<*>> {
+        val resultTransitions = mutableListOf<Transition<*>>()
+        val endTransitions = mutableListOf<EndTransitionData>()
+
+        for (oldState in disjointGroup.oldStates) {
+            for (outTransition in oldState.outTransitions) {
+                if (!resultTransitions.any { it.data === outTransition.data }) {
+                    resultTransitions.add(outTransition)
+                    if (outTransition.data is EndTransitionData) {
+                        endTransitions.add(outTransition.data)
+                    }
+                } else {
+                    // TODO: it should report on more precise element,
+                    //  but not at the end of unreachable antlr node
+                    val unreachableAntlrNode =
+                        outTransition.source.inTransitions.flatMap { (it.data as RealTransitionData).antlrNodes }
+                            .distinct().single()
+                    if (unreachableAntlrElements.add(unreachableAntlrNode)) {
+                        diagnosticReporter?.invoke(
+                            UnreachableElement(SourceInterval(unreachableAntlrNode.getInterval().end(), 0))
+                        )
+                    }
+                }
+            }
+        }
+
+        if (endTransitions.size > 1) {
+            endTransitions.sortBy { it.rule.treeNode.getInterval().offset }
+            val ruleTransitions = endTransitions.map { mutableSetOf<Transition<*>>() }
+
+            for (transition in resultTransitions) {
+                if (transition.data is RealTransitionData) {
+                    for (antlrNode in transition.data.antlrNodes) {
+                        val index = endTransitions.binarySearchBy(antlrNode.getInterval().offset) {
+                            it.rule.treeNode.getInterval().offset
+                        }
+                        val ruleIndex = if (index < 0) -index - 2 else index
+                        ruleTransitions[ruleIndex].add(transition)
+                    }
+                }
+            }
+
+            for (index0 in 0..<endTransitions.size) {
+                val ruleAbove = endTransitions[index0].rule
+                val transitionsAbove = ruleTransitions[index0]
+                for (index1 in index0 + 1..<endTransitions.size) {
+                    val transitionsBelow = ruleTransitions[index1]
+
+                    if ((transitionsAbove - transitionsBelow).isNotEmpty()) {
+                        val endTransitionDataBelow = endTransitions[index1]
+                        diagnosticReporter?.invoke(UnreachableToken(endTransitionDataBelow.rule, ruleAbove))
+                        resultTransitions.removeAll { it.data === endTransitionDataBelow }
+                    }
+                }
+            }
+        }
+
+        return resultTransitions
     }
 
     internal enum class DisjointInfoType {

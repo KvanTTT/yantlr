@@ -8,7 +8,6 @@ digraph ATN {
   s15 -> s16 [label="b {3:6(3), 4:12(1)}" taillabel=1]
   s16 -> s5 [label="a..z" taillabel=0]
   s16 -> s14 [label="end(ID)" taillabel=1 style=dotted]
-  s16 -> s14 [label="end(KEYWORD)" taillabel=2 style=dotted]
   s15 -> s5 [label="c..z" taillabel=2]
   s15 -> s14 [label="end(ID)" taillabel=3 style=dotted]
   "DEFAULT_MODE(s0)" -> s5 [label="b..z" taillabel=1]

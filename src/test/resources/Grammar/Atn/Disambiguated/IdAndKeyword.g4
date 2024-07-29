@@ -1,4 +1,4 @@
 lexer grammar IdAndKeyword;
 
 ID: [a-z]+;
-KEYWORD: 'ab';
+/*❗UnreachableToken*/KEYWORD: 'ab';/*❗*/

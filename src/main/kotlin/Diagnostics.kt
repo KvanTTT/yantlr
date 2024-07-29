@@ -37,6 +37,8 @@ class ElementsCollisionInSet(val element: Any, collisionNodes: List<AntlrNode>):
 // TODO: Correct AntlrNode instead of SourceInterval
 class UnreachableElement(sourceInterval: SourceInterval) : SemanticsDiagnostic(DiagnosticSeverity.Warning, sourceInterval)
 
+class UnreachableToken(unreachableToken: Rule, overlappedByToken: Rule) : SemanticsDiagnostic(DiagnosticSeverity.Warning, unreachableToken.treeNode.getInterval())
+
 enum class DiagnosticSeverity {
     Error,
     Warning,
