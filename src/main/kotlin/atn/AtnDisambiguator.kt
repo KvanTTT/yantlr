@@ -271,7 +271,7 @@ class AtnDisambiguator(
 
         val newData = when (val data = firstTransition.data) {
             is RealTransitionData -> {
-                val antlrNodes = groupTransitions.flatMap { (it.data as RealTransitionData).antlrNodes }.distinct()
+                val antlrNodes = groupTransitions.flatMapTo(sortedSetOf()) { (it.data as RealTransitionData).antlrNodes }
                 if (type == DisjointInfoType.MergedTransition && targetState !in newStatesMap) {
                     diagnosticReporter?.invoke(ElementsCollisionInSet(data, antlrNodes))
                 }

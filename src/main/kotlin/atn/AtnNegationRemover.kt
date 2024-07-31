@@ -173,7 +173,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
             negationIntervalsToTransitionsList.forEach { negationIntervalsToTransitions ->
                 negationIntervalsToTransitions.forEach { (interval, intervalTransitions) ->
-                    val antlrNodes = intervalTransitions.flatMap { it.data.antlrNodes }.distinct()
+                    val antlrNodes = intervalTransitions.flatMapTo(sortedSetOf()) { it.data.antlrNodes }
                     val firstTransition = intervalTransitions.first()
                     val mainNegationNode = firstTransition.data.negationNodes.first()
 

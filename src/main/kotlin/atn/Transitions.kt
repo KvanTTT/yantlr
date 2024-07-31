@@ -3,6 +3,7 @@ package atn
 import parser.AntlrNode
 import parser.ElementNode
 import semantics.Rule
+import java.util.SortedSet
 
 class Transition<T : TransitionData>(val data: T, val source: State, val target: State) {
     val isEnclosed = source === target
@@ -14,26 +15,23 @@ class Transition<T : TransitionData>(val data: T, val source: State, val target:
 
 sealed class TransitionData
 
-sealed interface RealTransitionData {
-    val negationNodes: List<ElementNode>
-    val antlrNodes: List<AntlrNode>
-}
+sealed class RealTransitionData(val antlrNodes: SortedSet<AntlrNode>, val negationNodes: List<ElementNode>) : TransitionData()
 
 class EpsilonTransitionData(val antlrNode: AntlrNode) : TransitionData() {
     override fun toString(): String = "ε"
 }
 
 class IntervalTransitionData(
-    val interval: Interval, override val antlrNodes: List<AntlrNode>, override val negationNodes: List<ElementNode> = emptyList()
-) : TransitionData(), RealTransitionData {
+    val interval: Interval, antlrNodes: SortedSet<AntlrNode>, negationNodes: List<ElementNode> = emptyList()
+) : RealTransitionData(antlrNodes, negationNodes) {
     override fun toString(): String {
         return "$interval"
     }
 }
 
 class RuleTransitionData(
-    val rule: Rule, override val antlrNodes: List<AntlrNode>, override val negationNodes: List<ElementNode> = emptyList()
-) : TransitionData(), RealTransitionData {
+    val rule: Rule, antlrNodes: SortedSet<AntlrNode>, negationNodes: List<ElementNode> = emptyList()
+) : RealTransitionData(antlrNodes, negationNodes) {
     override fun toString(): String {
         return "rule(${rule.name})"
     }

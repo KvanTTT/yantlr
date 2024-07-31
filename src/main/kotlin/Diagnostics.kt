@@ -2,6 +2,7 @@ import parser.AntlrNode
 import parser.AntlrTreeNode
 import parser.RuleNode
 import semantics.Rule
+import java.util.SortedSet
 
 abstract class AntlrDiagnostic(val severity: DiagnosticSeverity, sourceInterval: SourceInterval) : Diagnostic(sourceInterval)
 
@@ -32,7 +33,7 @@ class MultiCharacterLiteralInRange(treeNode: AntlrTreeNode) : SemanticsDiagnosti
 class EmptyClosure(treeNode: AntlrNode) : SemanticsDiagnostic(DiagnosticSeverity.Error, treeNode.getInterval())
 
 // TODO: Fix type of `element`
-class ElementsCollisionInSet(val element: Any, collisionNodes: List<AntlrNode>): SemanticsDiagnostic(DiagnosticSeverity.Warning, collisionNodes.merge())
+class ElementsCollisionInSet(val element: Any, collisionNodes: SortedSet<AntlrNode>): SemanticsDiagnostic(DiagnosticSeverity.Warning, collisionNodes.merge())
 
 // TODO: Correct AntlrNode instead of SourceInterval
 class UnreachableElement(sourceInterval: SourceInterval) : SemanticsDiagnostic(DiagnosticSeverity.Warning, sourceInterval)

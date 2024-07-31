@@ -1,6 +1,7 @@
 package atn
 
 import org.junit.jupiter.api.Test
+import parser.AntlrNode
 import parser.AntlrToken
 import parser.AntlrTokenType
 import kotlin.test.Ignore
@@ -16,12 +17,12 @@ object AtnDisambiguatorTests {
         val target = State(1)
 
         val transitions = listOf(
-            IntervalTransitionData(Interval('A'.code), listOf(antlrNode0)).bind(source, target),
-            IntervalTransitionData(Interval('A'.code), listOf(antlrNode1)).bind(source, target)
+            IntervalTransitionData(Interval('A'.code), sortedSetOf(antlrNode0)).bind(source, target),
+            IntervalTransitionData(Interval('A'.code), sortedSetOf(antlrNode1)).bind(source, target)
         )
 
         val result = AtnDisambiguator().buildDisjointGroups(transitions).single()
-        assertEquals(listOf(antlrNode0, antlrNode1), (result.data as IntervalTransitionData).antlrNodes)
+        assertEquals(sortedSetOf<AntlrNode>(antlrNode0, antlrNode1), (result.data as IntervalTransitionData).antlrNodes)
     }
 
     // A* {0} A {1} => A {0, 1} -> A {0}
@@ -35,10 +36,10 @@ object AtnDisambiguatorTests {
         val closureAntlrNode = AntlrToken(AntlrTokenType.LexerId, value = "A")
         val atomAntlrNode = AntlrToken(AntlrTokenType.LexerId, value = "A")
 
-        IntervalTransitionData(Interval('A'.code), listOf(closureAntlrNode)).bind(source, target1)
-        IntervalTransitionData(Interval('A'.code), listOf(closureAntlrNode)).bind(target1, target1)
-        IntervalTransitionData(Interval('A'.code), listOf(atomAntlrNode)).bind(target1, target2)
-        IntervalTransitionData(Interval('A'.code), listOf(atomAntlrNode)).bind(source, target2)
+        IntervalTransitionData(Interval('A'.code), sortedSetOf(closureAntlrNode)).bind(source, target1)
+        IntervalTransitionData(Interval('A'.code), sortedSetOf(closureAntlrNode)).bind(target1, target1)
+        IntervalTransitionData(Interval('A'.code), sortedSetOf(atomAntlrNode)).bind(target1, target2)
+        IntervalTransitionData(Interval('A'.code), sortedSetOf(atomAntlrNode)).bind(source, target2)
 
         val atnDisambiguator = AtnDisambiguator(currentStateNumber = 3)
         atnDisambiguator.performDisambiguation(source)
@@ -47,11 +48,11 @@ object AtnDisambiguatorTests {
         val outTransitionData = outTransition.data as IntervalTransitionData
 
         assertEquals(Interval('A'.code), outTransitionData.interval)
-        assertEquals(listOf(closureAntlrNode, atomAntlrNode), outTransitionData.antlrNodes)
+        assertEquals(sortedSetOf<AntlrNode>(closureAntlrNode, atomAntlrNode), outTransitionData.antlrNodes)
 
         val newOutTransition = outTransition.target.outTransitions.single()
 
-        assertEquals(listOf(closureAntlrNode), (newOutTransition.data as IntervalTransitionData).antlrNodes)
+        assertEquals(sortedSetOf<AntlrNode>(closureAntlrNode), (newOutTransition.data as IntervalTransitionData).antlrNodes)
         assertEquals(newOutTransition.source, newOutTransition.target)
     }
 }

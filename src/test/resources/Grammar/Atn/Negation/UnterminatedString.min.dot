@@ -3,11 +3,11 @@ digraph ATN {
 
   "DEFAULT_MODE(s0)" -> s5 [label="\""]
   s5 -> s9 [label="end(UnterminatedString)" taillabel=0 style=dotted]
-  s5 -> s7 [label="-∞..\\t {3:29(2), 3:27(2)}" taillabel=1]
+  s5 -> s7 [label="-∞..\\t {3:27(2), 3:29(2)}" taillabel=1]
   s7 -> s9 [label="end(UnterminatedString)" taillabel=0 style=dotted]
-  s7 -> s7 [label="-∞..\\t {3:29(2), 3:27(2)}" taillabel=1]
-  s7 -> s7 [label="\\u000B..\\u000C {3:29(2), 3:27(2)}" taillabel=2]
-  s7 -> s7 [label="\\u000E..+∞ {3:29(2), 3:27(2)}" taillabel=3]
-  s5 -> s7 [label="\\u000B..\\u000C {3:29(2), 3:27(2)}" taillabel=2]
-  s5 -> s7 [label="\\u000E..+∞ {3:29(2), 3:27(2)}" taillabel=3]
+  s7 -> s7 [label="-∞..\\t {3:27(2), 3:29(2)}" taillabel=1]
+  s7 -> s7 [label="\\u000B..\\u000C {3:27(2), 3:29(2)}" taillabel=2]
+  s7 -> s7 [label="\\u000E..+∞ {3:27(2), 3:29(2)}" taillabel=3]
+  s5 -> s7 [label="\\u000B..\\u000C {3:27(2), 3:29(2)}" taillabel=2]
+  s5 -> s7 [label="\\u000E..+∞ {3:27(2), 3:29(2)}" taillabel=3]
 }

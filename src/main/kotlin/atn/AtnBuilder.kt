@@ -125,7 +125,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             for (charToken in chars) {
                                 val state = createState()
                                 val interval = Interval(getCharCode(charToken, stringLiteral = true))
-                                IntervalTransitionData(interval, listOf(charToken), newData).bind(end, state)
+                                IntervalTransitionData(interval, sortedSetOf(charToken), newData).bind(end, state)
                                 end = state
                             }
                         } else {
@@ -163,7 +163,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         } else {
                             Interval.Empty
                         }
-                        IntervalTransitionData(interval, listOf(node), newData).bind(end, state)
+                        IntervalTransitionData(interval, sortedSetOf(node), newData).bind(end, state)
                         end = state
                     }
                 }
@@ -185,10 +185,10 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                                 diagnosticReporter?.invoke(ReversedInterval(child))
                                 Interval.Empty
                             }
-                            IntervalTransitionData(interval, listOf(child), newData).bind(start, end)
+                            IntervalTransitionData(interval, sortedSetOf(child), newData).bind(start, end)
                         }
                     } else {
-                        IntervalTransitionData(Interval.Empty, listOf(node), newData).bind(start, end)
+                        IntervalTransitionData(Interval.Empty, sortedSetOf(node), newData).bind(start, end)
                         diagnosticReporter?.invoke(EmptyStringOrSet(node))
                     }
                 }
@@ -203,18 +203,18 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 is ElementNode.LexerId -> {
                     end = createState()
                     val rule = declarationsInfo.lexerRules[node.lexerId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransitionData(rule, listOf(node), newData).bind(start, end)
+                    RuleTransitionData(rule, sortedSetOf(node), newData).bind(start, end)
                 }
 
                 is ElementNode.ParserId -> {
                     end = createState()
                     val rule = declarationsInfo.parserRules[node.parserId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransitionData(rule, listOf(node), newData).bind(start, end)
+                    RuleTransitionData(rule, sortedSetOf(node), newData).bind(start, end)
                 }
 
                 is ElementNode.Dot -> {
                     end = createState()
-                    IntervalTransitionData(Interval(Interval.MIN, Interval.MAX), listOf(node), newData).bind(start, end)
+                    IntervalTransitionData(Interval(Interval.MIN, Interval.MAX), sortedSetOf(node), newData).bind(start, end)
                 }
 
                 is ElementNode.Empty -> {
