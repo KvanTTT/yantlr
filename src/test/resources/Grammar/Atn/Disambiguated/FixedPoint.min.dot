@@ -2,16 +2,16 @@ digraph ATN {
   rankdir=LR;
 
   "DEFAULT_MODE(s0)" -> s5 [label=a]
-  s5 -> s24 [label="b {3:13(1), 3:25(1), 3:30(1)}" taillabel=0]
-  s24 -> s25 [label="b {3:13(1), 3:17(1), 3:25(1), 3:30(1)}" taillabel=0]
-  s25 -> s26 [label="c {3:18(1), 3:31(1)}" taillabel=0]
-  s26 -> s24 [label="b {3:13(1), 3:25(1), 3:30(1)}" taillabel=0]
+  s5 -> s24 [label="b {3:13(1), 3:30(1)}" taillabel=0]
+  s24 -> s25 [label="b {3:13(1), 3:17(1), 3:30(1)}" taillabel=0]
+  s25 -> s26 [label=c taillabel=0]
+  s26 -> s24 [label="b {3:13(1), 3:30(1)}" taillabel=0]
   s26 -> s23 [label="end(FixedPoint)" taillabel=1 style=dotted]
-  s25 -> s25 [label="b {3:13(1), 3:17(1), 3:25(1), 3:30(1)}" taillabel=1]
+  s25 -> s25 [label="b {3:13(1), 3:17(1), 3:30(1)}" taillabel=1]
   s25 -> s23 [label="end(FixedPoint)" taillabel=2 style=dotted]
   s24 -> s23 [label="end(FixedPoint)" taillabel=1 style=dotted]
   s24 -> s19 [label=c taillabel=2]
-  s19 -> s24 [label="b {3:13(1), 3:25(1), 3:30(1)}" taillabel=0]
+  s19 -> s24 [label="b {3:13(1), 3:30(1)}" taillabel=0]
   s19 -> s23 [label="end(FixedPoint)" taillabel=1 style=dotted]
   s5 -> s23 [label="end(FixedPoint)" taillabel=1 style=dotted]
 }

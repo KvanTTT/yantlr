@@ -1,6 +1,6 @@
 lexer grammar CharactersCollisionInSet;
 
-SINGLE_RANGE: '0' [/*❗ElementsCollisionInSet*/aa-z/*❗*/];
-RANGE_SINGLE: '1' [/*❗ElementsCollisionInSet*/a-za/*❗*/];
-RANGE_RANGE: '2' [/*❗ElementsCollisionInSet*/a-za-z/*❗*/];
-DIFFERENT_RANGES: '3' [/*❗ElementsCollisionInSet*/g-li-n/*❗*/];
+SINGLE_RANGE: '0' [aa-z/*❗UnreachableElement*//*❗*/];
+RANGE_SINGLE: '1' [a-za/*❗UnreachableElement*//*❗*/];
+RANGE_RANGE: '2' [a-za-z/*❗UnreachableElement*//*❗*/];
+DIFFERENT_RANGES: '3' [g-li-n/*❗UnreachableElement*//*❗*/];

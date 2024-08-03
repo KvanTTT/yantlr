@@ -32,9 +32,6 @@ class MultiCharacterLiteralInRange(treeNode: AntlrTreeNode) : SemanticsDiagnosti
 
 class EmptyClosure(treeNode: AntlrNode) : SemanticsDiagnostic(DiagnosticSeverity.Error, treeNode.getInterval())
 
-// TODO: Fix type of `element`
-class ElementsCollisionInSet(val element: Any, collisionNodes: SortedSet<AntlrNode>): SemanticsDiagnostic(DiagnosticSeverity.Warning, collisionNodes.merge())
-
 // TODO: Correct AntlrNode instead of SourceInterval
 class UnreachableElement(sourceInterval: SourceInterval) : SemanticsDiagnostic(DiagnosticSeverity.Warning, sourceInterval)
 
