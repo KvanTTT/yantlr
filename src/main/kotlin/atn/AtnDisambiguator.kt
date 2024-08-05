@@ -4,6 +4,7 @@ import SemanticsDiagnostic
 import SourceInterval
 import UnreachableElement
 import parser.AntlrNode
+import parser.ElementNode
 import semantics.Rule
 import java.util.*
 
@@ -250,13 +251,21 @@ class AtnDisambiguator(
             }
         }
 
-        fun computeNewData(antlrNodes: SortedSet<AntlrNode>? = null): TransitionData {
+        fun computeNewData(antlrNodes: SortedSet<AntlrNode>? = null, resultNonGreedyNodes: MutableList<ElementNode>? = null): TransitionData {
             return when (val data = firstTransition.data) {
                 is RealTransitionData -> {
                     if (data is IntervalTransitionData) {
-                        IntervalTransitionData(groupKey as Interval, antlrNodes ?: data.antlrNodes)
+                        IntervalTransitionData(
+                            groupKey as Interval,
+                            antlrNodes ?: data.antlrNodes,
+                             nonGreedyNodes = resultNonGreedyNodes ?: data.nonGreedyNodes
+                        )
                     } else {
-                        RuleTransitionData(groupKey as Rule, antlrNodes ?: data.antlrNodes)
+                        RuleTransitionData(
+                            groupKey as Rule,
+                            antlrNodes ?: data.antlrNodes,
+                            nonGreedyNodes = resultNonGreedyNodes ?: data.nonGreedyNodes
+                        )
                     }
                 }
 
@@ -269,10 +278,10 @@ class AtnDisambiguator(
         val disjointTransitionInfo = when (type) {
             DisjointInfoType.MergedTransition,
             DisjointInfoType.NewState -> {
-                val (antlrNodes, resultOutTransitions) =
+                val (antlrNodes, resultNonGreedyNodes, resultOutTransitions) =
                     computeAntlrNodesAndResultOuts(groupTransitions)
 
-                val newData = computeNewData(antlrNodes)
+                val newData = computeNewData(antlrNodes, resultNonGreedyNodes)
                 if (type == DisjointInfoType.MergedTransition) {
                     MergedTransitionsInfo(newData, targetState)
                 } else {
@@ -295,27 +304,36 @@ class AtnDisambiguator(
     }
 
     private fun computeAntlrNodesAndResultOuts(groupTransitions: List<Transition<*>>):
-            Pair<SortedSet<AntlrNode>, MutableList<Transition<*>>> {
+            Triple<SortedSet<AntlrNode>, MutableList<ElementNode>, MutableList<Transition<*>>> {
         val outTransitionsByData = LinkedHashMap<TransitionData, MutableList<Transition<*>>>()
         val outToGroupTransitionMap: MutableMap<Transition<*>, Transition<*>> = mutableMapOf()
+        var containsEndOutTransition = false
 
         for (groupTransition in groupTransitions) {
             for (outTransition in groupTransition.target.outTransitions) {
                 outTransitionsByData.getOrPut(outTransition.data) { mutableListOf() }.add(outTransition)
                 outToGroupTransitionMap[outTransition] = groupTransition
+                if (outTransition.data is EndTransitionData) {
+                    containsEndOutTransition = true
+                }
             }
         }
 
         val resultAntlrNodes: SortedSet<AntlrNode> = sortedSetOf()
+        val resultNonGreedyNodes: MutableList<ElementNode> = mutableListOf()
         val resultOutTransitions: MutableList<Transition<*>> = mutableListOf()
 
         for (sameOutTransitions in outTransitionsByData.values) {
             for ((index, sameOutTransition) in sameOutTransitions.withIndex()) {
                 val groupTransition = outToGroupTransitionMap.getValue(sameOutTransition)
                 val groupTransitionAntlrNodes = groupTransition.getAntlrNodes()
+
                 if (index == 0) {
-                    resultAntlrNodes.addAll(groupTransitionAntlrNodes)
-                    resultOutTransitions.add(sameOutTransition)
+                    if (!containsEndOutTransition || sameOutTransition.getNonGreedyNodes() == null) {
+                        resultAntlrNodes.addAll(groupTransitionAntlrNodes)
+                        resultOutTransitions.add(sameOutTransition)
+                        resultNonGreedyNodes.addAll(groupTransition.getNonGreedyNodes() ?: emptyList())
+                    }
                 } else {
                     for (unreachableNode in groupTransitionAntlrNodes) {
                         if (unreachableAntlrElements.add(unreachableNode)) {
@@ -328,6 +346,6 @@ class AtnDisambiguator(
             }
         }
 
-        return resultAntlrNodes to resultOutTransitions
+        return Triple(resultAntlrNodes, resultNonGreedyNodes, resultOutTransitions)
     }
 }

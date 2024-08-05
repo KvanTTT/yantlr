@@ -1,0 +1,19 @@
+digraph ATN {
+  rankdir=LR;
+
+  "DEFAULT_MODE(s0)" -> "NongreedyComment(s1)" [label=ε]
+  "NongreedyComment(s1)" -> s2 [label=ε]
+  s2 -> s3 [label=ε]
+  s3 -> s4 [label=ε]
+  s4 -> s5 [label="/"]
+  s5 -> s6 [label="*"]
+  s6 -> s7 [label=ε]
+  s7 -> s8 [label="-∞..+∞" taillabel=0]
+  s8 -> s7 [label=ε taillabel=0]
+  s8 -> s9 [label=ε taillabel=1]
+  s9 -> s10 [label="*"]
+  s10 -> s11 [label="/"]
+  s11 -> s12 [label=ε]
+  s12 -> s13 [label="end(NongreedyComment)" style=dotted]
+  s7 -> s8 [label=ε taillabel=1]
+}

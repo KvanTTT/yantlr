@@ -59,23 +59,33 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
     private fun buildRule(rule: Rule, visitor: AtnBuilderVisitor): Handle {
         val ruleNode = rule.treeNode
         val ruleState = RuleState(rule, stateCounter++)
-        val ruleBodyHandle = visitor.visitBlockNode(rule.treeNode.blockNode, emptyList())
+        visitor.clear()
+        val ruleBodyHandle = visitor.visitBlockNode(rule.treeNode.blockNode, null)
 
         bindEpsilon(ruleState, ruleBodyHandle.start, ruleNode)
 
         return Handle(ruleState, ruleBodyHandle.end)
     }
 
-    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?, List<ElementNode>>() {
-        override fun visitTreeNode(node: AntlrTreeNode, data: List<ElementNode>): Handle? {
+    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) :
+        AntlrTreeVisitor<Handle?, Nothing?>() {
+        private val negationNodes: ArrayDeque<List<ElementNode>> = ArrayDeque()
+        private val nonGreedyNodes: ArrayDeque<List<ElementNode>> = ArrayDeque()
+
+        fun clear() {
+            negationNodes.clear()
+            nonGreedyNodes.clear()
+        }
+
+        override fun visitTreeNode(node: AntlrTreeNode, data: Nothing?): Handle? {
             return node.acceptChildren(this, data)
         }
 
-        override fun visitToken(token: AntlrToken, data: List<ElementNode>): Handle? {
+        override fun visitToken(token: AntlrToken, data: Nothing?): Handle? {
             return null
         }
 
-        override fun visitBlockNode(node: BlockNode, data: List<ElementNode>): Handle {
+        override fun visitBlockNode(node: BlockNode, data: Nothing?): Handle {
             val start = createState()
             val endNodes = mutableListOf<Pair<State, AntlrNode>>()
 
@@ -94,7 +104,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitAlternativeNode(node: AlternativeNode, data: List<ElementNode>): Handle {
+        override fun visitAlternativeNode(node: AlternativeNode, data: Nothing?): Handle {
             val start = createState()
             var end = start
 
@@ -107,15 +117,16 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitElementNode(node: ElementNode, data: List<ElementNode>): Handle {
+        override fun visitElementNode(node: ElementNode, data: Nothing?): Handle {
             val start = createState()
             var end = start
 
-            val newData = if (node.tilde != null) {
-                data + node
-            } else {
-                data
+            if (node.tilde != null) {
+                negationNodes.add(negationNodes.lastOrEmpty() + node)
             }
+
+            val lastNegationNodes = negationNodes.lastOrEmpty()
+            val lastNonGreedyNodes = nonGreedyNodes.lastOrEmpty()
 
             when (node) {
                 is ElementNode.StringLiteralOrRange -> {
@@ -125,7 +136,12 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             for (charToken in chars) {
                                 val state = createState()
                                 val interval = Interval(getCharCode(charToken, stringLiteral = true))
-                                IntervalTransitionData(interval, sortedSetOf(charToken), newData).bind(end, state)
+                                IntervalTransitionData(
+                                    interval,
+                                    sortedSetOf(charToken),
+                                    lastNegationNodes,
+                                    lastNonGreedyNodes,
+                                ).bind(end, state)
                                 end = state
                             }
                         } else {
@@ -140,10 +156,12 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                                 diagnosticReporter?.invoke(EmptyStringOrSet(this))
                                 null
                             }
+
                             chars.size > 1 -> {
                                 diagnosticReporter?.invoke(MultiCharacterLiteralInRange(this))
                                 null
                             }
+
                             else -> {
                                 getCharCode(chars.first(), stringLiteral = true)
                             }
@@ -163,7 +181,12 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         } else {
                             Interval.Empty
                         }
-                        IntervalTransitionData(interval, sortedSetOf(node), newData).bind(end, state)
+                        IntervalTransitionData(
+                            interval,
+                            sortedSetOf(node),
+                            lastNegationNodes,
+                            lastNonGreedyNodes,
+                        ).bind(end, state)
                         end = state
                     }
                 }
@@ -185,16 +208,26 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                                 diagnosticReporter?.invoke(ReversedInterval(child))
                                 Interval.Empty
                             }
-                            IntervalTransitionData(interval, sortedSetOf(child), newData).bind(start, end)
+                            IntervalTransitionData(
+                                interval,
+                                sortedSetOf(child),
+                                lastNegationNodes,
+                                lastNonGreedyNodes,
+                            ).bind(start, end)
                         }
                     } else {
-                        IntervalTransitionData(Interval.Empty, sortedSetOf(node), newData).bind(start, end)
+                        IntervalTransitionData(
+                            Interval.Empty,
+                            sortedSetOf(node),
+                            lastNegationNodes,
+                            lastNonGreedyNodes,
+                        ).bind(start, end)
                         diagnosticReporter?.invoke(EmptyStringOrSet(node))
                     }
                 }
 
                 is ElementNode.Block -> {
-                    val blockNodeHandle = visitBlockNode(node.blockNode, newData)
+                    val blockNodeHandle = visitBlockNode(node.blockNode, data)
                     bindEpsilon(start, blockNodeHandle.start, node)
                     end = createState()
                     bindEpsilon(blockNodeHandle.end, end, node)
@@ -203,18 +236,29 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                 is ElementNode.LexerId -> {
                     end = createState()
                     val rule = declarationsInfo.lexerRules[node.lexerId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransitionData(rule, sortedSetOf(node), newData).bind(start, end)
+                    RuleTransitionData(rule, sortedSetOf(node), lastNegationNodes, lastNonGreedyNodes).bind(
+                        start,
+                        end
+                    )
                 }
 
                 is ElementNode.ParserId -> {
                     end = createState()
                     val rule = declarationsInfo.parserRules[node.parserId.value!!]!! // TODO: handle unresolved rule
-                    RuleTransitionData(rule, sortedSetOf(node), newData).bind(start, end)
+                    RuleTransitionData(rule, sortedSetOf(node), lastNegationNodes, lastNonGreedyNodes).bind(
+                        start,
+                        end
+                    )
                 }
 
                 is ElementNode.Dot -> {
                     end = createState()
-                    IntervalTransitionData(Interval(Interval.MIN, Interval.MAX), sortedSetOf(node), newData).bind(start, end)
+                    IntervalTransitionData(
+                        Interval(Interval.MIN, Interval.MAX),
+                        sortedSetOf(node),
+                        lastNegationNodes,
+                        lastNonGreedyNodes,
+                    ).bind(start, end)
                 }
 
                 is ElementNode.Empty -> {
@@ -230,17 +274,28 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     AntlrTokenType.Question -> {
                         bindEpsilon(start, end, ebnf)
                     }
+
                     AntlrTokenType.Star -> {
                         bindEpsilon(start, end, ebnf)
                         bindEpsilon(end, start, ebnf)
                     }
+
                     AntlrTokenType.Plus -> {
                         bindEpsilon(end, start, ebnf)
                     }
+
                     else -> {
                         error("Unexpected token type: ${ebnf.type}")
                     }
                 }
+            }
+
+            if (node.tilde != null) {
+                negationNodes.removeLast()
+            }
+
+            if (node.elementSuffix?.nonGreedy != null) {
+                nonGreedyNodes.add(nonGreedyNodes.lastOrEmpty() + node)
             }
 
             return Handle(start, end)
@@ -258,6 +313,8 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             }
             return code
         }
+
+        private fun ArrayDeque<List<ElementNode>>.lastOrEmpty(): List<ElementNode> = lastOrNull() ?: emptyList()
     }
 
     private fun bindEpsilon(previous: State, next: State, treeNode: AntlrNode): Transition<*> {

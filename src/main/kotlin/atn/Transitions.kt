@@ -15,23 +15,31 @@ class Transition<T : TransitionData>(val data: T, val source: State, val target:
 
 sealed class TransitionData
 
-sealed class RealTransitionData(val antlrNodes: SortedSet<AntlrNode>, val negationNodes: List<ElementNode>) : TransitionData()
+sealed class RealTransitionData(
+    val antlrNodes: SortedSet<AntlrNode>,
+    val negationNodes: List<ElementNode>,
+    val nonGreedyNodes: List<ElementNode>,
+) : TransitionData()
 
 class EpsilonTransitionData(val antlrNode: AntlrNode) : TransitionData() {
     override fun toString(): String = "ε"
 }
 
 class IntervalTransitionData(
-    val interval: Interval, antlrNodes: SortedSet<AntlrNode>, negationNodes: List<ElementNode> = emptyList()
-) : RealTransitionData(antlrNodes, negationNodes) {
+    val interval: Interval, antlrNodes: SortedSet<AntlrNode>,
+    negationNodes: List<ElementNode> = emptyList(),
+    nonGreedyNodes: List<ElementNode> = emptyList(),
+) : RealTransitionData(antlrNodes, negationNodes, nonGreedyNodes) {
     override fun toString(): String {
         return "$interval"
     }
 }
 
 class RuleTransitionData(
-    val rule: Rule, antlrNodes: SortedSet<AntlrNode>, negationNodes: List<ElementNode> = emptyList()
-) : RealTransitionData(antlrNodes, negationNodes) {
+    val rule: Rule, antlrNodes: SortedSet<AntlrNode>,
+    negationNodes: List<ElementNode> = emptyList(),
+    nonGreedyNodes: List<ElementNode> = emptyList(),
+) : RealTransitionData(antlrNodes, negationNodes, nonGreedyNodes) {
     override fun toString(): String {
         return "rule(${rule.name})"
     }
@@ -40,13 +48,5 @@ class RuleTransitionData(
 class EndTransitionData(val rule: Rule) : TransitionData() {
     override fun toString(): String {
         return "end(${rule.name})"
-    }
-}
-
-fun Transition<*>.getNegationNodes(): List<ElementNode>? {
-    return if (data is RealTransitionData && data.negationNodes.isNotEmpty()) {
-        data.negationNodes
-    } else {
-        null
     }
 }
