@@ -12,6 +12,7 @@ object AntlrParserWithLexerTests {
     fun stringLiteral() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                elementPrefix = null,
                 tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
@@ -35,6 +36,7 @@ object AntlrParserWithLexerTests {
     fun range() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                elementPrefix = null,
                 tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
@@ -59,6 +61,7 @@ object AntlrParserWithLexerTests {
     fun unterminatedStringLiteral() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                elementPrefix = null,
                 tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
@@ -76,6 +79,7 @@ object AntlrParserWithLexerTests {
     fun stringLiteralWithIncorrectEscaping() {
         infrastructure.check(
             ElementNode.StringLiteralOrRange(
+                elementPrefix = null,
                 tilde = null,
                 ElementNode.StringLiteralOrRange.StringLiteral(
                     AntlrToken(AntlrTokenType.Quote),
@@ -94,6 +98,7 @@ object AntlrParserWithLexerTests {
     fun charSet() {
         infrastructure.check(
             ElementNode.CharSet(
+                elementPrefix = null,
                 tilde = null,
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
@@ -135,6 +140,7 @@ object AntlrParserWithLexerTests {
     fun unterminatedCharSet() {
         infrastructure.check(
             ElementNode.CharSet(
+                elementPrefix = null,
                 tilde = null,
                 AntlrToken(AntlrTokenType.LeftBracket),
                 listOf(
@@ -160,6 +166,7 @@ object AntlrParserWithLexerTests {
             AlternativeNode(
                 listOf(
                     ElementNode.LexerId(
+                        elementPrefix = null,
                         tilde = null,
                         AntlrToken(AntlrTokenType.LexerId, value = "A"),
                         elementSuffix = ElementSuffixNode(
@@ -168,6 +175,7 @@ object AntlrParserWithLexerTests {
                         ),
                     ),
                     ElementNode.ParserId(
+                        elementPrefix = null,
                         tilde = null,
                         AntlrToken(AntlrTokenType.ParserId, value = "a"),
                         elementSuffix = ElementSuffixNode(
@@ -176,6 +184,7 @@ object AntlrParserWithLexerTests {
                         ),
                     ),
                     ElementNode.LexerId(
+                        elementPrefix = null,
                         tilde = null,
                         AntlrToken(AntlrTokenType.LexerId, value = "A"),
                         elementSuffix = ElementSuffixNode(
@@ -184,6 +193,7 @@ object AntlrParserWithLexerTests {
                         ),
                     ),
                     ElementNode.ParserId(
+                        elementPrefix = null,
                         tilde = null,
                         AntlrToken(AntlrTokenType.ParserId, value = "a"),
                         elementSuffix = ElementSuffixNode(
@@ -201,6 +211,7 @@ object AntlrParserWithLexerTests {
     fun dot() {
         infrastructure.check(
             ElementNode.Dot(
+                elementPrefix = null,
                 tilde = null,
                 AntlrToken(AntlrTokenType.Dot),
                 elementSuffix = null,
@@ -213,6 +224,7 @@ object AntlrParserWithLexerTests {
     fun tilde() {
         infrastructure.check(
             ElementNode.LexerId(
+                elementPrefix = null,
                 tilde = AntlrToken(AntlrTokenType.Tilde),
                 AntlrToken(AntlrTokenType.LexerId, value = "A"),
                 elementSuffix = null,
@@ -231,6 +243,7 @@ object AntlrParserWithLexerTests {
                 BlockNode(
                     alternativeNode = AlternativeNode(
                         listOf(ElementNode.StringLiteralOrRange(
+                            elementPrefix = null,
                             tilde = null,
                             ElementNode.StringLiteralOrRange.StringLiteral(
                                 AntlrToken(AntlrTokenType.Quote),
@@ -264,6 +277,47 @@ object AntlrParserWithLexerTests {
                 AntlrToken(AntlrTokenType.Semicolon),
             ),
             "A: 'A' -> skip, pushMode(DEFAULT_MODE);") {
+            it.parseRule()
+        }
+    }
+
+    @Test
+    fun labels() {
+        infrastructure.check(
+            RuleNode(
+                fragmentToken = null,
+                idToken = AntlrToken(AntlrTokenType.ParserId, value = "r"),
+                colonToken = AntlrToken(AntlrTokenType.Colon),
+                blockNode = BlockNode(
+                    alternativeNode = AlternativeNode(
+                        elementNodes = listOf(
+                            ElementNode.LexerId(
+                                elementPrefix = ElementPrefixNode(
+                                    AntlrToken(AntlrTokenType.ParserId, value = "label"),
+                                    AntlrToken(AntlrTokenType.Equals),
+                                ),
+                                tilde = null,
+                                AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                                elementSuffix = null
+                            ),
+                            ElementNode.LexerId(
+                                elementPrefix = ElementPrefixNode(
+                                    AntlrToken(AntlrTokenType.ParserId, value = "assignLabel"),
+                                    AntlrToken(AntlrTokenType.PlusAssign),
+                                ),
+                                tilde = null,
+                                AntlrToken(AntlrTokenType.LexerId, value = "B"),
+                                elementSuffix = null
+                            ),
+                        )
+                    ),
+                    orAlternativeNodes = emptyList(),
+                ),
+                commandsNode = null,
+                semicolonToken = AntlrToken(AntlrTokenType.Semicolon),
+            ),
+            "r: label=A assignLabel+=B;"
+        ) {
             it.parseRule()
         }
     }

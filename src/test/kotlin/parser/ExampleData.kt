@@ -71,42 +71,82 @@ x
                         AntlrToken(AntlrTokenType.Colon),
 
                         BlockNode(
-                            AlternativeNode(listOf(ElementNode.LexerId(tilde = null, AntlrToken(AntlrTokenType.LexerId, value = "A"), elementSuffix = null))),
+                            AlternativeNode(
+                                listOf(
+                                    ElementNode.LexerId(
+                                        elementPrefix = null,
+                                        tilde = null,
+                                        AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                                        elementSuffix = null
+                                    )
+                                )
+                            ),
 
                             listOf(
                                 BlockNode.OrAlternative(
                                     AntlrToken(AntlrTokenType.Bar),
-                                    AlternativeNode(listOf(ElementNode.ParserId(tilde = null, AntlrToken(AntlrTokenType.ParserId, value = "b"), elementSuffix = null))),
+                                    AlternativeNode(
+                                        listOf(
+                                            ElementNode.ParserId(
+                                                elementPrefix = null,
+                                                tilde = null,
+                                                AntlrToken(AntlrTokenType.ParserId, value = "b"),
+                                                elementSuffix = null
+                                            )
+                                        )
+                                    ),
                                 ),
                                 BlockNode.OrAlternative(
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
                                         listOf(
                                             ElementNode.Block(
+                                                elementPrefix = null,
                                                 tilde = null,
                                                 AntlrToken(AntlrTokenType.LeftParen),
                                                 BlockNode(
-                                                    AlternativeNode(listOf(ElementNode.LexerId(tilde = null, AntlrToken(AntlrTokenType.LexerId, value = "C"), elementSuffix = null))),
+                                                    AlternativeNode(
+                                                        listOf(
+                                                            ElementNode.LexerId(
+                                                                elementPrefix = null,
+                                                                tilde = null,
+                                                                AntlrToken(AntlrTokenType.LexerId, value = "C"),
+                                                                elementSuffix = null
+                                                            )
+                                                        )
+                                                    ),
                                                     listOf(
                                                         BlockNode.OrAlternative(
                                                             AntlrToken(AntlrTokenType.Bar),
-                                                            AlternativeNode(listOf(ElementNode.ParserId(tilde = null, AntlrToken(
-                                                                AntlrTokenType.ParserId, value = "d"), elementSuffix = null))),
-                                                        )),
+                                                            AlternativeNode(
+                                                                listOf(
+                                                                    ElementNode.ParserId(
+                                                                        elementPrefix = null, tilde = null, AntlrToken(
+                                                                            AntlrTokenType.ParserId, value = "d"
+                                                                        ), elementSuffix = null
+                                                                    )
+                                                                )
+                                                            ),
+                                                        )
+                                                    ),
                                                 ),
                                                 AntlrToken(AntlrTokenType.RightParen),
                                                 elementSuffix = null,
-                                            )),
+                                            )
+                                        ),
                                     ),
                                 ),
                                 BlockNode.OrAlternative(
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
-                                        listOf(ElementNode.Empty(
-                                            tilde = null,
-                                            emptyToken = AntlrToken(AntlrTokenType.Empty),
-                                            elementSuffix = null,
-                                        )),
+                                        listOf(
+                                            ElementNode.Empty(
+                                                elementPrefix = null,
+                                                tilde = null,
+                                                emptyToken = AntlrToken(AntlrTokenType.Empty),
+                                                elementSuffix = null,
+                                            )
+                                        ),
                                     ),
                                 ),
                             ),
