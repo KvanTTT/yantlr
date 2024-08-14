@@ -66,16 +66,16 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
         return Handle(ruleState, ruleBodyHandle.end)
     }
 
-    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?, List<ElementNode>>() {
-        override fun visitTreeNode(node: AntlrTreeNode, data: List<ElementNode>): Handle? {
+    inner class AtnBuilderVisitor(private val declarationsInfo: DeclarationsInfo) : AntlrTreeVisitor<Handle?, List<ElementBody>>() {
+        override fun visitTreeNode(node: AntlrTreeNode, data: List<ElementBody>): Handle? {
             return node.acceptChildren(this, data)
         }
 
-        override fun visitToken(token: AntlrToken, data: List<ElementNode>): Handle? {
+        override fun visitToken(token: AntlrToken, data: List<ElementBody>): Handle? {
             return null
         }
 
-        override fun visitBlockNode(node: BlockNode, data: List<ElementNode>): Handle {
+        override fun visitBlockNode(node: BlockNode, data: List<ElementBody>): Handle {
             val start = createState()
             val endNodes = mutableListOf<Pair<State, AntlrNode>>()
 
@@ -94,7 +94,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitAlternativeNode(node: AlternativeNode, data: List<ElementNode>): Handle {
+        override fun visitAlternativeNode(node: AlternativeNode, data: List<ElementBody>): Handle {
             val start = createState()
             var end = start
 
@@ -107,7 +107,35 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             return Handle(start, end)
         }
 
-        override fun visitElementNode(node: ElementNode, data: List<ElementNode>): Handle {
+        override fun visitElementNode(node: ElementNode, data: List<ElementBody>): Handle {
+            val bodyHandle = visitElementBody(node.elementBody, data)
+            val start = bodyHandle.start
+            val end = bodyHandle.end
+
+            // TODO: implement greedy processing
+            node.elementSuffix?.let {
+                val ebnf = it.ebnf
+                when (ebnf.type) {
+                    AntlrTokenType.Question -> {
+                        bindEpsilon(start, end, ebnf)
+                    }
+                    AntlrTokenType.Star -> {
+                        bindEpsilon(start, end, ebnf)
+                        bindEpsilon(end, start, ebnf)
+                    }
+                    AntlrTokenType.Plus -> {
+                        bindEpsilon(end, start, ebnf)
+                    }
+                    else -> {
+                        error("Unexpected token type: ${ebnf.type}")
+                    }
+                }
+            }
+
+            return bodyHandle
+        }
+
+        override fun visitElementBody(node: ElementBody, data: List<ElementBody>): Handle {
             val start = createState()
             var end = start
 
@@ -118,7 +146,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             }
 
             when (node) {
-                is ElementNode.StringLiteralOrRange -> {
+                is ElementBody.StringLiteralOrRange -> {
                     if (node.range == null) {
                         val chars = node.stringLiteral.chars
                         if (chars.isNotEmpty()) {
@@ -135,7 +163,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                             EpsilonTransitionData(node).bind(start, end)
                         }
                     } else {
-                        fun ElementNode.StringLiteralOrRange.StringLiteral.getBound(): Int? = when {
+                        fun ElementBody.StringLiteralOrRange.StringLiteral.getBound(): Int? = when {
                             chars.isEmpty() -> {
                                 diagnosticReporter?.invoke(EmptyStringOrSet(this))
                                 null
@@ -168,7 +196,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     }
                 }
 
-                is ElementNode.CharSet -> {
+                is ElementBody.CharSet -> {
                     end = createState()
                     if (node.children.isNotEmpty()) {
                         for (child in node.children) {
@@ -193,53 +221,33 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     }
                 }
 
-                is ElementNode.Block -> {
+                is ElementBody.Block -> {
                     val blockNodeHandle = visitBlockNode(node.blockNode, newData)
                     bindEpsilon(start, blockNodeHandle.start, node)
                     end = createState()
                     bindEpsilon(blockNodeHandle.end, end, node)
                 }
 
-                is ElementNode.LexerId -> {
+                is ElementBody.LexerId -> {
                     end = createState()
                     val rule = declarationsInfo.lexerRules[node.lexerId.value!!]!! // TODO: handle unresolved rule
                     RuleTransitionData(rule, sortedSetOf(node), newData).bind(start, end)
                 }
 
-                is ElementNode.ParserId -> {
+                is ElementBody.ParserId -> {
                     end = createState()
                     val rule = declarationsInfo.parserRules[node.parserId.value!!]!! // TODO: handle unresolved rule
                     RuleTransitionData(rule, sortedSetOf(node), newData).bind(start, end)
                 }
 
-                is ElementNode.Dot -> {
+                is ElementBody.Dot -> {
                     end = createState()
                     IntervalTransitionData(Interval(Interval.MIN, Interval.MAX), sortedSetOf(node), newData).bind(start, end)
                 }
 
-                is ElementNode.Empty -> {
+                is ElementBody.Empty -> {
                     end = createState()
                     bindEpsilon(start, end, node)
-                }
-            }
-
-            // TODO: implement greedy processing
-            node.elementSuffix?.let {
-                val ebnf = it.ebnf
-                when (ebnf.type) {
-                    AntlrTokenType.Question -> {
-                        bindEpsilon(start, end, ebnf)
-                    }
-                    AntlrTokenType.Star -> {
-                        bindEpsilon(start, end, ebnf)
-                        bindEpsilon(end, start, ebnf)
-                    }
-                    AntlrTokenType.Plus -> {
-                        bindEpsilon(end, start, ebnf)
-                    }
-                    else -> {
-                        error("Unexpected token type: ${ebnf.type}")
-                    }
                 }
             }
 

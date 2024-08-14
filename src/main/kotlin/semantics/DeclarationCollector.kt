@@ -107,11 +107,11 @@ class DeclarationCollector(
             node.ruleNodes.forEach { visitRuleNode(it, data) }
         }
 
-        override fun visitElementNode(node: ElementNode, data: Nothing?) {
+        override fun visitElementBody(node: ElementBody, data: Nothing?) {
             when (node) {
-                is ElementNode.LexerId,
-                is ElementNode.ParserId -> recursiveRules.add(currentRule)
-                is ElementNode.Block -> { visitBlockNode(node.blockNode, data) }
+                is ElementBody.LexerId,
+                is ElementBody.ParserId -> recursiveRules.add(currentRule)
+                is ElementBody.Block -> { visitBlockNode(node.blockNode, data) }
                 else -> {}
             }
         }

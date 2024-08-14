@@ -186,117 +186,108 @@ class AlternativeNode(val elementNodes: List<ElementNode>) : AntlrTreeNode() {
     }
 }
 
-sealed class ElementNode(
+class ElementNode(
     val elementPrefix: ElementPrefixNode?,
-    val tilde: AntlrToken?,
+    val elementBody: ElementBody,
     val elementSuffix: ElementSuffixNode?,
-    val endNode: EndNode?
 ) : AntlrTreeNode() {
-    class Empty(
-        elementPrefix: ElementPrefixNode?,
-        tilde: AntlrToken?,
-        val emptyToken: AntlrToken,
-        elementSuffix: ElementSuffixNode?,
-        endNode: EndNode? = null
-    ) : ElementNode(elementPrefix, tilde, elementSuffix, endNode) {
-        override fun calculateLeftToken(): AntlrToken = emptyToken
+    override fun calculateLeftToken(): AntlrToken = elementPrefix?.leftToken ?: elementBody.leftToken
 
-        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: emptyToken
+    override fun calculateRightToken(): AntlrToken = elementSuffix?.rightToken ?: elementBody.rightToken
+
+    override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
+        elementPrefix?.let { visitor.visitElementPrefixNode(it, data) }
+        visitor.visitElementBody(elementBody, data)
+        elementSuffix?.let { visitor.visitElementSuffixNode(it, data) }
+        return null
+    }
+}
+
+class ElementPrefixNode(val label: AntlrToken, val equalToken: AntlrToken) : AntlrTreeNode() {
+    override fun calculateLeftToken(): AntlrToken = label
+
+    override fun calculateRightToken(): AntlrToken = equalToken
+
+    override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
+        visitor.visitToken(label, data)
+        visitor.visitToken(equalToken, data)
+        return null
+    }
+}
+
+sealed class ElementBody(val tilde: AntlrToken?) : AntlrTreeNode() {
+    class Empty(tilde: AntlrToken?, val emptyToken: AntlrToken) : ElementBody(tilde) {
+        override fun calculateLeftToken(): AntlrToken = tilde ?: emptyToken
+
+        override fun calculateRightToken(): AntlrToken = emptyToken
 
         override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
             tilde?.let { visitor.visitToken(it, data) }
-            elementSuffix?.let { visitor.visitTreeNode(it, data) }
+            visitor.visitToken(emptyToken, data)
             return null
         }
     }
 
-    class LexerId(
-        elementPrefix: ElementPrefixNode?,
-        tilde: AntlrToken?,
-        val lexerId: AntlrToken,
-        elementSuffix: ElementSuffixNode?,
-        endNode: EndNode? = null
-    ) : ElementNode(elementPrefix, tilde, elementSuffix, endNode) {
-        override fun calculateLeftToken(): AntlrToken = lexerId
+    class LexerId(tilde: AntlrToken?, val lexerId: AntlrToken) : ElementBody(tilde) {
+        override fun calculateLeftToken(): AntlrToken = tilde ?: lexerId
 
-        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: lexerId
+        override fun calculateRightToken(): AntlrToken = lexerId
 
         override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
             tilde?.let { visitor.visitToken(it, data) }
             visitor.visitToken(lexerId, data)
-            elementSuffix?.let { visitor.visitTreeNode(it, data) }
             return null
         }
     }
 
-    class ParserId(
-        elementPrefix: ElementPrefixNode?,
-        tilde: AntlrToken?,
-        val parserId: AntlrToken,
-        elementSuffix: ElementSuffixNode?,
-        endNode: EndNode? = null
-    ) : ElementNode(elementPrefix, tilde, elementSuffix, endNode) {
-        override fun calculateLeftToken(): AntlrToken = parserId
+    class ParserId(tilde: AntlrToken?, val parserId: AntlrToken) : ElementBody(tilde) {
+        override fun calculateLeftToken(): AntlrToken = tilde ?: parserId
 
-        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: parserId
+        override fun calculateRightToken(): AntlrToken = parserId
 
         override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
             tilde?.let { visitor.visitToken(it, data) }
             visitor.visitToken(parserId, data)
-            elementSuffix?.let { visitor.visitTreeNode(it, data) }
             return null
         }
     }
 
-    class Dot(
-        elementPrefix: ElementPrefixNode?,
-        tilde: AntlrToken?,
-        val dotToken: AntlrToken,
-        elementSuffix: ElementSuffixNode?,
-        endNode: EndNode? = null
-    ) : ElementNode(elementPrefix, tilde, elementSuffix, endNode) {
-        override fun calculateLeftToken(): AntlrToken = dotToken
+    class Dot(tilde: AntlrToken?, val dotToken: AntlrToken) : ElementBody(tilde) {
+        override fun calculateLeftToken(): AntlrToken = tilde ?: dotToken
 
-        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: dotToken
+        override fun calculateRightToken(): AntlrToken = dotToken
 
         override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
+            tilde?.let { visitor.visitToken(it, data) }
             visitor.visitToken(dotToken, data)
-            elementSuffix?.let { visitor.visitTreeNode(it, data) }
             return null
         }
     }
 
     class Block(
-        elementPrefix: ElementPrefixNode?,
         tilde: AntlrToken?,
         val leftParen: AntlrToken,
         val blockNode: BlockNode,
         val rightParen: AntlrToken,
-        elementSuffix: ElementSuffixNode?,
-        endNode: EndNode? = null
-    ) : ElementNode(elementPrefix, tilde, elementSuffix, endNode) {
-        override fun calculateLeftToken(): AntlrToken = leftParen
+    ) : ElementBody(tilde) {
+        override fun calculateLeftToken(): AntlrToken = tilde ?: leftParen
 
-        override fun calculateRightToken(): AntlrToken = endNode?.rightToken ?: elementSuffix?.rightToken ?: rightParen
+        override fun calculateRightToken(): AntlrToken = rightParen
 
         override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
             tilde?.let { visitor.visitToken(it, data) }
             visitor.visitToken(leftParen, data)
             visitor.visitBlockNode(blockNode, data)
             visitor.visitToken(rightParen, data)
-            elementSuffix?.let { visitor.visitTreeNode(it, data) }
             return null
         }
     }
 
     class StringLiteralOrRange(
-        elementPrefix: ElementPrefixNode?,
         tilde: AntlrToken?,
         val stringLiteral: StringLiteral,
         val range: Range?,
-        elementSuffix: ElementSuffixNode?,
-        endNode: EndNode? = null
-    ) : ElementNode(elementPrefix, tilde, elementSuffix, endNode) {
+    ) : ElementBody(tilde) {
         class Range(val rangeToken: AntlrToken, val stringLiteral: StringLiteral) : AntlrTreeNode() {
             override fun calculateLeftToken(): AntlrToken = rangeToken
 
@@ -323,33 +314,26 @@ sealed class ElementNode(
             }
         }
 
-        override fun calculateLeftToken(): AntlrToken = stringLiteral.leftToken
+        override fun calculateLeftToken(): AntlrToken = tilde ?: stringLiteral.leftToken
 
         override fun calculateRightToken(): AntlrToken =
-            endNode?.rightToken ?: elementSuffix?.rightToken ?: range?.rightToken ?: stringLiteral.rightToken
+            range?.rightToken ?: stringLiteral.rightToken
 
         override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
             tilde?.let { visitor.visitToken(it, data) }
-            visitor.visitTreeNode(stringLiteral, data)
+            visitor.visitElementStringLiteral(stringLiteral, data)
             range?.let { visitor.visitElementStringLiteralRange(it, data) }
-            elementSuffix?.let { visitor.visitTreeNode(it, data) }
             return null
         }
     }
 
     class CharSet(
-        elementPrefix: ElementPrefixNode?,
         tilde: AntlrToken?,
         val openBracket: AntlrToken,
         val children: List<CharOrRange>,
         val closeBracket: AntlrToken,
-        elementSuffix: ElementSuffixNode?,
-        endNode: EndNode? = null
-    ) : ElementNode(elementPrefix, tilde, elementSuffix, endNode) {
-        class CharOrRange(
-            val char: AntlrToken,
-            val range: Range?
-        ) : AntlrTreeNode() {
+    ) : ElementBody(tilde) {
+        class CharOrRange(val char: AntlrToken, val range: Range?) : AntlrTreeNode() {
             class Range(val hyphen: AntlrToken, val char: AntlrToken) : AntlrTreeNode() {
                 override fun calculateLeftToken(): AntlrToken = hyphen
 
@@ -373,31 +357,17 @@ sealed class ElementNode(
             }
         }
 
-        override fun calculateLeftToken(): AntlrToken = openBracket
+        override fun calculateLeftToken(): AntlrToken = tilde ?: openBracket
 
-        override fun calculateRightToken(): AntlrToken =
-            endNode?.rightToken ?: elementSuffix?.rightToken ?: closeBracket
+        override fun calculateRightToken(): AntlrToken = closeBracket
 
         override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
             tilde?.let { visitor.visitToken(it, data) }
             visitor.visitToken(openBracket, data)
             children.forEach { visitor.visitElementCharSetCharHyphenCharNode(it, data) }
             visitor.visitToken(closeBracket, data)
-            elementSuffix?.let { visitor.visitTreeNode(it, data) }
             return null
         }
-    }
-}
-
-class ElementPrefixNode(val label: AntlrToken, val equalToken: AntlrToken) : AntlrTreeNode() {
-    override fun calculateLeftToken(): AntlrToken = label
-
-    override fun calculateRightToken(): AntlrToken = equalToken
-
-    override fun <R, D> acceptChildren(visitor: AntlrTreeVisitor<R, D>, data: D): R? {
-        visitor.visitToken(label, data)
-        visitor.visitToken(equalToken, data)
-        return null
     }
 }
 

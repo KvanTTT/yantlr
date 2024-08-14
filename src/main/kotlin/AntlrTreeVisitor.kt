@@ -27,23 +27,29 @@ abstract class AntlrTreeVisitor<out R, in D> {
 
     open fun visitElementNode(node: ElementNode, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementLexerId(node: ElementNode.LexerId, data: D) = visitElementNode(node, data)
+    open fun visitElementBody(node: ElementBody, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementParserId(node: ElementNode.ParserId, data: D) = visitElementNode(node, data)
+    open fun visitElementLexerId(node: ElementBody.LexerId, data: D) = visitElementBody(node, data)
 
-    open fun visitElementDot(node: ElementNode.Dot, data: D) = visitElementNode(node, data)
+    open fun visitElementParserId(node: ElementBody.ParserId, data: D) = visitElementBody(node, data)
 
-    open fun visitElementBlock(node: ElementNode.Block, data: D) = visitElementNode(node, data)
+    open fun visitElementDot(node: ElementBody.Dot, data: D) = visitElementBody(node, data)
 
-    open fun visitElementStringLiteralOrRange(node: ElementNode.StringLiteralOrRange, data: D) = visitElementNode(node, data)
+    open fun visitElementBlock(node: ElementBody.Block, data: D) = visitElementBody(node, data)
 
-    open fun visitElementStringLiteralRange(node: ElementNode.StringLiteralOrRange.Range, data: D) = visitTreeNode(node, data)
+    open fun visitElementStringLiteralOrRange(node: ElementBody.StringLiteralOrRange, data: D) = visitElementBody(node, data)
 
-    open fun visitElementCharSet(node: ElementNode.CharSet, data: D) = visitElementNode(node, data)
+    open fun visitElementStringLiteral(node: ElementBody.StringLiteralOrRange.StringLiteral, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementCharSetCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange, data: D) = visitTreeNode(node, data)
+    open fun visitElementStringLiteralRange(node: ElementBody.StringLiteralOrRange.Range, data: D) = visitTreeNode(node, data)
 
-    open fun visitElementCharSetCharHyphenCharHyphenCharNode(node: ElementNode.CharSet.CharOrRange.Range, data: D) = visitTreeNode(node, data)
+    open fun visitElementCharSet(node: ElementBody.CharSet, data: D) = visitElementBody(node, data)
+
+    open fun visitElementCharSetCharHyphenCharNode(node: ElementBody.CharSet.CharOrRange, data: D) = visitTreeNode(node, data)
+
+    open fun visitElementCharSetCharHyphenCharHyphenCharNode(node: ElementBody.CharSet.CharOrRange.Range, data: D) = visitTreeNode(node, data)
+
+    open fun visitElementPrefixNode(node: ElementPrefixNode, data: D) = visitTreeNode(node, data)
 
     open fun visitElementSuffixNode(node: ElementSuffixNode, data: D) = visitTreeNode(node, data)
 }

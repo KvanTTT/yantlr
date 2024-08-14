@@ -189,11 +189,11 @@ class AntlrParser(
     // alternative
     //   : element+
     //   ;
-    fun parseAlternative(lastTokenEnd: Int = 0): AlternativeNode {
+    private fun parseAlternative(lastTokenEnd: Int = 0): AlternativeNode {
         val elementNodes = buildList {
-            add(parseElement(false, lastTokenEnd))
+            add(parseElement(lastTokenEnd))
             while (getToken().type in elementTokenTypes) {
-                add(parseElement(false, lastTokenEnd))
+                add(parseElement(lastTokenEnd))
             }
         }
 
@@ -201,7 +201,30 @@ class AntlrParser(
     }
 
     // element
-    //   : elementPrefix? '~'?
+    //   : elementPrefix? elementBody elementSuffix?
+    //   ;
+    //
+    fun parseElement(lastTokenEnd: Int = 0): ElementNode {
+        val elementPrefix =
+            if (getToken(1).type.let { it == AntlrTokenType.Equals || it == AntlrTokenType.PlusAssign }) {
+                parseElementPrefix()
+            } else {
+                null
+            }
+
+        val elementBody = parseElementBody(lastTokenEnd)
+
+        val elementSuffix = if (getToken().type in elementSuffixTokenTypes) {
+            parseElementSuffix()
+        } else {
+            null
+        }
+
+        return ElementNode(elementPrefix, elementBody, elementSuffix)
+    }
+
+    // elementBody
+    //   : '~'?
     //     ( LexerId
     //     | ParserId
     //     | '(' block? ')'
@@ -209,19 +232,13 @@ class AntlrParser(
     //     | '[' (char range=('-' char)?)* ']')
     //     | '.'
     //     |
-    //     ) elementSuffix?
+    //     )
     //   ;
     //
     // char
     //   : Char | EscapedChar | UnicodeEscapedChar
     //   ;
-    fun parseElement(matchToEof: Boolean = false, lastTokenEnd: Int = 0): ElementNode {
-        val elementPrefix = if (getToken(1).type.let { it == AntlrTokenType.Equals || it == AntlrTokenType.PlusAssign } ) {
-            parseElementPrefix()
-        } else {
-            null
-        }
-
+    private fun parseElementBody(lastTokenEnd: Int = 0): ElementBody {
         val tildeToken: AntlrToken? = if (getToken().type == AntlrTokenType.Tilde) {
             matchToken()
         } else {
@@ -229,55 +246,24 @@ class AntlrParser(
         }
 
         val nextToken = getToken()
-
-        fun tryParseElementSuffix(): ElementSuffixNode? {
-            return if (getToken().type in elementSuffixTokenTypes) {
-                parseElementSuffix()
-            } else {
-                null
-            }
-        }
-
-        val extraTokens = mutableListOf<AntlrToken>()
         return when (nextToken.type) {
             AntlrTokenType.LexerId -> {
-                ElementNode.LexerId(
-                    elementPrefix,
-                    tildeToken,
-                    matchToken(),
-                    tryParseElementSuffix(),
-                    emitEndNode(extraTokens, matchToEof)
-                )
+                ElementBody.LexerId(tildeToken, matchToken())
             }
             AntlrTokenType.ParserId -> {
-                ElementNode.ParserId(
-                    elementPrefix,
-                    tildeToken,
-                    matchToken(),
-                    tryParseElementSuffix(),
-                    emitEndNode(extraTokens, matchToEof)
-                )
+                ElementBody.ParserId(tildeToken, matchToken())
             }
             AntlrTokenType.Dot -> {
-                ElementNode.Dot(
-                    elementPrefix,
-                    tildeToken,
-                    matchToken(),
-                    tryParseElementSuffix(),
-                    emitEndNode(extraTokens, matchToEof)
-                )
+                ElementBody.Dot(tildeToken, matchToken())
             }
-            AntlrTokenType.LeftParen -> ElementNode.Block(
-                elementPrefix,
+            AntlrTokenType.LeftParen -> ElementBody.Block(
                 tildeToken,
                 matchToken(),
                 parseBlock(nextToken.end()),
                 matchToken(AntlrTokenType.RightParen),
-                tryParseElementSuffix(),
-                emitEndNode(extraTokens, matchToEof),
             )
             AntlrTokenType.Quote -> {
-                fun matchStringLiteral(): ElementNode.StringLiteralOrRange.StringLiteral {
+                fun matchStringLiteral(): ElementBody.StringLiteralOrRange.StringLiteral {
                     val openQuote = matchToken() // Consume quote
                     var closeQuote: AntlrToken
 
@@ -296,29 +282,25 @@ class AntlrParser(
                                     add(matchToken())
                                 }
                                 else -> {
-                                    extraTokens.add(matchToken())
                                 }
                             }
                         }
                     }
 
-                    return ElementNode.StringLiteralOrRange.StringLiteral(openQuote, charTokens, closeQuote)
+                    return ElementBody.StringLiteralOrRange.StringLiteral(openQuote, charTokens, closeQuote)
                 }
 
-                ElementNode.StringLiteralOrRange(
-                    elementPrefix,
+                ElementBody.StringLiteralOrRange(
                     tildeToken,
                     matchStringLiteral(),
                     if (getToken().type == AntlrTokenType.Range) {
-                        ElementNode.StringLiteralOrRange.Range(
+                        ElementBody.StringLiteralOrRange.Range(
                             matchToken(),
                             matchStringLiteral(),
                         )
                     } else {
                         null
                     },
-                    tryParseElementSuffix(),
-                    emitEndNode(extraTokens, matchToEof)
                 )
             }
             AntlrTokenType.LeftBracket -> {
@@ -338,49 +320,35 @@ class AntlrParser(
                             }
                             AntlrTokenType.Hyphen, AntlrTokenType.Char, AntlrTokenType.EscapedChar, AntlrTokenType.UnicodeEscapedChar -> {
                                 if (getToken(1).type == AntlrTokenType.Hyphen && getToken(2).type in charSetTokenTypes) {
-                                    add(ElementNode.CharSet.CharOrRange(
+                                    add(ElementBody.CharSet.CharOrRange(
                                         matchToken(),
-                                        ElementNode.CharSet.CharOrRange.Range(
+                                        ElementBody.CharSet.CharOrRange.Range(
                                             matchToken(),
                                             matchToken(),
                                         )
                                     ))
                                 } else {
-                                    add(ElementNode.CharSet.CharOrRange(matchToken(), null))
+                                    add(ElementBody.CharSet.CharOrRange(matchToken(), null))
                                 }
                             }
                             else -> {
-                                extraTokens.add(matchToken())
+                                // TODO: implement error handling
                             }
                         }
                     }
                 }
 
-                ElementNode.CharSet(
-                    elementPrefix,
-                    tildeToken,
-                    openBracket,
-                    charSetNodes,
-                    closeBracket,
-                    tryParseElementSuffix(),
-                    emitEndNode(extraTokens, matchToEof)
-                )
+                ElementBody.CharSet(tildeToken, openBracket, charSetNodes, closeBracket)
             }
             else -> {
-                ElementNode.Empty(
-                    elementPrefix,
-                    tildeToken,
-                    AntlrToken(AntlrTokenType.Empty, lastTokenEnd, 0),
-                    tryParseElementSuffix(),
-                    emitEndNode(extraTokens, matchToEof)
-                )
+                ElementBody.Empty(tildeToken, AntlrToken(AntlrTokenType.Empty, lastTokenEnd, 0))
             }
         }
     }
 
     // elementPrefix
-    //  : identifier ('=' | '+=')
-    //  ;
+    //   : identifier ('=' | '+=')
+    //   ;
     private fun parseElementPrefix(): ElementPrefixNode? {
         val idToken = parseId()
         val assignToken = matchToken()

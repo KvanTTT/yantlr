@@ -24,32 +24,39 @@ x
       Token (Colon)
       Block
         Alternative
-          LexerId
-            Token (LexerId, A)
+          Element
+            LexerId
+              Token (LexerId, A)
         OrAlternative
           Token (Bar)
           Alternative
-            ParserId
-              Token (ParserId, b)
+            Element
+              ParserId
+                Token (ParserId, b)
         OrAlternative
           Token (Bar)
           Alternative
-            Block
-              Token (LeftParen)
+            Element
               Block
-                Alternative
-                  LexerId
-                    Token (LexerId, C)
-                OrAlternative
-                  Token (Bar)
+                Token (LeftParen)
+                Block
                   Alternative
-                    ParserId
-                      Token (ParserId, d)
-              Token (RightParen)
+                    Element
+                      LexerId
+                        Token (LexerId, C)
+                  OrAlternative
+                    Token (Bar)
+                    Alternative
+                      Element
+                        ParserId
+                          Token (ParserId, d)
+                Token (RightParen)
         OrAlternative
           Token (Bar)
           Alternative
-            Empty
+            Element
+              Empty
+                Token (Empty)
       Token (Semicolon)
   End
     Token (Eof)
@@ -73,10 +80,12 @@ x
                         BlockNode(
                             AlternativeNode(
                                 listOf(
-                                    ElementNode.LexerId(
+                                    ElementNode(
                                         elementPrefix = null,
-                                        tilde = null,
-                                        AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                                        ElementBody.LexerId(
+                                            tilde = null,
+                                            AntlrToken(AntlrTokenType.LexerId, value = "A"),
+                                        ),
                                         elementSuffix = null
                                     )
                                 )
@@ -87,10 +96,12 @@ x
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
                                         listOf(
-                                            ElementNode.ParserId(
+                                            ElementNode(
                                                 elementPrefix = null,
-                                                tilde = null,
-                                                AntlrToken(AntlrTokenType.ParserId, value = "b"),
+                                                ElementBody.ParserId(
+                                                    tilde = null,
+                                                    AntlrToken(AntlrTokenType.ParserId, value = "b"),
+                                                ),
                                                 elementSuffix = null
                                             )
                                         )
@@ -100,38 +111,45 @@ x
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
                                         listOf(
-                                            ElementNode.Block(
+                                            ElementNode(
                                                 elementPrefix = null,
-                                                tilde = null,
-                                                AntlrToken(AntlrTokenType.LeftParen),
-                                                BlockNode(
-                                                    AlternativeNode(
-                                                        listOf(
-                                                            ElementNode.LexerId(
-                                                                elementPrefix = null,
-                                                                tilde = null,
-                                                                AntlrToken(AntlrTokenType.LexerId, value = "C"),
-                                                                elementSuffix = null
-                                                            )
-                                                        )
-                                                    ),
-                                                    listOf(
-                                                        BlockNode.OrAlternative(
-                                                            AntlrToken(AntlrTokenType.Bar),
-                                                            AlternativeNode(
-                                                                listOf(
-                                                                    ElementNode.ParserId(
-                                                                        elementPrefix = null, tilde = null, AntlrToken(
-                                                                            AntlrTokenType.ParserId, value = "d"
-                                                                        ), elementSuffix = null
-                                                                    )
+                                                ElementBody.Block(
+                                                    tilde = null,
+                                                    AntlrToken(AntlrTokenType.LeftParen),
+                                                    BlockNode(
+                                                        AlternativeNode(
+                                                            listOf(
+                                                                ElementNode(
+                                                                    elementPrefix = null,
+                                                                    ElementBody.LexerId(
+                                                                        tilde = null,
+                                                                        AntlrToken(AntlrTokenType.LexerId, value = "C"),
+                                                                    ),
+                                                                    elementSuffix = null
                                                                 )
-                                                            ),
-                                                        )
+                                                            )
+                                                        ),
+                                                        listOf(
+                                                            BlockNode.OrAlternative(
+                                                                AntlrToken(AntlrTokenType.Bar),
+                                                                AlternativeNode(
+                                                                    listOf(
+                                                                        ElementNode(
+                                                                            elementPrefix = null,
+                                                                            ElementBody.ParserId(
+                                                                                tilde = null,
+                                                                                AntlrToken(AntlrTokenType.ParserId, value = "d"),
+                                                                            ),
+                                                                            elementSuffix = null
+                                                                        )
+                                                                    )
+                                                                ),
+                                                            )
+                                                        ),
                                                     ),
+                                                    AntlrToken(AntlrTokenType.RightParen),
                                                 ),
-                                                AntlrToken(AntlrTokenType.RightParen),
-                                                elementSuffix = null,
+                                                elementSuffix = null
                                             )
                                         ),
                                     ),
@@ -140,11 +158,13 @@ x
                                     AntlrToken(AntlrTokenType.Bar),
                                     AlternativeNode(
                                         listOf(
-                                            ElementNode.Empty(
+                                            ElementNode(
                                                 elementPrefix = null,
-                                                tilde = null,
-                                                emptyToken = AntlrToken(AntlrTokenType.Empty),
-                                                elementSuffix = null,
+                                                ElementBody.Empty(
+                                                    tilde = null,
+                                                    emptyToken = AntlrToken(AntlrTokenType.Empty),
+                                                ),
+                                                elementSuffix = null
                                             )
                                         ),
                                     ),

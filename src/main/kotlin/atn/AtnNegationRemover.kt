@@ -1,7 +1,7 @@
 package atn
 
 import SemanticsDiagnostic
-import parser.ElementNode
+import parser.ElementBody
 import java.util.*
 
 class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null) {
@@ -14,7 +14,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
     }
 
     private class Helper {
-        private val negationStateMap: MutableMap<ElementNode, State> = mutableMapOf()
+        private val negationStateMap: MutableMap<ElementBody, State> = mutableMapOf()
 
         fun run(rootState: RootState) {
             searchNegationStates(rootState)
@@ -25,7 +25,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
 
         private fun searchNegationStates(state: State) {
             val visitedStates: MutableSet<State> = mutableSetOf()
-            val currentNegationNodes: MutableSet<ElementNode> = mutableSetOf()
+            val currentNegationNodes: MutableSet<ElementBody> = mutableSetOf()
 
             fun searchNegationStatesInternal(state: State) {
                 if (!visitedStates.add(state)) return
@@ -108,7 +108,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
         private class Drop(targetState: State) : NegationInfo(targetState)
 
         private fun negate(outTransitions: List<Transition<*>>): List<NegationInfo> {
-            val negationIntervalInfoMap: MutableMap<ElementNode, SortedMap<Int, MutableList<IntervalInfo>>> =
+            val negationIntervalInfoMap: MutableMap<ElementBody, SortedMap<Int, MutableList<IntervalInfo>>> =
                 mutableMapOf()
 
             val resultNegationInfo = mutableListOf<NegationInfo>()
