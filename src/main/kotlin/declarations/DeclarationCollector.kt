@@ -1,4 +1,4 @@
-package semantics
+package declarations
 
 import AntlrTreeVisitor
 import DEFAULT_MODE_NAME

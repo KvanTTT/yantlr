@@ -9,6 +9,7 @@ import com.intellij.rt.execution.junit.FileComparisonFailure
 import infrastructure.testDescriptors.TestDescriptor
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import infrastructure.testDescriptors.TestDescriptorExtractor
+import types.TypesInfo
 import java.io.File
 import java.nio.file.Paths
 import kotlin.test.junit5.JUnit5Asserter.fail
@@ -73,10 +74,13 @@ object FullPipelineRunner {
         return GrammarPipeline.run(grammarText, grammarOffset, debugMode = true) {
             diagnosticReporter.invoke(it)
         }.also {
-            if (parentFile.path.substringAfter(resourcesFile.path).contains("Atn")) {
-                val dumpName = grammarName ?: it.grammarName
+            val subdirectory = parentFile.path.substringAfter(resourcesFile.path)
+            val dumpName = grammarName ?: it.grammarName
+            if (subdirectory.contains("Atn")) {
                 dumpAtn(it.originalAtn!!, it.lineOffsets, parentFile, dumpName, minimized = false)
                 dumpAtn(it.minimizedAtn, it.lineOffsets, parentFile, dumpName, minimized = true)
+            } else if (subdirectory.contains("Types")) {
+                dumpTypes(it.typesInfo, it.lineOffsets, parentFile, dumpName)
             }
         }
     }
@@ -91,6 +95,20 @@ object FullPipelineRunner {
             val expectedAtnDump = dumpFile.readText()
             failFileComparisonIfNotEqual(
                 "ATN ${if (minimized) "minimized " else ""} dumps are not equal", expectedAtnDump, actualAtnDump, dumpFile
+            )
+        }
+    }
+
+    private fun dumpTypes(typesInfo: TypesInfo, lineOffsets: List<Int>, parentFile: File, name: String?) {
+        val actualDump = TypesDumper(lineOffsets).dump(typesInfo)
+        val dumpFile = Paths.get(parentFile.path, "${name}.types").toFile()
+        if (!dumpFile.exists()) {
+            dumpFile.writeText(actualDump)
+            fail("Expected file doesn't exist. Generating: ${dumpFile.path}")
+        } else {
+            val expectedDump = dumpFile.readText()
+            failFileComparisonIfNotEqual(
+                "Type dumps are not equal", expectedDump, actualDump, dumpFile
             )
         }
     }

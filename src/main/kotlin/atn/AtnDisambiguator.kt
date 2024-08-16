@@ -4,7 +4,7 @@ import SemanticsDiagnostic
 import SourceInterval
 import UnreachableElement
 import parser.AntlrNode
-import semantics.Rule
+import declarations.Rule
 import java.util.*
 
 class AtnDisambiguator(

@@ -8,8 +8,8 @@ import parser.AntlrNode
 import parser.getLineColumn
 import parser.getLineOffsetsAndMainLineBreak
 import parser.stringEscapeToLiteralChars
-import semantics.Mode
-import semantics.Rule
+import declarations.Mode
+import declarations.Rule
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor

@@ -5,9 +5,10 @@ import EmptyStringOrSet
 import MultiCharacterLiteralInRange
 import ReversedInterval
 import SemanticsDiagnostic
+import getCharCode
 import parser.*
-import semantics.DeclarationsInfo
-import semantics.Rule
+import declarations.DeclarationsInfo
+import declarations.Rule
 
 class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null) {
     private var stateCounter = 0
@@ -152,7 +153,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                         if (chars.isNotEmpty()) {
                             for (charToken in chars) {
                                 val state = createState()
-                                val interval = Interval(getCharCode(charToken, stringLiteral = true))
+                                val interval = Interval(charToken.getCharCode(stringLiteral = true))
                                 IntervalTransitionData(interval, sortedSetOf(charToken), newData).bind(end, state)
                                 end = state
                             }
@@ -173,7 +174,7 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                                 null
                             }
                             else -> {
-                                getCharCode(chars.first(), stringLiteral = true)
+                                chars.first().getCharCode(stringLiteral = true)
                             }
                         }
 
@@ -200,9 +201,9 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     end = createState()
                     if (node.children.isNotEmpty()) {
                         for (child in node.children) {
-                            val startChar = getCharCode(child.char, stringLiteral = false)
+                            val startChar = child.char.getCharCode(stringLiteral = false)
                             val endChar = if (child.range != null) {
-                                getCharCode(child.range.char, stringLiteral = false)
+                                child.range.char.getCharCode(stringLiteral = false)
                             } else {
                                 startChar
                             }
@@ -252,19 +253,6 @@ class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
             }
 
             return Handle(start, end)
-        }
-
-        private fun getCharCode(charToken: AntlrToken, stringLiteral: Boolean): Int {
-            val literalToEscapeChars =
-                if (stringLiteral) antlrStringLiteralToEscapeChars else antlrCharSetLiteralToEscapeChars
-            val value = charToken.value!!
-            val code = when (charToken.type) {
-                AntlrTokenType.Char -> value[0].code
-                AntlrTokenType.EscapedChar -> value[1].let { literalToEscapeChars[it] ?: it }.code
-                AntlrTokenType.UnicodeEscapedChar -> value.substring(2).toInt(16)
-                else -> error("Unexpected token type: ${charToken.type}") // TODO: handle error tokens?
-            }
-            return code
         }
     }
 

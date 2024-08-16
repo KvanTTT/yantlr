@@ -1,4 +1,4 @@
-package semantics
+package declarations
 
 import parser.AntlrTreeNode
 import parser.ModeNode

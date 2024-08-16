@@ -1,0 +1,5 @@
+ModeType name=DEFAULT_MODE pos=3:1..21
+  RuleType name=SequenceType pos=3:1..21
+    SequenceType pos=3:16..20
+      AtomType pos=3:17..18 interval=[a]
+      AtomType pos=3:18..19 interval=[b]

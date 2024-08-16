@@ -22,4 +22,8 @@ object GrammarTests {
     @TestFactory
     @Execution(ExecutionMode.CONCURRENT)
     fun atnNegation(): Iterator<DynamicNode> = createTests(TestFileType.Antlr, Paths.get("Grammar", "Atn", "Negation").toString())
+
+    @TestFactory
+    @Execution(ExecutionMode.CONCURRENT)
+    fun types(): Iterator<DynamicNode> = createTests(TestFileType.Antlr, Paths.get("Grammar", "Types").toString())
 }

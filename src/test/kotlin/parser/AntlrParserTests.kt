@@ -1,6 +1,6 @@
 package parser
 
-import infrastructure.AntlrPrettier
+import infrastructure.AntlrTreePrettier
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import parser.AntlrTokenType.*
@@ -8,7 +8,7 @@ import parser.AntlrTokenType.*
 object AntlrParserTests {
     @Test
     fun prettifyAntlrNode() {
-        assertEquals(ExampleData.TREE_STRING, AntlrPrettier().prettify(ExampleData.TreeNode))
+        assertEquals(ExampleData.TREE_STRING, AntlrTreePrettier().prettify(ExampleData.TreeNode))
     }
 
     /**
@@ -47,6 +47,6 @@ object AntlrParserTests {
         val parser = AntlrParser(tokenStream)
         val result = parser.parseGrammar()
 
-        assertEquals(ExampleData.TREE_STRING, AntlrPrettier().prettify(result))
+        assertEquals(ExampleData.TREE_STRING, AntlrTreePrettier().prettify(result))
     }
 }

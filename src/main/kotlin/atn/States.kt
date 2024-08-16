@@ -1,8 +1,8 @@
 package atn
 
 import DEFAULT_MODE_NAME
-import semantics.Mode
-import semantics.Rule
+import declarations.Mode
+import declarations.Rule
 
 open class State(val number: Int) {
     val inTransitions: MutableList<Transition<*>> = mutableListOf()

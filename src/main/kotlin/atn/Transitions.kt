@@ -2,7 +2,7 @@ package atn
 
 import parser.AntlrNode
 import parser.ElementBody
-import semantics.Rule
+import declarations.Rule
 import java.util.SortedSet
 
 class Transition<T : TransitionData>(val data: T, val source: State, val target: State) {

@@ -6,10 +6,10 @@ data class LineColumnBorders(val start: LineColumn, val end: LineColumn) {
     constructor(startLine: Int, startColumn: Int) : this(LineColumn(startLine, startColumn), LineColumn(startLine, startColumn))
 
     override fun toString(): String {
-        return if (start == end) {
-            start.toString()
-        } else {
-            "$start..$end"
+        return when {
+            start == end -> start.toString()
+            start.line == end.line -> "${start.line}:${start.column}..${end.column}"
+            else -> "$start..$end"
         }
     }
 }

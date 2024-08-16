@@ -1,8 +1,7 @@
 import parser.AntlrNode
 import parser.AntlrTreeNode
 import parser.RuleNode
-import semantics.Rule
-import java.util.SortedSet
+import declarations.Rule
 
 abstract class AntlrDiagnostic(val severity: DiagnosticSeverity, sourceInterval: SourceInterval) : Diagnostic(sourceInterval)
 

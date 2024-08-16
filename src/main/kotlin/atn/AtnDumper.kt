@@ -1,6 +1,5 @@
 package atn
 
-import SourceInterval
 import parser.getLineColumn
 import parser.stringEscapeToLiteralChars
 import java.awt.event.KeyEvent
@@ -99,9 +98,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
             buildString {
                 append(" {")
                 for ((antlrNodeIndex, antlrNode) in data.antlrNodes.withIndex()) {
-                    val interval = antlrNode.getInterval().let {
-                        if (this@getLabel.data is EndTransitionData) SourceInterval(it.end(), 0) else it
-                    }
+                    val interval = antlrNode.getInterval()
                     append(interval.offset.let {
                         if (lineOffsets != null) it.getLineColumn(lineOffsets) else it
                     })

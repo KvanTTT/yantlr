@@ -1,0 +1,5 @@
+ModeType name=DEFAULT_MODE pos=3:1..32
+  RuleType name=NestedParentheses pos=3:1..32
+    SequenceType pos=3:20..31
+      AtomType pos=3:21..22 interval=[a]
+      AtomType pos=3:27..28 interval=[b]

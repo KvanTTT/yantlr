@@ -1,0 +1,4 @@
+ModeType name=DEFAULT_MODE pos=3:1..17
+  RuleType name=PlusType pos=3:1..17
+    PlusIterationType pos=3:12..16
+      AtomType pos=3:13..14 interval=[a]

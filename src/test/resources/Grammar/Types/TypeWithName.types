@@ -1,0 +1,12 @@
+ModeType name=DEFAULT_MODE pos=3:1..5:9
+  UnionType pos=3:1..5:9
+    RuleType name=A pos=4:1..8
+      AtomType pos=4:5..6 interval=[A]
+    RuleType name=B pos=5:1..9
+      SequenceType pos=5:4..8
+        AtomType pos=5:5..6 interval=[B]
+        AtomType pos=5:6..7 interval=[;]
+RuleType name=a pos=3:1..12
+  SequenceType pos=3:4..11
+    RuleRefType pos=3:6..7 rule=A
+    RuleRefType pos=3:10..11 rule=B

@@ -1,5 +1,8 @@
 package semantics
 
+import declarations.DeclarationsInfo
+import declarations.Mode
+import declarations.Rule
 import junit.framework.Assert.assertTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals

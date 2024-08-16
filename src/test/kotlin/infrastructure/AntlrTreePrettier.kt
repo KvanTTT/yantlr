@@ -5,7 +5,7 @@ import parser.AntlrLexer
 import parser.AntlrTreeNode
 import parser.AntlrToken
 
-class AntlrPrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit, Nothing?>() {
+class AntlrTreePrettier(val lexer: AntlrLexer? = null) : AntlrTreeVisitor<Unit, Nothing?>() {
     private var indentLevel = 0
     private val indentCache = mutableMapOf<Int, String>()
     private val result = StringBuilder()

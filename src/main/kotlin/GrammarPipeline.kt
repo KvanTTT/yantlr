@@ -2,8 +2,10 @@ import atn.*
 import parser.AntlrLexer
 import parser.AntlrLexerTokenStream
 import parser.AntlrParser
-import semantics.DeclarationCollector
-import semantics.DeclarationsInfo
+import declarations.DeclarationCollector
+import declarations.DeclarationsInfo
+import types.TypesBuilder
+import types.TypesInfo
 
 object GrammarPipeline {
     fun run(
@@ -16,6 +18,9 @@ object GrammarPipeline {
         val tree = AntlrParser(AntlrLexerTokenStream(lexer), diagnosticReporter = diagnosticReporter).parseGrammar()
 
         val declarationsInfo = DeclarationCollector(lexer, diagnosticReporter = diagnosticReporter).collect(tree)
+
+        val typesInfo = TypesBuilder(declarationsInfo, diagnosticReporter = diagnosticReporter).build()
+
         val atn = AtnBuilder(diagnosticReporter = diagnosticReporter).build(declarationsInfo)
         val minimizedAtn: Atn
         val originalAtn: Atn?
@@ -31,7 +36,7 @@ object GrammarPipeline {
         AtnDisambiguator(diagnosticReporter).run(minimizedAtn)
         AtnVerifier(checkNoEpsilons = true).verify(minimizedAtn)
 
-        return GrammarPipelineResult(tree.parserIdToken.value, lexer.lineOffsets, declarationsInfo, originalAtn, minimizedAtn)
+        return GrammarPipelineResult(tree.parserIdToken.value, lexer.lineOffsets, declarationsInfo, typesInfo, originalAtn, minimizedAtn)
     }
 }
 
@@ -39,6 +44,7 @@ class GrammarPipelineResult(
     val grammarName: String?,
     val lineOffsets: List<Int>,
     val declarationsInfo: DeclarationsInfo,
+    val typesInfo: TypesInfo,
     val originalAtn: Atn?, // Null if debugMode is false
     val minimizedAtn: Atn,
 )
