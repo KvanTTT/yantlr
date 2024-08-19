@@ -35,7 +35,7 @@ object AtnCloner {
 
             val number = if (stateCounter == null) state.number else stateCounter!!
             val result = when (state) {
-                is RuleState -> RuleState(state.rule, number)
+                is RuleState -> RuleState(state.ruleType, number)
                 is ModeState -> ModeState(state.mode, number)
                 else -> State(number)
             }.also {
