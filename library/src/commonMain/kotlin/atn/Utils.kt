@@ -1,7 +1,8 @@
 package atn
 
+import SortedSet
 import parser.AntlrNode
-import java.util.*
+import sortedSetOf
 
 fun Transition<*>.getAntlrNodes(): SortedSet<AntlrNode> {
     return when (data) {

@@ -1,5 +1,4 @@
 import parser.AntlrNode
-import java.util.SortedSet
 
 data class SourceInterval(val offset: Int, val length: Int) {
     companion object {
@@ -13,7 +12,7 @@ data class SourceInterval(val offset: Int, val length: Int) {
     }
 }
 
-fun SortedSet<AntlrNode>.merge(): SourceInterval {
+fun Set<AntlrNode>.merge(): SourceInterval {
     if (isEmpty()) {
         return SourceInterval.EMPTY
     }

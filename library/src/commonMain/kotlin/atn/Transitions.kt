@@ -1,9 +1,9 @@
 package atn
 
+import SortedSet
 import parser.AntlrNode
 import parser.ElementBody
 import declarations.Rule
-import java.util.SortedSet
 
 class Transition<T : TransitionData>(val data: T, val source: State, val target: State) {
     val isEnclosed = source === target

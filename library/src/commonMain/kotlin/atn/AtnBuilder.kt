@@ -9,6 +9,7 @@ import getCharCode
 import parser.*
 import declarations.DeclarationsInfo
 import declarations.Rule
+import sortedSetOf
 
 class AtnBuilder(private val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null) {
     private var stateCounter = 0
