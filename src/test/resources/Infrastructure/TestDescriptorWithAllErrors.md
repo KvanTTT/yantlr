@@ -1,6 +1,6 @@
 # Notes
 
-Test runner should report `UnknownProperty` but preserved ANTLR errors
+Test runner should report `UnknownProperty` but preserve ANTLR errors
 
 # Grammars
 

@@ -5,10 +5,11 @@ import GrammarPipeline
 import GrammarPipelineResult
 import atn.Atn
 import atn.AtnDumper
-import com.intellij.rt.execution.junit.FileComparisonFailure
 import infrastructure.testDescriptors.TestDescriptor
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import infrastructure.testDescriptors.TestDescriptorExtractor
+import org.opentest4j.AssertionFailedError
+import org.opentest4j.FileInfo
 import types.TypesInfo
 import java.io.File
 import java.nio.file.Paths
@@ -135,12 +136,7 @@ object FullPipelineRunner {
                 allDiagnosticsExtractionResult,
                 actualDescriptorDiagnostics.map { it.toInfoWithDescriptor() } + otherDiagnosticInfos
             )
-            throw FileComparisonFailure(
-                "Test descriptor contains errors",
-                inputWithoutDescriptorErrors,
-                inputWithDescriptorErrors,
-                file.path
-            )
+            throwAssertionFailedError("Test descriptor contains errors", file, inputWithoutDescriptorErrors, inputWithDescriptorErrors)
         }
 
         return TestDescriptorInfo(testDescriptor, refinedInput, otherDiagnostics)
@@ -154,7 +150,16 @@ object FullPipelineRunner {
 
     private fun failFileComparisonIfNotEqual(message: String, expected: String, actual: String, file: File) {
         if (expected != actual) {
-            throw FileComparisonFailure(message, expected, actual, file.path)
+            throwAssertionFailedError(message, file, expected, actual)
         }
+    }
+
+    private fun throwAssertionFailedError(
+        message: String,
+        file: File,
+        expected: String,
+        actual: String
+    ) {
+        throw AssertionFailedError(message, FileInfo(file.path, expected.toByteArray()), actual)
     }
 }

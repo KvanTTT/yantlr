@@ -11,7 +11,6 @@ import parser.AntlrLexerTokenStream
 import parser.AntlrParser
 import java.io.File
 import java.nio.file.Paths
-import java.util.stream.Stream
 import kotlin.streams.asStream
 
 fun <T> check(expectedTreeFragment: T, grammarFragment: String, parseFunc: (AntlrParser) -> T) {

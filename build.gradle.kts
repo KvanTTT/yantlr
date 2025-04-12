@@ -13,7 +13,6 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     testImplementation(kotlin("reflect"))
-    testImplementation(files("libs/idea_rt.jar", "libs/junit.jar"))
 }
 
 tasks.test {
