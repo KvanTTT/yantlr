@@ -22,7 +22,7 @@ fun <T> check(expectedTreeFragment: T, grammarFragment: String, parseFunc: (Antl
     AntlrTreeComparer(lexer).compare(expectedTreeFragment, actualNode)
 }
 
-val resourcesFile = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toFile()
+val resourcesFile: File = Paths.get(System.getProperty("user.dir"), "src", "jvmTest", "resources").toFile()
 
 enum class TestFileType {
     Antlr,
