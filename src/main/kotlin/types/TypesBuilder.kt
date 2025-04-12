@@ -1,5 +1,7 @@
 package types
 
+import AntlrTreeVisitor
+import SemanticsDiagnostic
 import atn.Interval
 import getCharCode
 import parser.AlternativeNode
