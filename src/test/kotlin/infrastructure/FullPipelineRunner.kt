@@ -149,7 +149,7 @@ object FullPipelineRunner {
     )
 
     private fun failFileComparisonIfNotEqual(message: String, expected: String, actual: String, file: File) {
-        if (expected != actual) {
+        if (expected.normalizeText() != actual.normalizeText()) {
             throwAssertionFailedError(message, file, expected, actual)
         }
     }

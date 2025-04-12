@@ -58,3 +58,7 @@ fun InfoWithSourceInterval.toInfoWithDescriptor(): InfoWithDescriptor<InfoWithSo
     @Suppress("UNCHECKED_CAST")
     return InfoWithDescriptor(this, descriptor as EmbeddedInfoDescriptor<InfoWithSourceInterval>)
 }
+
+fun String.normalizeText(): String {
+    return replace("\r\n", "\n")
+}
