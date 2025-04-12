@@ -17,3 +17,7 @@ fun AntlrToken.getCharCode(stringLiteral: Boolean): Int {
     }
     return code
 }
+
+fun <T> sortedSetOf(vararg elements: T): SortedSet<T> = elements.toCollection(SortedSet())
+
+fun <K : Comparable<K>, V> sortedMapOf(vararg pairs: Pair<K, V>): SortedMap<K, V> = SortedMap<K, V>().apply { putAll(pairs) }

@@ -1,8 +1,10 @@
 package atn
 
 import SemanticsDiagnostic
+import SortedMap
 import parser.ElementBody
-import java.util.*
+import sortedMapOf
+import sortedSetOf
 
 class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null) {
     fun run(atn: Atn) {
@@ -36,7 +38,7 @@ class AtnNegationRemover(val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)
                     currentNegationNodes.removeAll {
                         // Check by end offset to handle EndTransition correctly
                         if (outTransition.getEndOffset() > it.getInterval().end()) {
-                            negationStateMap.putIfAbsent(it, state)
+                            negationStateMap.getOrPut(it) { state }
                             true
                         } else {
                             false

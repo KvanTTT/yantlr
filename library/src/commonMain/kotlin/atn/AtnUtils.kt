@@ -1,6 +1,6 @@
 package atn
 
-import java.util.*
+import SortedMap
 
 fun TransitionData.bind(source: State, target: State): Transition<*> {
     return Transition(this, source, target).also {
@@ -32,7 +32,7 @@ fun SortedMap<Int, MutableList<IntervalInfo>>.addIntervalInfo(interval: Interval
     getOrPut(interval.end + 1) { mutableListOf() }.add(IntervalInfo(transition, start = false))
 }
 
-fun SortedMap<Int, MutableList<IntervalInfo>>.collectIntervalDataToTransitions(negation: Boolean)
+fun Map<Int, MutableList<IntervalInfo>>.collectIntervalDataToTransitions(negation: Boolean)
         : Map<Interval, List<Transition<IntervalTransitionData>>> {
     val disjointIntervals = mutableMapOf<Interval, List<Transition<IntervalTransitionData>>>()
 

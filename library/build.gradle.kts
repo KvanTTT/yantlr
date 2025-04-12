@@ -50,9 +50,15 @@ kotlin {
         }
     }
 
-    tasks.withType<Test> {
-        useJUnitPlatform()
+    sourceSets.forEach { _ ->
+        compilerOptions {
+            freeCompilerArgs.add("-Xexpect-actual-classes")
+        }
     }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 android {

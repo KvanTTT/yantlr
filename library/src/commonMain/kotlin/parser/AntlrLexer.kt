@@ -163,7 +163,7 @@ class AntlrLexer(
             '\uFEFF' -> createToken(AntlrTokenType.Bom, charIndex, 1, AntlrTokenChannel.Hidden).also { charIndex++ }
 
             in idStartChars -> tokenizeSequence(
-                if (Character.isUpperCase(getChar(charIndex))) AntlrTokenType.LexerId else AntlrTokenType.ParserId,
+                if (getChar(charIndex).isUpperCase()) AntlrTokenType.LexerId else AntlrTokenType.ParserId,
                 idContinueChars
             )
 

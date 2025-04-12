@@ -1,11 +1,14 @@
 package atn
 
 import SemanticsDiagnostic
+import SortedMap
+import SortedSet
 import SourceInterval
 import UnreachableElement
 import parser.AntlrNode
 import declarations.Rule
-import java.util.*
+import sortedMapOf
+import sortedSetOf
 
 class AtnDisambiguator(
     val diagnosticReporter: ((SemanticsDiagnostic) -> Unit)? = null,
@@ -177,7 +180,7 @@ class AtnDisambiguator(
         //  - Calculate type of newly created info
         //  - Try to preserve order of transitions if possible
 
-        val disjointInfos: MutableMap<Int, MutableList<DisjointTransitionInfo<*>>> = mutableMapOf()
+        val disjointInfos: SortedMap<Int, MutableList<DisjointTransitionInfo<*>>> = sortedMapOf()
 
         intervalsToTransitions.forEach { (interval, intervalTransitions) ->
             disjointInfos.add(interval, intervalTransitions, transitionOrderMap)
@@ -191,7 +194,7 @@ class AtnDisambiguator(
             disjointInfos.add(rule, endRuleTransitions, transitionOrderMap)
         }
 
-        return disjointInfos.toSortedMap().flatMap { it.value }
+        return disjointInfos.flatMap { it.value }
     }
 
     private fun MutableMap<Int, MutableList<DisjointTransitionInfo<*>>>.add(

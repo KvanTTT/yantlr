@@ -1,8 +1,8 @@
 package atn
 
+import isPrintable
 import parser.getLineColumn
 import parser.stringEscapeToLiteralChars
-import java.awt.event.KeyEvent
 
 class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: String = "\n") {
     companion object {
@@ -189,11 +189,7 @@ class AtnDumper(private val lineOffsets: List<Int>?, private val lineBreak: Stri
     }
 
     private fun StringBuilder.appendPrintable(char: Char) {
-        // Copied from https://stackoverflow.com/a/418560/1046374
-        if (!Character.isISOControl(char) &&
-            char != KeyEvent.CHAR_UNDEFINED &&
-            Character.UnicodeBlock.of(char).let { it != null && it !== Character.UnicodeBlock.SPECIALS }
-        ) {
+        if (char.isPrintable) {
             append(char)
         } else {
             // Avoid printing non-printable characters because they could cause incorrect Graphviz rendering,
