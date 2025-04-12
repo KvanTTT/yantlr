@@ -4,10 +4,10 @@ import AntlrDiagnostic
 import LineColumn
 import SourceInterval
 import infrastructure.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.assertThrows
 import parser.*
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 object AntlrDiagnosticsExtractorTests {
     private val baseInput = """
@@ -97,7 +97,7 @@ a : '\u';
 
     @Test
     fun unclosedDiagnosticDescriptor() {
-        val exception = assertThrows<IllegalStateException> { AntlrDiagnosticsExtractor.extract("""
+        val exception = assertFailsWith<IllegalStateException> { AntlrDiagnosticsExtractor.extract("""
 grammar test /*❗UnrecognizedToken*/`
         """.trimIndent())
         }
@@ -106,7 +106,7 @@ grammar test /*❗UnrecognizedToken*/`
 
     @Test
     fun unexpectedDiagnosticEndMarker() {
-        val exception = assertThrows<IllegalStateException> { AntlrDiagnosticsExtractor.extract("""
+        val exception = assertFailsWith<IllegalStateException> { AntlrDiagnosticsExtractor.extract("""
 grammar test /*❗UnrecognizedToken*/`/*❗*//*❗*/
         """.trimIndent())
         }

@@ -1,9 +1,9 @@
 package parser
 
 import infrastructure.AntlrTreePrettier
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import parser.AntlrTokenType.*
+import kotlin.test.Test
 
 object AntlrParserTests {
     @Test

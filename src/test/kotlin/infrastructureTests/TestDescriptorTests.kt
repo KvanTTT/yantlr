@@ -3,10 +3,10 @@ package infrastructureTests
 import LineColumnBorders
 import infrastructure.*
 import infrastructure.testDescriptors.*
-import org.junit.jupiter.api.Test
 import parser.getLineColumnBorders
 import parser.getLineOffsets
 import java.nio.file.Paths
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 

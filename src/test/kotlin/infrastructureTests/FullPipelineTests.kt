@@ -2,13 +2,13 @@ package infrastructureTests
 
 import infrastructure.FullPipelineRunner
 import infrastructure.resourcesFile
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.assertThrows
 import org.opentest4j.AssertionFailedError
 import org.opentest4j.FileInfo
 import java.nio.charset.Charset
 import java.nio.file.Paths
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 object FullPipelineTests {
     @Test
@@ -25,7 +25,7 @@ object FullPipelineTests {
     fun dontRunPipelineIfTestDescriptorContainsErrors() {
         val file = Paths.get(resourcesFile.toString(), "Infrastructure", "TestDescriptorWithErrors.md").toFile()
 
-        val exception = assertThrows<AssertionFailedError> { FullPipelineRunner.run(file) }
+        val exception = assertFailsWith<AssertionFailedError> { FullPipelineRunner.run(file) }
 
         val fileInfo = exception.expected.value as FileInfo
         assertEquals(DescriptorEmbeddedDiagnosticsTests.refinedInput, fileInfo.getContentsAsString(Charset.defaultCharset()))
@@ -37,7 +37,7 @@ object FullPipelineTests {
     fun descriptorAndAntlrDiagnosticsInTheSameFile() {
         val file = Paths.get(resourcesFile.toString(), "Infrastructure", "TestDescriptorWithAllErrors.md").toFile()
 
-        val exception = assertThrows<AssertionFailedError> { FullPipelineRunner.run(file) }
+        val exception = assertFailsWith<AssertionFailedError> { FullPipelineRunner.run(file) }
 
         val expected = """
 # Notes

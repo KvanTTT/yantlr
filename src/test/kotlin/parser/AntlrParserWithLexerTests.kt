@@ -1,6 +1,6 @@
 package parser
 
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 object AntlrParserWithLexerTests {
     @Test

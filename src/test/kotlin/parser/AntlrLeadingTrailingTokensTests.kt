@@ -1,7 +1,7 @@
 package parser
 
 import infrastructure.AntlrTreeComparer
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 object AntlrLeadingTrailingTokensTests {
