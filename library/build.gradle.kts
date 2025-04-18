@@ -57,8 +57,19 @@ kotlin {
     }
 }
 
+tasks.register<JavaExec>("testsGeneration") {
+    println("Generate tests based on test data...")
+    classpath = rootProject.project("test-generator").sourceSets["main"].runtimeClasspath
+    mainClass.set("MainKt")
+    args = listOf(rootProject.projectDir.toString())
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.named("compileTestKotlinJvm") {
+    dependsOn("testsGeneration")
 }
 
 android {
