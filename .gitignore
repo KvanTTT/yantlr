@@ -17,3 +17,5 @@ xcuserdata
 
 ### VSCode ANTLR Extension ###
 .antlr/
+
+**/kotlin/generated**
