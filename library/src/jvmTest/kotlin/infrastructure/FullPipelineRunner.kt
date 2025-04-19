@@ -8,6 +8,7 @@ import atn.AtnDumper
 import infrastructure.testDescriptors.TestDescriptor
 import infrastructure.testDescriptors.TestDescriptorDiagnostic
 import infrastructure.testDescriptors.TestDescriptorExtractor
+import org.junit.jupiter.api.assertAll
 import org.opentest4j.AssertionFailedError
 import org.opentest4j.FileInfo
 import types.TypesInfo
@@ -18,19 +19,26 @@ import kotlin.test.junit5.JUnit5Asserter.fail
 object FullPipelineRunner {
     fun run(file: File) {
         val content = file.readText()
+        val failExecutables = mutableListOf<() -> Unit>()
         when (file.extension) {
             "g4" -> {
                 val extractionResult = AntlrDiagnosticsExtractor.extract(content)
                 val actualGrammarDiagnostics = mutableListOf<AntlrDiagnostic>()
 
-                runGrammarPipeline(extractionResult.refinedInput, 0, file.nameWithoutExtension, file.parentFile) {
+                val (_, grammarFailExecutables) = runGrammarPipeline(extractionResult.refinedInput, 0, file.nameWithoutExtension, file.parentFile) {
                     actualGrammarDiagnostics.add(it)
                 }
+                failExecutables.addAll(grammarFailExecutables)
 
                 val grammarWithActualDiagnostics = InfoEmbedder.embedDiagnostics(extractionResult, actualGrammarDiagnostics)
 
-                failFileComparisonIfNotEqual(
-                    "Grammar diagnostics are not equal", content, grammarWithActualDiagnostics, file)
+                getFileComparisonFailExecutableIfNotEqual(
+                    "Grammar diagnostics are not equal",
+                    content,
+                    grammarWithActualDiagnostics, file
+                )?.let {
+                    failExecutables.add(it)
+                }
             }
             "md" -> {
                 val (testDescriptor, refinedInput, diagnosticInfos) = getAndCheckTestDescriptor(content, file)
@@ -39,9 +47,17 @@ object FullPipelineRunner {
                 val embeddedInfos = mutableListOf<InfoWithDescriptor<*>>()
 
                 for (grammar in testDescriptor.grammars) {
-                    grammarResults.add(runGrammarPipeline(grammar.value, grammar.sourceInterval.offset, grammarName = null, file.parentFile) {
+                    val (grammarPipelineResult, grammarFailExecutables) = runGrammarPipeline(
+                        grammar.value,
+                        grammar.sourceInterval.offset,
+                        grammarName = null,
+                        file.parentFile
+                    ) {
                         embeddedInfos.add(it.toInfoWithDescriptor())
-                    })
+                    }
+
+                    grammarResults.add(grammarPipelineResult)
+                    failExecutables.addAll(grammarFailExecutables)
                 }
 
                 if (testDescriptor.atn != null) {
@@ -58,11 +74,18 @@ object FullPipelineRunner {
                 val antlrDiagnosticsExtractionResult = ExtractionResult(expectDiagnosticInfos, refinedInput)
                 val actual = InfoEmbedder.embed(antlrDiagnosticsExtractionResult, embeddedInfos)
 
-                failFileComparisonIfNotEqual(
-                    "Grammar diagnostics or dumps are not equal", content, actual, file)
+                getFileComparisonFailExecutableIfNotEqual(
+                    "Grammar diagnostics or dumps are not equal",
+                    content,
+                    actual,
+                    file
+                )?.let {
+                    failExecutables.add(it)
+                }
             }
-            else -> error("Valid extensions are `g4` and `md`")
+            else -> fail("Valid extensions are `g4` and `md`")
         }
+        assertAll(failExecutables)
     }
 
     private fun runGrammarPipeline(
@@ -71,44 +94,53 @@ object FullPipelineRunner {
         grammarName: String?,
         parentFile: File,
         diagnosticReporter: ((AntlrDiagnostic) -> Unit),
-    ): GrammarPipelineResult {
-        return GrammarPipeline.run(grammarText, grammarOffset, debugMode = true) {
+    ): Pair<GrammarPipelineResult, List<() -> Unit>> {
+        val failExecutables = mutableListOf<() -> Unit>()
+        val result = GrammarPipeline.run(grammarText, grammarOffset, debugMode = true) {
             diagnosticReporter.invoke(it)
-        }.also {
-            val subdirectory = parentFile.path.substringAfter(resourcesFile.path)
-            val dumpName = grammarName ?: it.grammarName
-            if (subdirectory.contains("Atn")) {
-                dumpAtn(it.originalAtn!!, it.lineOffsets, parentFile, dumpName, minimized = false)
-                dumpAtn(it.minimizedAtn, it.lineOffsets, parentFile, dumpName, minimized = true)
-            } else if (subdirectory.contains("Types")) {
-                dumpTypes(it.typesInfo, it.lineOffsets, parentFile, dumpName)
+        }
+
+        val subdirectory = parentFile.path.substringAfter(resourcesFile.path)
+        val dumpName = grammarName ?: result.grammarName
+        if (subdirectory.contains("Atn")) {
+            dumpAtn(result.originalAtn!!, result.lineOffsets, parentFile, dumpName, minimized = false)?.let {
+                failExecutables.add(it)
+            }
+            dumpAtn(result.minimizedAtn, result.lineOffsets, parentFile, dumpName, minimized = true)?.let {
+                failExecutables.add(it)
+            }
+        } else if (subdirectory.contains("Types")) {
+            (dumpTypes(result.typesInfo, result.lineOffsets, parentFile, dumpName))?.let {
+                failExecutables.add(it)
             }
         }
+
+        return result to failExecutables
     }
 
-    private fun dumpAtn(atn: Atn, lineOffsets: List<Int>, parentFile: File, name: String?, minimized: Boolean) {
+    private fun dumpAtn(atn: Atn, lineOffsets: List<Int>, parentFile: File, name: String?, minimized: Boolean): (() -> Unit)? {
         val actualAtnDump = AtnDumper(lineOffsets).dump(atn)
         val dumpFile = Paths.get(parentFile.path, "${name}${if (minimized) ".min" else ""}.dot").toFile()
-        if (!dumpFile.exists()) {
+        return if (!dumpFile.exists()) {
             dumpFile.writeText(actualAtnDump)
-            fail("Expected file doesn't exist. Generating: ${dumpFile.path}")
+            getFileNotExistFailExecutable(dumpFile)
         } else {
             val expectedAtnDump = dumpFile.readText()
-            failFileComparisonIfNotEqual(
+            getFileComparisonFailExecutableIfNotEqual(
                 "ATN ${if (minimized) "minimized " else ""} dumps are not equal", expectedAtnDump, actualAtnDump, dumpFile
             )
         }
     }
 
-    private fun dumpTypes(typesInfo: TypesInfo, lineOffsets: List<Int>, parentFile: File, name: String?) {
+    private fun dumpTypes(typesInfo: TypesInfo, lineOffsets: List<Int>, parentFile: File, name: String?): (() -> Unit)? {
         val actualDump = TypesDumper(lineOffsets).dump(typesInfo)
         val dumpFile = Paths.get(parentFile.path, "${name}.types").toFile()
-        if (!dumpFile.exists()) {
+        return if (!dumpFile.exists()) {
             dumpFile.writeText(actualDump)
-            fail("Expected file doesn't exist. Generating: ${dumpFile.path}")
+            getFileNotExistFailExecutable(dumpFile)
         } else {
             val expectedDump = dumpFile.readText()
-            failFileComparisonIfNotEqual(
+            getFileComparisonFailExecutableIfNotEqual(
                 "Type dumps are not equal", expectedDump, actualDump, dumpFile
             )
         }
@@ -148,9 +180,15 @@ object FullPipelineRunner {
         val regularDiagnosticInfos: List<DiagnosticInfo>,
     )
 
-    private fun failFileComparisonIfNotEqual(message: String, expected: String, actual: String, file: File) {
-        if (expected.normalizeText() != actual.normalizeText()) {
-            throwAssertionFailedError(message, file, expected, actual)
+    private fun getFileNotExistFailExecutable(file: File): (() -> Unit) {
+        return { fail("Expected file doesn't exist. Generating: ${file.path}") }
+    }
+
+    private fun getFileComparisonFailExecutableIfNotEqual(message: String, expected: String, actual: String, file: File): (() -> Unit)? {
+        return if (expected.normalizeText() != actual.normalizeText()) {
+            { throwAssertionFailedError(message, file, expected, actual) }
+        } else {
+            null
         }
     }
 
@@ -159,7 +197,7 @@ object FullPipelineRunner {
         file: File,
         expected: String,
         actual: String
-    ) {
+    )  {
         throw AssertionFailedError(message, FileInfo(file.path, expected.toByteArray()), actual)
     }
 }
